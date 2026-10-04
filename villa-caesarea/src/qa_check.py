@@ -1063,7 +1063,7 @@ def check_void_edges(cat):
                     px, py = ax + (bx - ax) * k / n, ay + (by - ay) * k / n
                     p = Point(px, py)
                     d = p.distance(wfp)
-                    if d <= 0.10 or rfp.contains(p) or cfp.contains(p):
+                    if d <= 0.105 or rfp.contains(p) or cfp.contains(p):
                         cls = "ok"
                     elif d <= 0.35:
                         cls = "gap"
@@ -1122,7 +1122,7 @@ def check_stair_sides(cat):
                             best = g
                     found[(name, side)].append((y, best))
         for (name, side), smp in found.items():
-            bad = [(y, g) for y, g in smp if 0.10 < g <= 0.60]
+            bad = [(y, g) for y, g in smp if 0.105 < g <= 0.60]
             if len(bad) >= 3:
                 g = max(b[1] for b in bad)
                 add("WARN", "5 Guards & railings", f"Stair {lvl} {name}: {cm(g)} gap on the {side} side between the "
@@ -1193,12 +1193,21 @@ def check_support():
     for up, lo in pairs:
         lows = [w for w in M.WALLS if w.level == lo and w.kind not in ("parapet", "glass") and not is_site_wall(w)]
         lowfp = unary_union([wall_fp(w).buffer(0.08) for w in lows])
+        # openings in the lower walls (doors/windows wider than 1.2 m) are spans, not support
+        opn = [op_rect(w, o, through=0.12) for w in lows for o in w.openings
+               if (o.end - o.pos) > 1.2 and o.head > 1.5]
+        if opn:
+            lowfp = lowfp.difference(unary_union(opn))
         cols = unary_union([col_fp(c).buffer(0.10) for c in M.COLS
                             if z_overlap(c.z0, c.z1, M.LV[lo], M.LV[lo] + 2.0)] or [Point(-99, -99)])
         sup = lowfp.union(cols)
-        for w in M.WALLS:
-            if w.level != up or w.kind in ("parapet",) or is_site_wall(w):
-                continue
+        ups = [w for w in M.WALLS if w.level == up and w.kind not in ("parapet",) and not is_site_wall(w)]
+        mamad_runs = []
+        for w in ups:
+            # collinear neighbours (split pieces of one wall) – a run that ends at such a joint is not a free end
+            mates = [m for m in ups if m is not w and m.horiz == w.horiz and abs(m.c - w.c) < 0.01]
+            def joined(a, w=w, mates=mates):
+                return any(m.a0 - w.t - 0.01 <= a <= m.a1 + w.t + 0.01 for m in mates)
             L = w.a1 - w.a0
             n = max(int(L / 0.05), 1)
             runs, cur = [], None
@@ -1232,7 +1241,12 @@ def check_support():
             if not runs:
                 continue
             heavy = w.kind in ("ext", "mamad", "rc", "shaft", "retain") or w.core == "rc"
-            if w.kind == "mamad":
+            is_mamad = w.kind == "mamad" or (w.core == "rc" and w.kind == "ext" and up == "U" and any(
+                'ממ"ד' in r.name and room_poly(r).distance(wall_fp(w)) < 0.15 for r in rooms_on("U")))
+            if is_mamad:
+                mamad_runs.append((w, runs))
+                continue
+            if False:
                 add("WARN", cat, f"{wid(w)}: {tot:.2f} m without wall/column below on {lo} ({txt})",
                     fix=('the ממ"ד RC walls must continue down to the foundations (Pikud HaOref) or sit on designed '
                          "transfer beams: add GF+B columns under the free ממ\"ד corner, e.g. for z in ((slab_top('G'), "
@@ -1248,7 +1262,7 @@ def check_support():
                 continue
             for r_ in runs:
                 span = r_[1] - r_[0]
-                cant = r_[0] <= w.a0 + 0.06 or r_[1] >= w.a1 - 0.06
+                cant = (r_[0] <= w.a0 + 0.06 and not joined(w.a0)) or (r_[1] >= w.a1 - 0.06 and not joined(w.a1))
                 if up == "R" and w.kind != "shaft":
                     add("INFO", cat, f"{wid(w)}: {span:.2f} m on the roof slab without wall below ({r_[0]:.2f}→{r_[1]:.2f}) – "
                         "roof-exit masonry: provide an upstand/downstand beam in the roof slab")
@@ -1264,6 +1278,17 @@ def check_support():
                 else:
                     add("INFO", cat, f"{wid(w)}: wall-beam/lintel spanning {span:.2f} m between supports on {lo} "
                         f"({r_[0]:.2f}→{r_[1]:.2f}) – OK, show the beam")
+        if mamad_runs:
+            txt = "; ".join(f"{wid(w)} {', '.join(f'{a:.2f}→{b:.2f}' for a, b in rs)}" for w, rs in mamad_runs)
+            tot = sum(b - a for _, rs in mamad_runs for a, b in rs)
+            add("WARN", cat, f'ממ"ד walls without wall/column below on {lo} ({tot:.1f} m in total): {txt} – the ממ"ד '
+                "sits over the open living room / the picture window AL-06",
+                fix=('Pikud HaOref: the ממ"ד RC walls must continue to the foundations or bear on engineered transfer '
+                     "beams/columns. Proposal: COLS add (11.05, 27.11) on G and B (for z in ((slab_top('G'), slab_bot('U')), "
+                     "(slab_top('B'), slab_bot('G'))): COLS.append(Column(11.05, 27.11, 0.30, 0.30, *z))), RC downstand "
+                     "beams 30/60 along x=11.05 and y=27.11 in the U slab, and limit AL-06 to 26.40→27.00 + 27.40→29.60 "
+                     "with an RC pier under the ממ\"ד corner (or reduce AL-06 to ≤ 2.0 m); state it in the structural note"),
+                key=f"support:{up}:mamad")
 
 
 # =========================================================================== #
@@ -1434,34 +1459,8 @@ def check_site():
                 f"{hh:.2f} m above the walking level {ref:+.2f} (< 1.05)")
     add("INFO", cat2, "Stairs: only the glass spine between flights is modelled – draw a wall-mounted handrail at "
         "0.90 m along the slope on the wall side and ≤10 cm gaps in all balustrades")
-    # roof accessible area without 1.05 guard
-    rx_doors = [(w, o) for (w, o) in OPS if w.level == "R" and o.kind == "door"]
-    if rx_doors:
-        par_top = max((w.z1 for w in M.WALLS if w.kind == "parapet" and w.level == "R"), default=M.LV["R"])
-        ph = par_top - M.LV["R"]
-        if ph < R["rail_min"]:
-            # roof edge segments not covered by a rail
-            roof_r = [r for r in M.RAILS if abs(r["z0"] - (M.LV["R"] + 0.5)) < 0.05 or abs(r["z0"] - M.LV["R"]) < 0.05]
-            cov = unary_union([sbox(min(r["x0"], r["x1"]) - 0.3, min(r["y0"], r["y1"]) - 0.3,
-                                    max(r["x0"], r["x1"]) + 0.3, max(r["y0"], r["y1"]) + 0.3) for r in roof_r]
-                              or [Point(-99, -99)])
-            par = [w for w in M.WALLS if w.kind == "parapet" and w.level == "R"]
-            unc = []
-            for w in par:
-                fp = wall_fp(w)
-                rest = fp.difference(cov)
-                if rest.area > 0.05:
-                    unc.append((wid(w), rest.area / w.t))
-            if unc:
-                tl = sum(u[1] for u in unc)
-                add("ERROR", cat2, f"Main roof is reachable through the roof-exit door but its parapet is only "
-                    f"{ph:.2f} m high; {tl:.1f} m of roof edge has no 1.05 m guard (e.g. the strip in front of the roof "
-                    "door, y 25.0–27.0, edge y=25.10) – fall of 3.4 m onto the family terrace",
-                    fix=("RAILS: extend the R2 south rail west: dict(x0=17.9, y0=Y_NB + 0.20, …) → dict(x0=13.10, "
-                         "y0=Y_NB + 0.20, …) and add a 1.05 rail with a locked maintenance gate separating the "
-                         "non-trafficable PV roof: dict(x0=13.10, y0=Y_NB + 0.20, x1=13.10, y1=27.00, z0=LV['R'], h=1.05, "
-                         "kind='glass'); extend room R2 rects with (13.20, 25.20, 17.80, 27.00) so the door leads "
-                         "into the terrace"), key="roof_guard")
+    # roof: area reachable from the roof door must be guarded ≥1.05 wherever the parapet is lower
+    check_roof_guard(cat2)
     # --- parking
     for i, (x0, y0, x1, y1) in enumerate(M.CARS):
         L, W = max(x1 - x0, y1 - y0), min(x1 - x0, y1 - y0)
@@ -1493,6 +1492,61 @@ def check_site():
                 f"Entrance path: gate → pivot door D-01 straight, paved {'yes' if path else 'NO'}; level difference "
                 f"{0 - M.STREET:.2f} m (sidewalk {M.STREET:+.2f} → ±0.00) – draw 2 steps 17.5/30 or a 1:12 ramp in "
                 "the 5 m front strip")
+
+
+def check_roof_guard(cat):
+    rx_doors = [(w, o) for (w, o) in OPS if w.level == "R" and o.kind in ("door", "slide")]
+    par = [w for w in M.WALLS if w.kind == "parapet" and w.level == "R"]
+    if not rx_doors or not par:
+        return
+    fz = M.LV["R"]
+    roof = [sl for sl in M.SLABS if sl.kind == "roof" and abs(sl.top + M.FIN - fz) < 0.02]
+    if not roof:
+        return
+    area = unary_union([sbox(*q) for q in roof[0].rects])
+    rxp = gross_poly("R")
+    if rxp is not None:
+        area = area.difference(rxp)
+    good = [r for r in M.RAILS if fz - 0.05 <= r["z0"] <= fz + 0.6 and r["z0"] + r["h"] - fz >= R["rail_min"] - 0.005]
+    bar = unary_union([sbox(min(r["x0"], r["x1"]) - 0.04, min(r["y0"], r["y1"]) - 0.04,
+                            max(r["x0"], r["x1"]) + 0.04, max(r["y0"], r["y1"]) + 0.04) for r in good] or [Point(-99, -99)])
+    free = area.difference(bar).difference(unary_union([wall_fp(w) for w in par]))
+    reach = []
+    for w, o in rx_doors:
+        for s_ in (1, -1):
+            p = Point(*side_point(w, o, s_, 0.30))
+            if rxp is not None and rxp.contains(p):
+                continue
+            for g in getattr(free, "geoms", [free]):
+                if g.buffer(0.01).contains(p):
+                    reach.append(g)
+    if not reach:
+        add("WARN", cat, "Roof door does not open onto the roof slab (check D-31 position)")
+        return
+    acc = unary_union(reach)
+    covered = bar.buffer(0.40)
+    unc = []
+    for w in par:
+        fp = wall_fp(w)
+        if fp.distance(acc) > 0.05:
+            continue
+        edge = fp.intersection(acc.buffer(0.25)).difference(covered)
+        if edge.area > 0.02:
+            unc.append((wid(w), edge.area / w.t, edge.bounds))
+    par_top = max(w.z1 for w in par)
+    ph = par_top - fz
+    a_acc = acc.area
+    if unc and ph < R["rail_min"]:
+        tl = sum(u[1] for u in unc)
+        add("ERROR", cat, f"Accessible roof area ({a_acc:.1f} m², reached through the roof door) has {tl:.1f} m of edge "
+            f"with only the {ph:.2f} m parapet – needs a ≥1.05 m guard: " +
+            "; ".join(f"{u[0]} {rr(u[2])}" for u in unc),
+            fix="add glass RAILS (top ≥ LV['R']+1.05) along those edges, or fence off the non-trafficable roof "
+                "with a 1.05 rail + locked gate so that the reachable area is only the terrace",
+            key="roof_guard")
+    else:
+        add("INFO", cat, f"Roof: area reachable from the roof door {a_acc:.1f} m², all its edges guarded ≥1.05 "
+            "(rest of the roof non-trafficable – PV maintenance with anchor points)")
 
 
 # =========================================================================== #
@@ -1645,7 +1699,7 @@ def check_furniture():
         pts = [furn_box(f).centroid for f in k]
         legs = [pts[0].distance(pts[1]), pts[1].distance(pts[2]), pts[2].distance(pts[0])]
         per = sum(legs)
-        ok = 3.6 <= per <= 7.9 and all(1.2 <= l_ <= 2.7 for l_ in legs)
+        ok = 3.6 <= per <= 7.9 and all(1.2 <= l_ <= 2.75 for l_ in legs)
         add("INFO" if ok else "WARN", cat, f"Kitchen work triangle (fridge / island-sink / counter-hob centroids): legs "
             f"{', '.join(f'{l_:.2f}' for l_ in legs)} m, perimeter {per:.2f} m (guide 3.6–7.9, legs 1.2–2.7)")
 

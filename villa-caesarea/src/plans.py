@@ -435,6 +435,7 @@ def plan_extent(level):
     x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
     if level in ("B", "G"):
         y0 = min(y0, 16.0)
+        y1 = max(y1, M.COURT_N[3] + 0.3)
         x1 = max(x1, 27.7 if level == "G" else x1)
     if level == "U":
         y0 = min(y0, 16.0)
@@ -487,6 +488,12 @@ def draw_terraces(v: View, level, scale):
         v.text((M.PATIO[0] + M.PATIO[2]) / 2, 18.1, "חלל פטיו שקוע", size=2.0 if scale >= 100 else 2.6, weight=500)
         v.level_mark(M.PATIO[0] + 0.5, 17.5, M.LV["B"] - 0.02, size=1.8 if scale >= 100 else 2.2, plan=True)
         # pool edge (partial)
+        # English court void (north)
+        cx0, cy0, cx1, cy1 = M.COURT_N
+        v.rect(cx0, cy0, cx1, cy1, fill="#f6f3ee", lw="xs")
+        v.line(cx0, cy0, cx1, cy1, lw="xxs", color="#999")
+        v.line(cx0, cy1, cx1, cy0, lw="xxs", color="#999")
+        v.text((cx0 + cx1) / 2, cy1 + 0.35, "חצר אנגלית – חלל", size=1.9 if scale >= 100 else 2.4)
         # entrance path & canopy
         v.rect(M.X_E, 28.8, M.X_E + 2.6, 30.8, fill="pat:paving", lw="xs")
     if level == "U":
@@ -576,6 +583,7 @@ def sheet_plans_bg(sh, box):
         v = _view(sh, ox, oy, sc, f"plan_{lvl}_100")
         plan(v, lvl, sc, terraces=(lvl == "G"))
         drawing_title(sh, cx + 70, y + h - 40, title, 'קנ"מ 1:100', width=80)
+        room_table(sh, cx + 72, y + h * 0.70, lvl)
         save_dxf(f"plan_{lvl}_100")
     north_arrow(sh, x + w - 18, y + 22, r=8)
     scale_bar(sh, x + 14, y + h - 14, 100, 10)
@@ -596,6 +604,7 @@ def sheet_plans_ur(sh, box):
         else:
             plan(v, lvl, sc)
         drawing_title(sh, cx + 70, y + h - 40, title, 'קנ"מ 1:100', width=80)
+        room_table(sh, cx + 72, y + h * 0.70, lvl)
         save_dxf(f"plan_{lvl}_100")
     north_arrow(sh, x + w - 18, y + 22, r=8)
     scale_bar(sh, x + 14, y + h - 14, 100, 10)
@@ -664,3 +673,17 @@ def notes_block(sh, x, y, upper=False):
     ]
     for i, t in enumerate(lines):
         sh.text(x + 120, y + 4 + i * 4.4, t, size=2.6 if i else 3.0, anchor="right", weight=700 if i == 0 else 400)
+
+
+def room_table(sh, x_right, y, level, width=150):
+    from siteplan import table
+    rows = []
+    for r in M.ROOMS:
+        if r.level != level:
+            continue
+        a = unary_union([sbox(*q) for q in r.rects]).area
+        rows.append([r.no, r.name, f"{a:.1f}", r.floor, "—" if r.outdoor else f"{r.ceil:.2f}"])
+    tot = sum(float(rw[2]) for rw in rows if rw[4] != "—")
+    rows.append(["", 'סה"כ פנים (נטו)', f"{tot:.1f}", "", ""])
+    table(sh, x_right, y, ["מס'", "חלל", 'שטח מ"ר', "ריצוף", "ג. תקרה"], rows, [12, 46, 18, 50, 18],
+          title=f"טבלת חללים – {M.LEVEL_NAMES[level]}", row_h=5.2, size=2.3, bold_last=True)

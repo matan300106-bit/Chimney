@@ -704,9 +704,12 @@ def island_layout(f):
     for n, w in mods:
         out.append((n, x, x + w))
         x += w
-    over = 0.32            # seating overhang
-    panel = 0.03           # fluted oak panel
-    return dict(L=L, D=D, leg=leg, mods=out, over=over, panel=panel, carc0=over + panel, front_gap=0.021)
+    over = 0.30            # seating overhang (to the fluted panel face)
+    panel = 0.03           # fluted oak panel 18 + MDF backer 12
+    gap = 0.02             # Z-clip zone
+    H = f.h or 0.92
+    return dict(L=L, D=D, H=H, leg=leg, mods=out, over=over, panel=panel, gap=gap, carc0=over + panel + gap,
+                front=D - 0.021 - 0.019, front_gap=0.021)
 
 
 def sym_island(v, f, sh, stools=True):

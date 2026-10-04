@@ -469,7 +469,6 @@ def stair_section(sh, x0, y0, w):
         (*P(28.30, M.LV["G"] + 1.05), ["מעקה זכוכית 105 בשפת התקרה", "פרופיל U נירוסטה (B)"]),
         (*P(28.05, M.LV["G"] - 0.30), ["חיבור מהלך לשפת התקרה", "(זיזון לפי מהנדס)"]),
         (*P(27.55, M.LV["B"] + 2.906), ["תקרה מונמכת גבס,", "חלל מיזוג 20 ס\"מ"]),
-        (*P(27.40, M.LV["B"] + 1.0), ["קיר בלוק 12 (מבואת מרתף)"]),
         (*P(28.5, raft_t - 0.25), ["רפסודת ב\"מ 50 ס\"מ"]),
         (*P(28.9, raft_b - 0.03), ["בטון רזה 5 + יריעה ביטומנית"]),
     ]
@@ -485,7 +484,7 @@ def stair_section(sh, x0, y0, w):
     callout_col(sh, [(*P(pipe_c[0], pipe_c[1]), ["צינור ניקוז", "מחורר Ø100"])], fr.X(y_n) - 1.5, side="left",
                 size=SZS, y_max=fr.Y(raft_b) - 7)
     # title
-    D.drawing_title(sh, x0 + w - 4, yb2 + 14, "חתך א-א – מדרגות", 'קנ"מ 1:25', width=88, size=6.0)
+    D.drawing_title(sh, x0 + w - 10, yb2 + 14, "חתך א-א – מדרגות", 'קנ"מ 1:25', width=88, size=6.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -854,180 +853,146 @@ def _det_frame(sh, x, y, w, h, scale, xmin, xmax, zmin, zmax, bands=None, dx=0.0
 
 def detail_A(sh, x, y, w, h):
     """A – tread nosing with LED strip (section along the walking line)."""
-    r, t = M.STAIRS[1]["r"], 0.28
-    th = h - 16
-    fr = _det_frame(sh, x + 4, y + 2, w * 0.56, th, 5, -0.17, 0.33, -0.40, 0.10, dx=0)
+    r = M.STAIRS[1]["r"]
+    fr = _det_frame(sh, x + 2, y + 2, w * 0.56, h - 6, 5, -0.15, 0.25, -0.36, 0.07)
     c = C_NOSE
-    # geometry: lower tread top at z=-r (nosing at y=-t), riser k at y=0 (nosing), upper tread top z=0
     z_up, z_lo = 0.0, -r
     items = []
-    # RC folded plate: lower tread slab + riser + upper tread slab
-    top = [(-0.17, z_lo - T_OAK), (c, z_lo - T_OAK), (c, z_up - T_OAK), (0.33, z_up - T_OAK)]
-    bot = [(0.33, z_up - T_OAK - T_PLATE), (c + T_PLATE, z_up - T_OAK - T_PLATE), (c + T_PLATE, z_lo - T_OAK - T_PLATE),
-           (-0.17, z_lo - T_OAK - T_PLATE)]
-    rc = PG(top + bot)
-    items.append((rc, S_RC))
-    # riser finish: fine plaster 1 cm
+    top = [(-0.15, z_lo - T_OAK), (c, z_lo - T_OAK), (c, z_up - T_OAK), (0.25, z_up - T_OAK)]
+    bot = [(0.25, z_up - T_OAK - T_PLATE), (c + T_PLATE, z_up - T_OAK - T_PLATE), (c + T_PLATE, z_lo - T_OAK - T_PLATE),
+           (-0.15, z_lo - T_OAK - T_PLATE)]
+    items.append((PG(top + bot), S_RC))
     items.append((R(c - 0.008, z_lo, c, z_up - T_OAK), S_PLAST))
-    # oak treads (upper with nosing + groove for LED), lower tread
-    oak_up = PG([(0.0, z_up), (0.33, z_up), (0.33, z_up - T_OAK), (0.022, z_up - T_OAK), (0.022, z_up - T_OAK + 0.012),
+    oak_up = PG([(0.0, z_up), (0.25, z_up), (0.25, z_up - T_OAK), (0.022, z_up - T_OAK), (0.022, z_up - T_OAK + 0.012),
                  (0.008, z_up - T_OAK + 0.012), (0.008, z_up - T_OAK), (0.0, z_up - T_OAK)])
-    # rounded nosing approximation (chamfer 3 mm)
     oak_up = oak_up.difference(PG([(0.0, z_up), (0.004, z_up), (0.0, z_up - 0.004)]))
     items.append((oak_up, S_OAK))
-    items.append((R(-0.17, z_lo - T_OAK, c - 0.008, z_lo), S_OAK))
-    # adhesive layers
-    items.append((R(c, z_up - T_OAK - 0.004, 0.33, z_up - T_OAK), dict(fill="#555", lw="xxs")))
-    items.append((R(-0.17, z_lo - T_OAK - 0.004, c - 0.008, z_lo - T_OAK), dict(fill="#555", lw="xxs")))
-    # LED alu profile in groove under nosing
+    items.append((R(-0.15, z_lo - T_OAK, c - 0.008, z_lo), S_OAK))
+    items.append((R(c, z_up - T_OAK - 0.004, 0.25, z_up - T_OAK), dict(fill="#555", lw="xxs")))
+    items.append((R(-0.15, z_lo - T_OAK - 0.004, c - 0.008, z_lo - T_OAK), dict(fill="#555", lw="xxs")))
     items.append((R(0.009, z_up - T_OAK + 0.001, 0.021, z_up - T_OAK + 0.011), S_ALU))
     items.append((R(0.010, z_up - T_OAK + 0.0005, 0.020, z_up - T_OAK + 0.003), dict(fill="#fff6c8", lw="xxs")))
     fr.render(items)
-    # light cone
-    p0 = fr.P(0.015, z_up - T_OAK)
-    p1 = fr.P(c - 0.006, z_lo + 0.02)
-    p2 = fr.P(-0.06, z_lo)
+    p0, p1, p2 = fr.P(0.015, z_up - T_OAK), fr.P(c - 0.006, z_lo + 0.02), fr.P(-0.05, z_lo)
     sh.polyline([p0, p1, p2], closed=True, lw="xxs", color="#e2b400", fill="#fff3b0", fop=0.6)
-    # anti-slip grooves
-    for gx in (0.025, 0.040):
+    for gx in (0.03, 0.045):
         sh.line(*fr.P(gx, z_up), *fr.P(gx, z_up - 0.003), lw="xs")
-    # break lines
-    breakline(sh, fr.X(-0.17), fr.Y(z_lo + 0.03), fr.X(-0.17), fr.Y(z_lo - 0.27), amp=1.2)
-    breakline(sh, fr.X(0.33), fr.Y(z_up + 0.03), fr.X(0.33), fr.Y(z_up - 0.27), amp=1.2)
+    breakline(sh, fr.X(-0.15), fr.Y(z_lo + 0.03), fr.X(-0.15), fr.Y(z_lo - 0.27), amp=1.2)
+    breakline(sh, fr.X(0.25), fr.Y(z_up + 0.03), fr.X(0.25), fr.Y(z_up - 0.27), amp=1.2)
     # dims
-    dimv(sh, fr.Y(z_lo), fr.Y(z_up), fr.X(-0.12), f"{r * 100:.1f}", ext=fr.X(-0.02), size=SZS)
-    dimv(sh, fr.Y(z_up - T_OAK), fr.Y(z_up), fr.X(0.30), "5", ext=fr.X(0.25), size=SZS, left=False)
+    dimv(sh, fr.Y(z_lo), fr.Y(z_up), fr.X(-0.11), f"{r * 100:.1f}", ext=fr.X(-0.02), size=SZS)
+    dimv(sh, fr.Y(z_up - T_OAK), fr.Y(z_up), fr.X(0.25) + 4, "5", ext=fr.X(0.24), size=SZS, left=False)
+    dimv(sh, fr.Y(z_up - T_OAK - T_PLATE), fr.Y(z_up - T_OAK), fr.X(0.25) + 4, "18", size=SZS, left=False)
     dimh(sh, fr.X(0.0), fr.X(c), fr.Y(z_up) - 4, "3", ext=fr.Y(z_up), size=SZS)
-    dimh(sh, fr.X(c), fr.X(c + T_PLATE), fr.Y(z_lo - 0.30), "18", ext=fr.Y(z_lo - 0.24), size=SZS)
-    dimv(sh, fr.Y(z_up - T_OAK - T_PLATE), fr.Y(z_up - T_OAK), fr.X(0.31) + 6, "18", ext=fr.X(0.29), size=SZS, left=False)
-    # callouts
-    tx = x + w * 0.56 + 6
-    L = lambda px, pz, ty, lines: leader(sh, *fr.P(px, pz), tx, ty, lines, side="right", size=SZS)
-    y_ = fr.Y(z_up) - 14
-    L(0.20, z_up - 0.02, y_, ["מדרך עץ אלון מלא 5 ס\"מ", "שמן-לכה מט, חריצי החלקה"])
-    L(0.10, z_up - T_OAK - 0.002, y_ + 7, ["הדבקה אלסטית פוליאוריטן"])
-    L(0.015, z_up - T_OAK + 0.006, y_ + 12, ["פס לד 24V בפרופיל אלומיניום", "בחריץ מתחת לחוטם, 3000K"])
-    L(-0.04, z_lo + 0.06, y_ + 21, ["תאורה עקיפה על הרום"])
-    L(c - 0.004, z_lo + 0.10, y_ + 27, ["טיח פנים חלק + צבע"])
-    L(0.15, z_up - T_OAK - 0.10, y_ + 33, ["מדרגה מקופלת ב\"מ 18 ס\"מ", "ב-30, ברזל לפי מהנדס"])
+    dimh(sh, fr.X(c), fr.X(c + T_PLATE), fr.Y(z_lo - T_OAK - T_PLATE) + 4, "18", ext=fr.Y(z_lo - T_OAK - T_PLATE),
+         size=SZS, above=False)
+    P = fr.P
+    callout_col(sh, [
+        (*P(0.17, z_up - 0.02), ["מדרך אלון מלא 5 ס\"מ,", "שמן-לכה מט + חריצי החלקה"]),
+        (*P(0.12, z_up - T_OAK - 0.002), ["הדבקה אלסטית פוליאוריטן"]),
+        (*P(0.015, z_up - T_OAK + 0.006), ["פס לד 24V, 3000K בפרופיל", "אלומיניום בחריץ מתחת לחוטם"]),
+        (*P(-0.03, z_lo + 0.05), ["תאורה עקיפה על הרום והמדרך"]),
+        (*P(c - 0.004, z_lo + 0.10), ["טיח פנים חלק + צבע"]),
+        (*P(0.15, z_up - T_OAK - 0.10), ["מדרגה מקופלת ב\"מ 18 ס\"מ", "ב-30, זיון לפי מהנדס"]),
+    ], x + w * 0.66, side="right", y_min=y + 6, y_max=y + h - 22, size=SZS)
     detail_title(sh, x + w - 3, y + h - 8, "A", "חוטם מדרגה ופס לד", 'קנ"מ 1:5', size=4.0)
 
 
 def detail_B(sh, x, y, w, h):
     """B – flight / landing edge with glass balustrade in side-mounted SS channel (cross-section)."""
-    th = h - 16
-    bands = [(-0.30, 0.10), (0.94, 1.10)]
-    fr = _det_frame(sh, x + 2, y + 2, w * 0.52, th, 5, -0.25, 0.14, -0.30, 1.10, bands=bands, dx=4)
+    bands = [(-0.30, 0.10), (0.93, 1.10)]
+    fr = _det_frame(sh, x + 2, y + 2, w * 0.52, h - 6, 5, -0.20, 0.13, -0.30, 1.10, bands=bands)
     items = []
-    z0 = 0.0
-    # RC landing/flight edge (floor at 0): oak 5 on RC 20
-    items.append((R(-0.25, -0.25, 0.0, -0.05), S_RC))
-    items.append((R(-0.25, -0.05, -0.005, 0.0), S_OAK))
-    # side channel SS316 (U 80x140) fixed to slab face
-    ch_x0 = 0.0
+    items.append((R(-0.20, -0.25, 0.0, -0.05), S_RC))
+    items.append((R(-0.20, -0.05, -0.005, 0.0), S_OAK))
     chan = PG([(0.0, -0.215), (0.075, -0.215), (0.075, -0.055), (0.068, -0.055), (0.068, -0.208), (0.007, -0.208),
                (0.007, -0.055), (0.0, -0.055)])
     items.append((chan, S_SS))
-    # glass 12+12 laminated
     gx0, gx1 = 0.025, 0.050
     items.append((R(gx0, -0.195, gx1, 1.05 - 0.015), S_GLASS))
     items.append((LN([(0.0375, -0.195), (0.0375, 1.035)]), dict(lw="xxs", color="#2b6c86")))
-    # setting block + wedge gaskets
     items.append((R(gx0, -0.207, gx1, -0.195), dict(fill="#333", lw="xxs")))
     items.append((PG([(0.007, -0.06), (gx0, -0.06), (gx0, -0.15), (0.007, -0.14)]), dict(fill="dx:rubber", lw="xxs")))
     items.append((PG([(gx1, -0.06), (0.068, -0.06), (0.068, -0.14), (gx1, -0.15)]), dict(fill="dx:rubber", lw="xxs")))
-    # cap rail: SS U-channel + tube Ø42.4
-    items.append((PG([(gx0 - 0.004, 1.02), (gx1 + 0.004, 1.02), (gx1 + 0.004, 1.034), (gx0 - 0.004, 1.034)]), S_SS))
-    tube = ring(0.0375, 1.05 + 0.0, 0.0212, 0.0025)
-    items.append((tube, S_SS))
+    items.append((R(gx0 - 0.004, 1.02, gx1 + 0.004, 1.034), S_SS))
+    items.append((ring(0.0375, 1.055, 0.0212, 0.0025), S_SS))
     items.append((R(gx0, 1.015, gx1, 1.03), dict(fill="dx:rubber", lw="xxs")))
     fr.render(items)
-    fr.breaks(-0.25, 0.14, amp=1.2)
-    # anchors (chemical M12)
+    fr.breaks(-0.20, 0.13, amp=1.2)
     for zz in (-0.10, -0.17):
         a, b = fr.P(-0.12, zz), fr.P(0.07, zz)
         sh.line(*a, *b, lw="m")
         sh.line(a[0], a[1] - 0.6, a[0], a[1] + 0.6, lw="xs")
         hx, hy = fr.P(0.075, zz)
         sh.rect(hx, hy - 1.6, 1.4, 3.2, lw="xs", fill="#8e969e")
-    breakline(sh, fr.X(-0.25), fr.Y(0.02), fr.X(-0.25), fr.Y(-0.29), amp=1.2)
+    breakline(sh, fr.X(-0.20), fr.Y(0.02), fr.X(-0.20), fr.Y(-0.29), amp=1.2)
     # dims
-    xdim = fr.X(0.14) + 3
-    sh.line(fr.X(0.09), fr.Y(0.0), xdim + 1, fr.Y(0.0), lw="xxs", color="#444")
-    sh.line(fr.X(0.06), fr.Y(1.05 + 0.021), xdim + 1, fr.Y(1.05 + 0.021, 1), lw="xxs", color="#444")
-    dimv(sh, fr.Y(0.0), fr.Y(0.0) - 0.0 + 0.0 - 1e-3 - 0.0 - (fr.Y(0.0) - fr.Y(0.10)), xdim, None, size=SZS, left=False)
-    dimv(sh, fr.Y(0.94, 1), fr.Y(1.071, 1), xdim, None, size=SZS, left=False)
-    sh.text(xdim + 3.4, (fr.Y(0.10) + fr.Y(0.94, 1)) / 2 + 1, "105", size=SZS, weight=700)
-    sh.text(xdim + 3.4, (fr.Y(0.10) + fr.Y(0.94, 1)) / 2 + 3.6, "(90 לאורך מהלך)", size=SZS)
+    xdim = fr.X(0.13) + 3
+    y0_, y1_ = fr.Y(0.0), fr.Y(1.076, 1)
+    sh.line(fr.X(0.09), y0_, xdim + 1, y0_, lw="xxs", color="#444")
+    sh.line(fr.X(0.06), y1_, xdim + 1, y1_, lw="xxs", color="#444")
+    dimv(sh, y0_, fr.Y(0.10), xdim, None, size=SZS)
+    dimv(sh, fr.Y(0.93, 1), y1_, xdim, None, size=SZS)
+    ym = (fr.Y(0.10) + fr.Y(0.93, 1)) / 2
+    sh.text(xdim + 1.2, ym - 0.6, "105", size=SZS, weight=700, anchor="left")
+    sh.text(xdim + 1.2, ym + 2.2, "(במהלך: 90", size=SZS, anchor="left")
+    sh.text(xdim + 1.2, ym + 4.6, "מעל החוטמים)", size=SZS, anchor="left")
     dimh(sh, fr.X(gx0), fr.X(gx1), fr.Y(0.10) - 3, "2.5", ext=fr.Y(0.08), size=SZS)
-    dimv(sh, fr.Y(-0.215), fr.Y(-0.055), fr.X(-0.25) - 3, "16", ext=fr.X(-0.01), size=SZS)
-    level_tag(sh, fr.X(-0.18), fr.Y(0.0), "±0.00 מפלס", side="right", size=SZS, line=6)
-    # callouts
-    tx = x + w * 0.52 + 12
-    L = lambda px, pz, ty, lines, b=None: leader(sh, *fr.P(px, pz, b), tx, ty, lines, side="right", size=SZS)
-    yy = fr.Y(1.10, 1) - 1
-    L(0.03, 1.07, yy, ["מאחז יד נירוסטה 316 Ø42.4", "על פרופיל כיסוי U"], 1)
-    L(0.045, 0.98, yy + 9, ["זכוכית מחוסמת שכבתית", "12+12 PVB/SGP"], 1)
-    L(0.06, -0.10, fr.Y(-0.02) + 2, ["פרופיל U נירוסטה 316", "מוצמד לצד (80×140)"])
-    L(0.06, -0.12, fr.Y(-0.02) + 11, ["טריזי EPDM + שומר מרחק"])
-    L(-0.10, -0.17, fr.Y(-0.02) + 17, ["עוגן כימי M12 @30"])
-    L(-0.15, -0.20, fr.Y(-0.02) + 23, ["שפת משטח ב\"מ"])
+    dimv(sh, fr.Y(-0.215), fr.Y(-0.055), fr.X(-0.20) - 3, "16", ext=fr.X(-0.01), size=SZS)
+    level_tag(sh, fr.X(-0.16), fr.Y(0.0), "±0.00", side="right", size=SZS, line=5)
+    P = fr.P
+    callout_col(sh, [
+        (*P(0.02, 1.07, 1), ["מאחז יד נירוסטה 316 Ø42.4", "על פרופיל כיסוי U"]),
+        (*P(0.045, 0.97, 1), ["זכוכית מחוסמת שכבתית", "12+12 (SGP)"]),
+        (*P(0.073, -0.08), ["פרופיל U נירוסטה 316", "מוצמד לצד 80×140"]),
+        (*P(0.06, -0.12), ["טריזי EPDM + שומר מרחק"]),
+        (*P(-0.08, -0.17), ["עוגן כימי M12 @30"]),
+        (*P(-0.15, -0.22), ["שפת משטח/מהלך ב\"מ"]),
+        (*P(-0.12, -0.02), ["פרקט/מדרך אלון 5"]),
+    ], x + w * 0.62, side="right", y_min=y + 6, y_max=y + h - 22, size=SZS)
     detail_title(sh, x + w - 3, y + h - 8, "B", "מעקה זכוכית בשפת משטח", 'קנ"מ 1:5', size=4.0)
 
 
 def detail_C(sh, x, y, w, h):
     """C – start of a flight on the floor slab with floor finishes."""
     r = M.STAIRS[1]["r"]
-    th = h - 16
-    fr = _det_frame(sh, x + 4, y + 2, w * 0.56, th, 5, -0.26, 0.31, -0.32, 0.26, dx=0)
+    fr = _det_frame(sh, x + 2, y + 2, w * 0.56, h - 6, 5, -0.18, 0.22, -0.33, 0.24)
     c = C_NOSE
     items = []
     zs = -M.FIN
-    # slab
-    items.append((R(-0.26, -0.40, 0.31, zs), S_RC))
-    # floor build-up: fill 7 + mortar/adhesive 1 + porcelain 2
-    items.append((R(-0.26, zs, -0.004 + c - 0.012, -0.03), S_FILL))
-    items.append((R(-0.26, -0.03, c - 0.012, -0.02), S_MORTAR))
-    items.append((R(-0.26, -0.02, c - 0.012, 0.0), S_PORC))
-    # perimeter joint
+    items.append((R(-0.18, -0.40, 0.22, zs), S_RC))
+    items.append((R(-0.18, zs, c - 0.012, -0.03), S_FILL))
+    items.append((R(-0.18, -0.03, c - 0.012, -0.02), S_MORTAR))
+    items.append((R(-0.18, -0.02, c - 0.012, 0.0), S_PORC))
     items.append((R(c - 0.012, zs, c - 0.004, 0.0), dict(fill="#fff", lw="xxs")))
-    # first step RC on slab (dowelled)
-    top = [(c, zs), (c, r - T_OAK), (c + 0.28, r - T_OAK), (c + 0.28, 0.31)]
-    step = PG([(c, zs), (c, r - T_OAK), (0.31, r - T_OAK), (0.31, zs)])
-    items.append((step, S_RC))
+    items.append((PG([(c, zs), (c, r - T_OAK), (0.22, r - T_OAK), (0.22, zs)]), S_RC))
     items.append((R(c - 0.008, 0.0, c, r - T_OAK), S_PLAST))
-    # oak tread with nosing + LED
-    items.append((R(0.0, r - T_OAK, 0.31, r), S_OAK))
+    items.append((R(0.0, r - T_OAK, 0.22, r), S_OAK))
     items.append((R(0.009, r - T_OAK + 0.001, 0.021, r - T_OAK + 0.011), S_ALU))
-    # second riser (begins at 0.28)
-    items.append((R(0.28 + c, r, 0.31, 0.26), S_RC))
     fr.render(items)
-    # shadow gap skirting line + dowels
-    for dx_ in (0.08, 0.20):
-        a, b = fr.P(c + dx_, zs - 0.15), fr.P(c + dx_, r - T_OAK - 0.04)
-        sh.line(*a, *b, lw="m", dash="1.2 0.5")
-    # starter bar (bent)
-    sh.polyline([fr.P(c + 0.03, zs - 0.05), fr.P(c + 0.03, r - T_OAK - 0.03), fr.P(0.25, r - T_OAK - 0.03)], lw="s")
-    breakline(sh, fr.X(-0.26), fr.Y(0.04), fr.X(-0.26), fr.Y(-0.33), amp=1.2)
-    breakline(sh, fr.X(0.31), fr.Y(0.27), fr.X(0.31), fr.Y(-0.33), amp=1.2)
-    breakline(sh, fr.X(-0.27), fr.Y(-0.32), fr.X(0.32), fr.Y(-0.32), amp=1.2)
+    for dx_ in (0.07, 0.15):
+        sh.line(*fr.P(c + dx_, zs - 0.15), *fr.P(c + dx_, r - T_OAK - 0.04), lw="m", dash="1.2 0.5")
+    sh.polyline([fr.P(c + 0.03, zs - 0.05), fr.P(c + 0.03, r - T_OAK - 0.03), fr.P(0.21, r - T_OAK - 0.03)], lw="s")
+    breakline(sh, fr.X(-0.18), fr.Y(0.04), fr.X(-0.18), fr.Y(-0.33), amp=1.2)
+    breakline(sh, fr.X(0.22), fr.Y(r + 0.02), fr.X(0.22), fr.Y(-0.33), amp=1.2)
+    breakline(sh, fr.X(-0.19), fr.Y(-0.33), fr.X(0.23), fr.Y(-0.33), amp=1.2)
     # dims
-    xd = fr.X(-0.20)
-    dim_chain_v(sh, [fr.Y(zs), fr.Y(-0.03), fr.Y(0.0)], xd, texts=["7", "3"], ext=fr.X(-0.15), size=SZS)
+    xd = fr.X(-0.15)
+    dim_chain_v(sh, [fr.Y(zs), fr.Y(-0.03), fr.Y(0.0)], xd, texts=["7", "3"], ext=fr.X(-0.11), size=SZS)
     dimv(sh, fr.Y(0.0), fr.Y(r), fr.X(-0.05), f"{r * 100:.1f}", ext=fr.X(-0.01), size=SZS)
-    dimh(sh, fr.X(0.0), fr.X(0.28), fr.Y(0.26) + 0.5, "28", ext=fr.Y(r), size=SZS)
-    level_tag(sh, fr.X(-0.13), fr.Y(0.0), "±0.00", side="right", size=SZS, line=5)
-    # callouts
-    tx = x + w * 0.56 + 6
-    L = lambda px, pz, ty, lines: leader(sh, *fr.P(px, pz), tx, ty, lines, side="right", size=SZS)
-    y_ = fr.Y(0.26) - 1
-    L(0.20, r - 0.02, y_, ["מדרך אלון 5 ס\"מ + לד"])
-    L(c - 0.004, 0.08, y_ + 6, ["רום ראשון – טיח + צבע"])
-    L(0.05, 0.0, y_ + 12, ["פרופיל הפרדה נירוסטה", "+ מישק אלסטי 8 מ\"מ"])
-    L(-0.10, -0.01, y_ + 21, ["ריצוף פורצלן 120/120", "על דבק C2TE S1"])
-    L(-0.18, -0.06, y_ + 30, ["מילוי בטון קל/חול 7 ס\"מ"])
-    L(0.11, 0.0, y_ + 36, ["קוצים Ø10 @20 – מדרגה", "ראשונה יצוקה על התקרה"])
-    L(0.0, -0.30, y_ + 45, ["תקרת ב\"מ 30 ס\"מ"])
+    dimv(sh, fr.Y(-0.40 + 0.07), fr.Y(zs), xd, None, size=SZS)
+    dimh(sh, fr.X(0.0), fr.X(c), fr.Y(r) - 4, "3", ext=fr.Y(r), size=SZS)
+    level_tag(sh, fr.X(-0.10), fr.Y(0.0), "±0.00", side="right", size=SZS, line=4)
+    P = fr.P
+    callout_col(sh, [
+        (*P(0.16, r - 0.02), ["מדרך אלון 5 ס\"מ + פס לד"]),
+        (*P(c - 0.004, 0.09), ["רום ראשון – טיח + צבע"]),
+        (*P(c - 0.008, -0.01), ["פרופיל הפרדה נירוסטה", "+ מישק אלסטי 8 מ\"מ"]),
+        (*P(-0.08, -0.01), ["ריצוף פורצלן 120/120", "על דבק C2TE S1"]),
+        (*P(-0.12, -0.065), ["מילוי בטון קל/חול 7 ס\"מ"]),
+        (*P(c + 0.07, 0.02), ["קוצים Ø10 @20 – המדרגה", "הראשונה יצוקה על התקרה"]),
+        (*P(0.05, -0.25), ["תקרת ב\"מ 30 ס\"מ"]),
+    ], x + w * 0.60, side="right", y_min=y + 6, y_max=y + h - 22, size=SZS)
     detail_title(sh, x + w - 3, y + h - 8, "C", "תחילת מהלך על תקרה", 'קנ"מ 1:5', size=4.0)
 
 
@@ -1063,7 +1028,7 @@ def detail_D(sh, x, y, w, h):
     L(0.05, 0.012, fr.Y(0.08) + 8, ["זרוע נירוסטה Ø16", "+ אוכף מרותך"])
     L(0.004, -0.025, fr.Y(0.08) + 16, ["רוזטה Ø70 + 2 ברגים", "ודיבלים כימיים"])
     L(-0.03, -0.07, fr.Y(0.08) + 24, ["קיר בטון/בלוק + טיח"])
-    detail_title(sh, x + w - 4, y + h - 6, "D", "תושבת מאחז יד", 'קנ"מ 1:5', size=4.0)
+    detail_title(sh, x + w - 10, y + h - 6, "D", "תושבת מאחז יד", 'קנ"מ 1:5', size=4.0)
     # notes (left part)
     notes = ["הערות:",
              "1. מידות בס\"מ, מפלסים במ' (±0.00 = +18.50).",

@@ -51,17 +51,17 @@ CAMS = {
                    desc="hero - south-west, eye level, dusk: cantilever over the pool"),
     "ext_02": dict(mode="day", loc=(9.6, 1.35, 1.6), tgt=(9.6, 17.0, 4.6), lens=24, level=True, exposure=0.0,
                    desc="garden / pool axis looking north at the cantilevered master loggia"),
-    "ext_03": dict(mode="dusk", loc=(41.0, 15.5, 1.35), tgt=(25.0, 28.0, 3.6), lens=22, level=True, exposure=0.9,
+    "ext_03": dict(mode="dusk", loc=(40.6, 27.0, 1.35), tgt=(25.0, 24.2, 3.4), lens=22, level=True, exposure=0.9,
                    desc="street (east) facade: pivot door, canopy, carport"),
     "ext_04": dict(mode="day", loc=(-21.0, -17.0, 30.0), tgt=(15.0, 19.0, 1.0), lens=32, level=False, exposure=0.0,
                    desc="aerial south-west 3/4 view: roof terrace, whole lot"),
-    "ext_05": dict(mode="dusk", loc=(21.0, 17.35, -2.0), tgt=(14.5, 20.6, -1.2), lens=19, level=True, exposure=0.8,
+    "ext_05": dict(mode="dusk", loc=(20.95, 17.35, -2.0), tgt=(15.0, 21.0, -1.0), lens=19, level=True, exposure=0.8,
                    desc="sunken patio + covered terrace under the cantilever"),
     "int_01": dict(mode="int_day", loc=(12.55, 28.1, 1.32), tgt=(7.0, 21.6, 1.15), lens=18, level=True, exposure=1.2,
                    desc="living room toward the garden"),
     "int_02": dict(mode="int_day", loc=(13.55, 24.95, 1.40), tgt=(22.0, 22.9, 1.10), lens=18, level=True, exposure=1.2,
                    desc="kitchen, island and dining"),
-    "int_03": dict(mode="int_dusk", loc=(12.35, 21.25, 1.35), tgt=(8.0, 16.6, 1.30), lens=18, level=True,
+    "int_03": dict(mode="int_dusk", loc=(12.35, 21.25, 4.95), tgt=(8.0, 16.6, 4.90), lens=18, level=True,
                    exposure=0.9, desc="master bedroom toward the loggia"),
 }
 
@@ -296,13 +296,14 @@ def m_tiles(name, c1, c2, grout, size, rough, joint=0.002, offset=0.0, var=0.25,
     return m
 
 
-def m_wood(name, c_light, c_dark, rough=0.45, scale=6.0, planks=None, metal=0.0, coat=0.0, distort=7.0):
+def m_wood(name, c_light, c_dark, rough=0.45, scale=6.0, planks=None, metal=0.0, coat=0.0, distort=7.0, grain="u"):
+    """grain='u': grain lines run along U (decks, floors); 'v': along V (= vertical on walls / fins)"""
     m, T = new_mat(name)
     uv = T.tc("UV")
     ob = T.tc("Object")
-    mp = T.n("ShaderNodeMapping", Vector=uv, Scale=(1.0, 8.0, 1.0))  # stretch grain along U
+    mp = T.n("ShaderNodeMapping", Vector=uv, Scale=(1.0, 8.0, 1.0) if grain == "u" else (8.0, 1.0, 1.0))
     wv = T.n("ShaderNodeTexWave", Vector=mp.outputs[0], Scale=scale, Distortion=distort, Detail=3.0, Detail_Scale=1.5,
-             props=dict(wave_type="BANDS", bands_direction="Y"))
+             props=dict(wave_type="BANDS", bands_direction="Y" if grain == "u" else "X"))
     n = T.noise(uv, 40.0, 3)
     g = T.math("MULTIPLY", T.o(wv, "Fac"), 0.75)
     g = T.math("ADD", g, T.math("MULTIPLY", n, 0.25))
@@ -350,9 +351,7 @@ def m_glass(name, tint=(0.90, 0.95, 0.94, 1.0), refl=1.0, rough=0.0):
     tr = T.n("ShaderNodeBsdfTransparent", Color=tint)
     gl = T.n("ShaderNodeBsdfGlossy", Color=(refl, refl, refl, 1), Roughness=rough)
     fr = T.n("ShaderNodeFresnel", IOR=1.52)
-    lw = T.n("ShaderNodeLayerWeight", Blend=0.08)
-    fac = T.math("MAXIMUM", T.o(fr, "Fac"), T.math("MULTIPLY", T.o(lw, "Facing"), 0.25))
-    mx = T.n("ShaderNodeMixShader", Fac=fac)
+    mx = T.n("ShaderNodeMixShader", Fac=T.o(fr, "Fac"))
     T.nt.links.new(tr.outputs[0], mx.inputs[1])
     T.nt.links.new(gl.outputs[0], mx.inputs[2])
     T.output(shadow_transparent(T, mx.outputs[0], tint))
@@ -513,9 +512,9 @@ def build_materials():
     mk["n_glass"] = m_glass("n_glass", tint=(0.18, 0.20, 0.21, 1))
     mk["frame"] = m_simple("frame", "#2E2924", 0.38, 0.75)
     mk["steel"] = m_simple("steel", "#B9B9B6", 0.22, 1.0)
-    mk["alu_wood"] = m_wood("alu_wood", "#9E7A58", "#694C35", rough=0.48, scale=4.0)
+    mk["alu_wood"] = m_wood("alu_wood", "#9E7A58", "#694C35", rough=0.48, scale=4.0, grain="v")
     mk["wood"] = m_wood("wood", "#C3A27A", "#93714E", rough=0.42, scale=5.0)
-    mk["wood_dark"] = m_wood("wood_dark", "#5C4433", "#2F2219", rough=0.35, scale=5.0, coat=0.3)
+    mk["wood_dark"] = m_wood("wood_dark", "#5C4433", "#2F2219", rough=0.35, scale=5.0, coat=0.3, grain="v")
     mk["deck"] = m_wood("deck", "#94704C", "#6B4D33", rough=0.62, scale=7.0, planks=(0.145, 2.4, 0.012))
     mk["water"] = m_water()
     mk["pool_plaster"] = m_plaster("pool_plaster", "#DCEDF0", 0.55, 0.02)
@@ -1507,20 +1506,33 @@ def plant_meshes():
     return meshes
 
 
+def tree_base(x, y):
+    """garden level, or the sunken patio floor when a model tree stands inside the patio void"""
+    P = M.PATIO
+    if P[0] < x < P[2] and P[1] < y < P[3]:
+        msg = (f"tree at ({x},{y}) lies inside the sunken patio void {P}; rendered planted on the patio floor "
+               f"(z={M.LV['B']:+.2f}).")
+        if msg not in ISSUES:
+            ISSUES.append(msg)
+        return M.LV["B"] - 0.02
+    return M.GARDEN
+
+
 def build_vegetation(dense=True):
     g = M.GARDEN
     trees = G.trees()
     for i, (x, y, r, kind) in enumerate(trees):
         rng = random.Random(i * 31 + 5)
         nm = f"tree{i:02d}_{kind}"
+        zt = tree_base(x, y)
         if kind.startswith("olive"):
-            tree_olive(x, y, r, rng, nm, g)
+            tree_olive(x, y, r, rng, nm, zt)
         elif kind == "carob":
-            tree_carob(x, y, r, rng, nm, g)
+            tree_carob(x, y, r, rng, nm, zt)
         elif kind == "palm":
-            tree_palm(x, y, r, rng, nm, g)
+            tree_palm(x, y, r, rng, nm, zt)
         else:
-            tree_olive(x, y, r, rng, nm, g)
+            tree_olive(x, y, r, rng, nm, zt)
     # hedges inside the north and south boundary walls (screen the neighbours)
     L = M.LOT
     rng = random.Random(3)
@@ -1760,11 +1772,12 @@ def build_lights():
         for k in range(n):
             a = k * math.pi + 0.6
             px, py = x + math.cos(a) * 0.6, y + math.sin(a) * 0.6
-            add_light("SPOT", (px, py, M.GARDEN + 0.05), 180.0 if kind != "palm" else 260.0, WARM2, "garden",
+            zb = tree_base(x, y)
+            add_light("SPOT", (px, py, zb + 0.05), 180.0 if kind != "palm" else 260.0, WARM2, "garden",
                       size=0.04, spot=(45 if kind == "palm" else 70, 0.6),
                       direction=(x - px, y - py, 6.0), name="uplight")
-            em.append(dict(t="cyl", x=px, y=py, z0=M.GARDEN - 0.01, z1=M.GARDEN + 0.03, r=0.06, mat="frame", soft=3))
-            em.append(dict(t="cyl", x=px, y=py, z0=M.GARDEN + 0.03, z1=M.GARDEN + 0.035, r=0.045, mat="em_garden", soft=3))
+            em.append(dict(t="cyl", x=px, y=py, z0=zb - 0.01, z1=zb + 0.03, r=0.06, mat="frame", soft=3))
+            em.append(dict(t="cyl", x=px, y=py, z0=zb + 0.03, z1=zb + 0.035, r=0.045, mat="em_garden", soft=3))
     # ---------------- step / marker lights: patio retaining walls, deck edge, entrance path
     PAT = M.PATIO
     for x in [PAT[0] + 1.0 + i * (PAT[2] - PAT[0] - 2.0) / 3 for i in range(4)]:
