@@ -205,7 +205,7 @@ def callout_column(sh, items, x_text, y_min, y_max, size=2.1, gap=None, elbow=5.
 
 
 def table(sh, x_right, y, cols, rows, size=2.0, rh=5.0, head_fill="#efe7da", head_size=None, wrap=None,
-          zebra=True, bold_first=False):
+          zebra=True, bold_first=False, align=None):
     """Hebrew table laid out right-to-left. cols = [(title, width)], first col at the right.
     rows: list of lists (str or callable(sh, x0, y0, w, h) for symbols). Returns bottom y."""
     head_size = head_size or size
@@ -228,7 +228,9 @@ def table(sh, x_right, y, cols, rows, size=2.0, rh=5.0, head_fill="#efe7da", hea
             else:
                 s = str(cell)
                 rtl = any("֐" <= ch <= "׿" for ch in s)
-                if rtl or ci == 0:
+                if align:
+                    rtl = align[ci] == "r"
+                if rtl or (ci == 0 and not align):
                     sh.text(xr - 1.2, yy + rh / 2 + size * 0.36, s, size=size, anchor="right",
                             weight=700 if (bold_first and ci == 0) else 400)
                 else:
@@ -1349,9 +1351,11 @@ def plan_rcp(sh, ox, oy, sc=50):
     for xx in spread(x0 + 0.2, x1 - 0.8, 1.6):
         R.downlight(xx, y0 + 0.62)
     R.keypad(x0 + 1.1, y1 + 0.02)
-    # ---------------- hall
+    # ---------------- hall (may be several rectangles)
     x0, y0, x1, y1 = G4
-    R.plane(x0, y0, x1, y1, HC)
+    hall = unary_union([sbox(*r) for r in room("G4").rects])
+    for p_ in _polys(hall):
+        v.polygon(_ring(p_), fill=CEIL_FILL[HC], lw="s", color=INK)
     st = next((s for s in M.STAIRS if s["level"] == "G"), None)
     if st:
         sx0, sy0, sx1, sy1 = M.ST["x0"], 27.98, M.ST["x1"], M.ST["yn"]

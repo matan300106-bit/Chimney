@@ -109,7 +109,7 @@ def view_plan(sh, ox, oy, g):
     v.dim_chain([0, D], 0, axis="y", at=-0.62, size=2.0)
     # labels
     for name, a, b in g["mods"]:
-        px, py = v.P((a + b) / 2, D - 0.09)
+        px, py = v.P((a + b) / 2, g["v_back0"] + 0.09)
         sh.text(px, py + 0.7, name, size=2.0, color="#333")
     px, py = v.P(L / 2, 0.15)
     sh.text(px, py + 0.7, "צד ישיבה – תלייה 30", size=2.0, color="#333")
@@ -260,7 +260,7 @@ def section_AA(sh, ox, oy, g, items_l, items_r):
     # waterfall leg beyond
     v.rect(0, 0, D, g["z_apron"], fill="none", lw="xxs", color="#aaa", dash="3 1")
     # dims
-    v.dim_chain([0, p0, b0, f0, g["v_front1"], D], 0, axis="x", at=-0.10, size=2.0)
+    v.dim_chain([0, p0, b0, f0, D], 0, axis="x", at=-0.10, size=2.0)
     v.dim_chain([0, D], 0, axis="x", at=-0.16, size=2.0)
     v.dim_chain([0, PL, g["z_apron"], g["z_sub0"], H], 0, axis="y", at=-0.10, size=2.0)
     zs = [0, PL] + [z for f in fr for z in f] + [g["z_wedge"], H]
@@ -405,13 +405,17 @@ def detail_fluted(sh, ox, oy, g, items, plan_ox, plan_oy):
     v.rect(p0, za - 0.1, p0 + 0.018, zt, fill=pat(sh, "ix_oakv"), lw="l")
     v.rect(p0 + 0.018, za - 0.1, p1, zt, fill=pat(sh, "ix_mdf"), lw="s")
     zc = g["z_apron"] - 0.07
-    # Z-clip pair
-    v.polygon([(p1, zc), (p1 + 0.012, zc), (p1 + 0.012, zc - 0.03), (p1 + 0.0135, zc - 0.03), (p1 + 0.0135, zc + 0.0015),
-               (p1, zc + 0.0015)], fill=pat(sh, "ix_alu"), lw="xs")
-    v.polygon([(b0, zc - 0.006), (p1 + 0.016, zc - 0.006), (p1 + 0.016, zc + 0.025), (p1 + 0.0145, zc + 0.025),
-               (p1 + 0.0145, zc - 0.0045), (b0, zc - 0.0045)], fill=pat(sh, "ix_alu"), lw="xs")
-    for (x0, x1, zz) in ((p1 - 0.008, p1 + 0.012, zc - 0.02), (p1 + 0.0145, b0 + 0.01, zc + 0.012)):
-        v.rect(x0, zz - 0.0012, x1, zz + 0.0012, fill="#444", color="none")
+    t = 0.0015
+    alu = pat(sh, "ix_alu")
+    # panel-side Z clip (hangs down)
+    for r in ((p1, zc - 0.035, p1 + t, zc), (p1, zc - t, p1 + 0.011, zc), (p1 + 0.011 - t, zc - 0.012, p1 + 0.011, zc)):
+        v.rect(*r, fill=alu, lw="xs")
+    # carcass-side Z clip (hooks up)
+    for r in ((b0 - t, zc - 0.03, b0, zc + 0.01), (p1 + 0.0125, zc - 0.0145, b0, zc - 0.0145 + t),
+              (p1 + 0.0125, zc - 0.0145, p1 + 0.0125 + t, zc - 0.003)):
+        v.rect(*r, fill=alu, lw="xs")
+    v.rect(p1 - 0.008, zc - 0.0255, p1 + t, zc - 0.0235, fill="#444", color="none")
+    v.rect(b0 - t, zc - 0.021, b0 + 0.010, zc - 0.019, fill="#444", color="none")
     sh.end_group()
     sh.rect(fx, fy, fw, fh, lw="xxs", color="#999")
     v.dim_chain([p0, p0 + 0.018, p1, b0], 0, axis="x", at=za + 0.008, size=2.0)
@@ -419,7 +423,7 @@ def detail_fluted(sh, ox, oy, g, items, plan_ox, plan_oy):
     items += [
         (*v.P(p0 + 0.009, za + 0.04), ["אלון מעושן מלא WD-02 18 מ\"מ,", "חריצים R6 @20"]),
         (*v.P(p0 + 0.024, za + 0.06), ["גב MDF-MR 12, הדבקה בלחץ"]),
-        (*v.P(p1 + 0.013, zc - 0.02), ["תפסני Z אלומיניום (זוג), כל 60 ס\"מ"]),
+        (*v.P(p1 + 0.012, zc - 0.014), ["תפסני Z אלומיניום (זוג), כל 60 ס\"מ"]),
         (*v.P(b0 + 0.009, za + 0.03), ["גב גוף – דיקט ליבנה 18"]),
         (*v.P(p0 + 0.01, zt + 0.0025), ["מישק צל 5 מ\"מ"]),
     ]
@@ -548,10 +552,8 @@ def axo(sh, ox, oy, s, g):
             sh.line(*a, *b, lw="s", color="#5b4636")
         pts = [P(cu + 0.2 * math.cos(t), cv + 0.2 * math.sin(t), 0.65) for t in [k * math.pi / 12 for k in range(24)]]
         sh.polyline(pts, closed=True, lw="xs", fill=pat(sh, "ix_leather"))
-        x0, y0 = P(cu - 0.17, cv + 0.17, 0.65)
-        x1, y1 = P(cu + 0.17, cv + 0.17, 0.65)
-        sh.polyline([P(cu - 0.17, cv + 0.17, 0.65), P(cu - 0.17, cv + 0.17, 0.86), P(cu + 0.17, cv + 0.17, 0.86),
-                     P(cu + 0.17, cv + 0.17, 0.65)], lw="s", color="#5b4636")
+        ring = [P(cu + 0.15 * math.cos(t), cv + 0.15 * math.sin(t), 0.25) for t in [k * math.pi / 12 for k in range(25)]]
+        sh.polyline(ring, lw="xs", color=C_BRASS)
 
 
 # --------------------------------------------------------------------------- #
@@ -601,50 +603,56 @@ def sheet_joinery(sh, box):
     g = geom()
     L, D, H = g["L"], g["D"], g["H"]
     k25 = 40.0
-    # ---------------- row 1, left: 1:25 set
-    x_pl = bx + 28
-    oy_pl = by + 26 + D * k25
+    # ---------------- row 1, left: 1:25 set (plan above front elevation, work side & end to the right)
+    x_pl = bx + 30
+    oy_pl = by + 8 + (0.95 + D) * k25
     vp, ua = view_plan(sh, x_pl, oy_pl, g)
     t_y = oy_pl + 0.6 * k25 + 6
     drawing_title(sh, x_pl + L * k25 + 4, t_y, "תכנית אי", 'קנ"מ 1:25', width=60, size=4.6)
-    oy_fr = t_y + 18 + H * k25
+    oy_fr = t_y + 20 + H * k25
     view_front(sh, x_pl, oy_fr, g)
-    drawing_title(sh, x_pl + L * k25 + 4, oy_fr + 15, "חזית צד ישיבה (דרום)", 'קנ"מ 1:25', width=60, size=4.6)
-    x2 = x_pl + L * k25 + 30
-    oy_bk = oy_pl - D * k25 + 8 + H * k25
+    drawing_title(sh, x_pl + L * k25 + 4, oy_fr + 16, "חזית צד ישיבה (דרום)", 'קנ"מ 1:25', width=60, size=4.6)
+    x2 = x_pl + L * k25 + 34
+    oy_bk = oy_pl - 0.04 * k25
     view_back(sh, x2, oy_bk, g)
-    drawing_title(sh, x2 + L * k25 + 4, oy_bk + 15, "חזית צד עבודה (צפון)", 'קנ"מ 1:25', width=60, size=4.6)
-    view_side(sh, x2 + 8, oy_fr, g)
-    drawing_title(sh, x2 + 8 + D * k25 + 30, oy_fr + 15, "חזית צד – מפל", 'קנ"מ 1:25', width=56, size=4.6)
+    drawing_title(sh, x2 + L * k25 + 4, t_y, "חזית צד עבודה (צפון)", 'קנ"מ 1:25', width=60, size=4.6)
+    view_side(sh, x2 + 10, oy_fr, g)
+    drawing_title(sh, x2 + L * k25 + 4, oy_fr + 16, "חזית קצה – רגל מפל", 'קנ"מ 1:25', width=60, size=4.6)
     right1 = x2 + L * k25 + 8
 
     # ---------------- row 1, right: section 1:10
     k10 = 100.0
-    sx = right1 + 92
-    s_oy = by + 14 + (H + 0.02) * k10
+    sx = bx + bw - 98 - D * k10
+    s_oy = by + 12 + (H + 0.02) * k10
     il, ir = [], []
     section_AA(sh, sx, s_oy, g, il, ir)
-    callout_column(sh, il, sx - 18, by + 10, s_oy, size=2.0, lh=2.5, gap=1.6, side="left", elbow=5)
-    callout_column(sh, ir, sx + D * k10 + 18, by + 10, s_oy, size=2.0, lh=2.5, gap=1.2, side="right", elbow=5)
-    drawing_title(sh, bx + bw, s_oy + 26, "חתך A-A דרך מודול המגירות", 'קנ"מ 1:10', width=90, size=5.0)
-    row1_bot = max(oy_fr + 30, s_oy + 40)
+    callout_column(sh, il, sx - 16, by + 8, s_oy, size=2.0, lh=2.5, gap=1.6, side="left", elbow=5)
+    callout_column(sh, ir, sx + D * k10 + 18, by + 8, s_oy, size=2.0, lh=2.5, gap=1.2, side="right", elbow=5)
+    drawing_title(sh, bx + bw, s_oy + 28, "חתך A-A דרך מודול המגירות", 'קנ"מ 1:10', width=95, size=5.0)
+    # ---------------- row 1, middle: axonometric
+    ax_l, ax_r = right1 + 6, sx - 16 - 92
+    s_ax = min((ax_r - ax_l) / ((L + D + 0.3) * 0.866), 150 / ((L + D) * 0.5 + H + 0.4))
+    ax_ox = ax_l + (D + 0.2) * 0.866 * s_ax
+    ax_oy = by + 22 + (L + D) * 0.5 * s_ax + H * s_ax
+    axo(sh, ax_ox, ax_oy, s_ax, g)
+    sh.text((ax_l + ax_r) / 2, by + 10, "מבט איזומטרי – ללא קנ\"מ", size=3.6, weight=700)
+    sh.line((ax_l + ax_r) / 2 - 28, by + 12, (ax_l + ax_r) / 2 + 28, by + 12, lw="s")
+    row1_bot = max(oy_fr + 32, s_oy + 42)
 
     # ---------------- row 2: details 1:2
     cw = bw / 4
     k2 = 500.0
     y2 = row1_bot + 4
     sh.line(bx, y2 - 2, bx + bw, y2 - 2, lw="xxs", color="#bbb")
-    det_h = 0.20 * k2
-    cells = []
+    ttl_y = y2 + 6 + 0.245 * k2 + 12
     # 1 mitre
     c0 = bx + 3 * cw
     items = []
-    xr = c0 + cw - 6
-    oxd = xr - 0.13 * k2
+    oxd = c0 + cw - 6 - 0.13 * k2
     oyd = y2 + 6 + (H + 0.015) * k2
     detail_mitre(sh, oxd, oyd, g, items)
     callout_column(sh, items, oxd - 0.03 * k2 - 6, y2 + 6, oyd - 0.74 * k2 + 4, size=2.0, lh=2.5, gap=1.2, side="left", elbow=4)
-    drawing_title(sh, c0 + cw - 4, oyd - 0.74 * k2 + 14, "פרט 1 – מיטר משטח/מפל", 'קנ"מ 1:2', width=70, size=4.4)
+    drawing_title(sh, c0 + cw - 4, ttl_y, "פרט 1 – מיטר משטח/מפל", 'קנ"מ 1:2', width=72, size=4.4)
     # 2 J-profile
     c1 = bx + 2 * cw
     items = []
@@ -654,17 +662,17 @@ def sheet_joinery(sh, box):
     detail_j(sh, oxd, oyd, g, items)
     callout_column(sh, items, oxd + (D - 0.13) * k2 - 14, y2 + 6, oyd - (zt - 0.075) * k2, size=2.0, lh=2.5, gap=1.2,
                    side="left", elbow=4)
-    drawing_title(sh, c1 + cw - 4, oyd - 0.74 * k2 + 14 + (H + 0.012 - 0.935) * 0, "פרט 2 – ידית פרופיל J", 'קנ"מ 1:2',
-                  width=70, size=4.4)
+    drawing_title(sh, c1 + cw - 4, ttl_y, "פרט 2 – ידית פרופיל J", 'קנ"מ 1:2', width=72, size=4.4)
     # 3 fluted panel
     c2 = bx + cw
     items = []
     oxd = c2 + cw - 6 - (g["v_back0"] + 0.035) * k2
     oyd = y2 + 6 + (g["z_apron"] + 0.03) * k2
-    detail_fluted(sh, oxd, oyd, g, items, c2 + 8, oyd - (g["z_apron"] - 0.135) * k2 + 4 + g["v_pan1"] * k2 + 8)
-    callout_column(sh, items, oxd + (g["v_pan0"] - 0.035) * k2 - 8, y2 + 6, oyd - (g["z_apron"] - 0.135) * k2 - 4,
+    fb = oyd - (g["z_apron"] - 0.135) * k2
+    detail_fluted(sh, oxd, oyd, g, items, c2 + 16, fb + 12 + g["v_pan1"] * k2)
+    callout_column(sh, items, oxd + (g["v_pan0"] - 0.035) * k2 - 8, y2 + 6, fb - 4,
                    size=2.0, lh=2.5, gap=1.2, side="left", elbow=4)
-    drawing_title(sh, c2 + cw - 4, y2 + 6 + 0.209 * k2 + 14, "פרט 3 – קיבוע פאנל מחורץ", 'קנ"מ 1:2', width=70, size=4.4)
+    drawing_title(sh, c2 + cw - 4, ttl_y, "פרט 3 – קיבוע פאנל מחורץ", 'קנ"מ 1:2', width=72, size=4.4)
     # 4 plinth
     c3 = bx
     items = []
@@ -673,38 +681,63 @@ def sheet_joinery(sh, box):
     detail_plinth(sh, oxd, oyd, g, items)
     callout_column(sh, items, oxd + (g["v_plinth_w"] - 0.10) * k2 - 6, y2 + 6, oyd + 0.035 * k2, size=2.0, lh=2.5, gap=1.2,
                    side="left", elbow=4)
-    drawing_title(sh, c3 + cw - 4, y2 + 6 + 0.209 * k2 + 14, "פרט 4 – סוקל, LED ורגלי פילוס", 'קנ"מ 1:2', width=70, size=4.4)
-    row2_bot = y2 + 6 + 0.209 * k2 + 26
+    drawing_title(sh, c3 + cw - 4, ttl_y, "פרט 4 – סוקל, LED ורגלי פילוס", 'קנ"מ 1:2', width=72, size=4.4)
+    for i in range(1, 4):
+        sh.line(bx + i * cw, y2 + 2, bx + i * cw, ttl_y + 10, lw="xxs", color="#ddd")
+    row2_bot = ttl_y + 14
 
     # ---------------- row 3: cutting list + axo + notes
     y3 = row2_bot + 2
     sh.line(bx, y3 - 2, bx + bw, y3 - 2, lw="xxs", color="#bbb")
-    cols = [("מס'", 9), ("פריט", 38), ("חומר", 52), ("עובי", 12), ("מידות (מ\"מ)", 30), ("כמות", 11), ("הערות", 50)]
+    cols = [("מס'", 11), ("פריט", 58), ("חומר", 80), ("עובי", 15), ("מידות (מ\"מ)", 44), ("כמות", 14), ("הערות", 92)]
     W = sum(c[1] for c in cols)
     xr_t = bx + bw
     sh.text(xr_t, y3 + 4, "רשימת חיתוך וחומרים – אי מטבח", size=3.8, anchor="right", weight=700)
     sh.line(xr_t - 80, y3 + 5.8, xr_t, y3 + 5.8, lw="m")
     rows = cutting_rows(g)
-    rh = min(5.0, (by + bh - (y3 + 9) - 6) / (len(rows) + 1))
-    yb = table(sh, xr_t, y3 + 9, cols, rows, size=2.0, rh=rh)
+    rh = min(7.4, (by + bh - (y3 + 9) - 10) / (len(rows) + 1))
+    yb = table(sh, xr_t, y3 + 9, cols, rows, size=2.15, rh=rh, align=["c", "r", "r", "c", "c", "c", "r"])
     sh.text(xr_t, yb + 4, f"מידות כלליות: {round(L * 100)}×{round(D * 100)}×{round(H * 100)} ס\"מ (לפי המודל). "
             "מידות לייצור – לאחר מדידה באתר ואישור דוגמאות.", size=2.0, anchor="right", color="#444")
-    # axonometric
-    ax_w = xr_t - W - bx - 10
-    s = min(ax_w / ((L + D + 0.3) * 0.866), 60)
-    ax_ox = bx + 6 + (D + 0.15) * 0.866 * s
-    ax_oy = y3 + 14 + (L + D) * 0.5 * s + H * s * 0 + (H) * s
-    axo(sh, ax_ox, ax_oy, s, g)
-    sh.text(bx + 4, y3 + 4, "מבט איזומטרי – ללא קנ\"מ", size=3.4, anchor="left", weight=700)
-    # notes / spec under axo
+    left_w = xr_t - W - bx - 12
+    # island material swatches
+    from interior import PALETTE
+    sw = [p for p in PALETTE if p[0] in ("SS-01", "WD-01", "WD-02", "MT-01", "LT-01")]
+    sh.text(bx + left_w, y3 + 4, "חומרי האי", size=3.4, anchor="right", weight=700)
+    sy = y3 + 10
+    swc = left_w / len(sw)
+    for i, (code, pn, name, spec, use, sup) in enumerate(sw):
+        x0 = bx + left_w - (i + 1) * swc
+        sh.rect(x0 + 2, sy, swc - 4, 22, lw="xs", fill=pat(sh, pn))
+        sh.text(x0 + swc - 2, sy + 27, code, size=2.6, weight=700, anchor="right")
+        sh.text(x0 + swc - 2, sy + 30.5, name, size=2.1, anchor="right")
+        sh.text(x0 + swc - 2, sy + 33.8, spec, size=2.0, anchor="right", color="#555")
     notes = [
-        "מפרט אביזרים:",
-        f"• כיור אינטגרלי תחתון 70/40 נירוסטה, ברז נשלף פליז מוברש",
-        f"• כיריים אינדוקציה 80 ס\"מ עם קולט אדים משולב (Downdraft)",
-        f"• מדיח אינטגרלי 60 ס\"מ, פתיחת לחיצה",
-        f"• 3 כסאות בר עור LT-01, גובה ישיבה 65 ס\"מ",
-        "גימור: שמן-לכה מט 10%, אבן – אימפרגנציה נגד כתמים",
+        "מפרט אביזרים וגמרים",
+        "• כיור אינטגרלי תחתון 70/40 נירוסטה,",
+        "   ברז נשלף פליז מוברש",
+        "• כיריים אינדוקציה 80 ס\"מ + קולט אדים",
+        "   משולב (Downdraft), מנוע בסוקל",
+        "• מדיח אינטגרלי 60 ס\"מ, פתיחת לחיצה",
+        "• 3 כסאות בר עור LT-01, ישיבה +65",
+        "• אבן: אימפרגנציה נגד כתמים",
+        "• עץ: שמן-לכה מט 10% (WD-01/02)",
+        "• מתכת: פליז מוברש PVD (MT-01)",
+        "",
+        "הערות ייצור",
+        "1. כל המידות במ\"מ אלא אם צוין.",
+        "2. מיטר אבן – חיתוך CNC במפעל,",
+        "   הרכבה באתר ע\"י מתקין מוסמך.",
+        "3. פאנל מחורץ נשלף (Z) לגישה",
+        "   לצנרת ולחשמל.",
+        "4. התאמת ורידים (Book-match) בין",
+        "   רגלי המפל והמשטח.",
     ]
-    ny = ax_oy + 8
-    for i, t in enumerate(notes):
-        sh.text(bx + 4, ny + i * 3.1, t, size=2.0 if i else 2.4, anchor="left", weight=700 if i == 0 else 400, color="#333")
+    ny = sy + 46
+    half = notes.index("")
+    for col, chunk in enumerate((notes[:half], notes[half + 1:])):
+        nx = bx + left_w - col * (left_w / 2)
+        for i, t in enumerate(chunk):
+            head = t in ("מפרט אביזרים וגמרים", "הערות ייצור")
+            sh.text(nx, ny + i * 3.4, t, size=2.8 if head else 2.2, anchor="right", weight=700 if head else 400,
+                    color="#333")

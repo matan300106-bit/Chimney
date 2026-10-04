@@ -420,6 +420,9 @@ def check_walls():
                                              and cap.distance(fp) < 1.2 for ww, fp in others):
                     touches += 1      # lift landing door gap (checked in the lift section)
                     continue
+                if cand and cand[0][0] < 0.01:
+                    touches += 1
+                    continue
                 if cand and cand[0][0] < 0.6:
                     gap, ww, fp = cand[0]
                     if ww.horiz != w.horiz:          # perpendicular: close the corner to its far face
@@ -720,7 +723,8 @@ def wall_trim_fix(r, walls_u):
             continue
         rects += [tuple(round(v, 2) for v in q) for q in decompose(g) if (q[2] - q[0]) * (q[3] - q[1]) > 0.05]
     rects.sort(key=lambda q: -(q[2] - q[0]) * (q[3] - q[1]))
-    return "rects=[" + ", ".join(rr(q) for q in rects) + "]"
+    old = "[" + ", ".join(rr(q) for q in r.rects) + "]"
+    return f"rects {old} → [" + ", ".join(rr(q) for q in rects) + "]"
 
 
 def check_rooms():
@@ -746,8 +750,13 @@ def check_rooms():
                         fix=f"{room_label(r)}: {wall_trim_fix(r, wu)}", key=f"room_wall:{r.no}")
                 net = p.difference(wu).difference(cu).area
                 ci = p.intersection(cu)
+                wall_only = unary_union([wall_fp(w) for w in ws])
                 for g in getattr(ci, "geoms", [ci]):
                     if not g.is_empty and min_dim(g) > R["tol_room_wall"]:
+                        if g.buffer(0.02).intersection(wall_only).area < 1e-4:
+                            add("INFO", cat, f"Free-standing column in {room_label(r)} ({lvl}) at {rr(g.bounds)} – "
+                                "intended; show it in plan and keep furniture clear")
+                            continue
                         add("WARN" if min_dim(g) >= 0.10 else "INFO", cat,
                             f"Column protrudes {cm(min_dim(g))} into {room_label(r)} ({lvl}) at {rr(g.bounds)} – show "
                             "it in plan / box it into the wall or align the column with the wall faces",
@@ -775,9 +784,6 @@ def check_rooms():
         ip = interior_poly(lvl)
         if ip is not None:
             rest = ip.difference(wu).difference(unary_union([room_poly(r) for r in rs] or [Point(0, 0).buffer(0)]))
-            hole = None
-            if lvl in ("B", "G", "U"):
-                hole = None
             rest = rest.buffer(-0.08, join_style=2).buffer(0.08, join_style=2)
             for g in getattr(rest, "geoms", [rest]):
                 if g.is_empty or g.area < 0.25 or min_dim(g) < 0.20:
@@ -785,7 +791,8 @@ def check_rooms():
                 adj = max(rs, key=lambda r: room_poly(r).intersection(g.buffer(0.2, join_style=2)).area, default=None)
                 pieces = [rr(tuple(round(v, 2) for v in q)) for q in decompose(g)]
                 add("WARN", cat, f"Floor area {g.area:.2f} m² at {rr(g.bounds)} on level {lvl} belongs to no room",
-                    fix=(f"add {', '.join(pieces)} to the rects of {room_label(adj)}" if adj else "define the space"),
+                    fix=(f"{room_label(adj)}: rects [{', '.join(rr(q) for q in adj.rects)}] → "
+                         f"[{', '.join(rr(q) for q in adj.rects)}, {', '.join(pieces)}]" if adj else "define the space"),
                     key=f"room_gap:{lvl}:{g.bounds[0]:.1f}:{g.bounds[1]:.1f}")
     # ממ"ד
     for r in M.ROOMS:
@@ -800,7 +807,6 @@ def check_rooms():
                 "counted as MAIN area (only the standard ממ\"ד area is service) – verify takanon / area sheet",
                 key="mamad_big")
         # surrounding walls
-        bnd = p.buffer(0.35, join_style=2).difference(p.buffer(0.005, join_style=2))
         sides = {"W": sbox(p.bounds[0] - 0.4, p.bounds[1], p.bounds[0], p.bounds[3]),
                  "E": sbox(p.bounds[2], p.bounds[1], p.bounds[2] + 0.4, p.bounds[3]),
                  "S": sbox(p.bounds[0], p.bounds[1] - 0.4, p.bounds[2], p.bounds[1]),
@@ -810,7 +816,6 @@ def check_rooms():
             if not cand:
                 add("ERROR", cat, f'ממ"ד {sname} side has no wall')
                 continue
-            rc = [w for w in cand if (w.core == "rc" or w.kind in ("mamad", "rc", "shaft")) and w.t >= R["mamad_wall_min"] - 1e-6]
             # RC thickness = sum of RC layers stacked on that side
             rc_t = sum(w.t for w in cand if w.kind in ("mamad", "rc"))
             rc_t += sum(0.20 for w in cand if w.kind == "ext" and w.core == "rc")
@@ -825,8 +830,6 @@ def check_rooms():
                 if o.end - o.pos > R["mamad_win_max"][0] + 0.005 or o.head - o.sill > R["mamad_win_max"][1] + 0.005:
                     add("ERROR", cat, f'{op_label(w, o)}: ממ"ד window larger than 100/100')
             if o.kind == "mamad_door":
-                if o.swing == 0:
-                    pass
                 inside = room_at(w.level, *side_point(w, o, o.swing))
                 if inside is r:
                     add("ERROR", cat, f'{op_label(w, o)}: ממ"ד blast door must open OUTWARD (away from the ממ"ד)')
@@ -859,6 +862,10 @@ def check_stairs():
             add("ERROR", cat, f"Stair {lvl}: riser {r * 100:.2f} cm > 17.5")
         if t < R["tread_min"] - 1e-6:
             add("ERROR", cat, f"Stair {lvl}: tread {t * 100:.1f} cm < 26")
+        if r >= R["riser_max"] - 1e-4 or f2 >= R["stair_2rt"][1] - 1e-4:
+            add("INFO", cat, f"Stair {lvl}: R={r * 100:.2f} cm / 2R+T={f2 * 100:.1f} cm are exactly at the limit – "
+                f"compliant; {n + 1} risers ({ftf / (n + 1) * 100:.2f} cm, 2R+T={(2 * ftf / (n + 1) + t) * 100:.1f}) would be "
+                "more comfortable (flight A then starts 0.28 m further south, like the G run)")
         if abs(n * r - ftf) > 0.001:
             add("ERROR", cat, f"Stair {lvl}: {n}×{r:.4f} ≠ floor-to-floor {ftf:.2f}")
         if len(s["treadsA"]) != s["nA"] - 1 or len(s["treadsB"]) != s["nB"] - 1:
@@ -1244,16 +1251,18 @@ def check_support():
             is_mamad = w.kind == "mamad" or (w.core == "rc" and w.kind == "ext" and up == "U" and any(
                 'ממ"ד' in r.name and room_poly(r).distance(wall_fp(w)) < 0.15 for r in rooms_on("U")))
             if is_mamad:
-                mamad_runs.append((w, runs))
-                continue
-            if False:
-                add("WARN", cat, f"{wid(w)}: {tot:.2f} m without wall/column below on {lo} ({txt})",
-                    fix=('the ממ"ד RC walls must continue down to the foundations (Pikud HaOref) or sit on designed '
-                         "transfer beams: add GF+B columns under the free ממ\"ד corner, e.g. for z in ((slab_top('G'), "
-                         "slab_bot('U')), (slab_top('B'), slab_bot('G'))): COLS.append(Column(11.05, 27.11, 0.30, 0.30, *z)) "
-                         "and RC 30/60 downstand beams along x=11.05 and y=27.11 in the U slab (the B column lands in "
-                         "the cinema – shift recliner rows ≥ 0.4 m west); note it in the structural legend"),
-                    key=f"support:{up}:mamad:{w.c:.2f}")
+                def end_ok(a_, d_, w=w):     # is there support just beyond the wall end (abutting wall below)?
+                    q = (a_ + d_ * 0.2, w.c) if w.horiz else (w.c, a_ + d_ * 0.2)
+                    return joined(a_) or sup.contains(Point(*q))
+                bad = [r_ for r_ in runs if r_[1] - r_[0] > 6.0
+                       or (r_[0] <= w.a0 + 0.06 and not end_ok(w.a0, -1))
+                       or (r_[1] >= w.a1 - 0.06 and not end_ok(w.a1, 1))]
+                if bad:
+                    mamad_runs.append((w, runs))
+                else:
+                    add("INFO", cat, f"{wid(w)}: ממ\"ד wall bears on transfer beam(s) spanning "
+                        f"{', '.join(f'{r_[1] - r_[0]:.2f} m' for r_ in runs)} between supports on {lo} – engineer to "
+                        "design, show in the structural note (Pikud HaOref approval)")
                 continue
             if not heavy:
                 if tot > 2.0:
@@ -1284,10 +1293,11 @@ def check_support():
             add("WARN", cat, f'ממ"ד walls without wall/column below on {lo} ({tot:.1f} m in total): {txt} – the ממ"ד '
                 "sits over the open living room / the picture window AL-06",
                 fix=('Pikud HaOref: the ממ"ד RC walls must continue to the foundations or bear on engineered transfer '
-                     "beams/columns. Proposal: COLS add (11.05, 27.11) on G and B (for z in ((slab_top('G'), slab_bot('U')), "
-                     "(slab_top('B'), slab_bot('G'))): COLS.append(Column(11.05, 27.11, 0.30, 0.30, *z))), RC downstand "
-                     "beams 30/60 along x=11.05 and y=27.11 in the U slab, and limit AL-06 to 26.40→27.00 + 27.40→29.60 "
-                     "with an RC pier under the ממ\"ד corner (or reduce AL-06 to ≤ 2.0 m); state it in the structural note"),
+                     "beams/columns. Option A (validated, edits E7/E7b): RC column 30/30 at (11.05, 27.11) on G and B + "
+                     "RC downstand beams 30/60 along x=11.05 and y=27.11 in the U slab + a solid RC pier in the GF west "
+                     "wall under the ממ\"ד SW corner (picture window AL-06 kept at 3.2 m, starting at y ≥ 27.30). Option B "
+                     "(no column in the living room): one 30/80 transfer beam along y=27.11 from the west wall to the RC "
+                     "wall x=12.85 (6.7 m) carrying the ממ\"ד east wall; state it in the structural note"),
                 key=f"support:{up}:mamad")
 
 
@@ -1366,7 +1376,8 @@ def check_planning():
             rp = room_poly(r)
             if r.outdoor:
                 if g.contains(rp.buffer(-0.05)):
-                    balcony += rp.buffer(0.10, join_style=2).intersection(g).area
+                    indoor = unary_union([room_poly(q) for q in rooms_on(l) if not q.outdoor] or [Point(-99, -99)])
+                    balcony += rp.buffer(0.30, join_style=2).intersection(g).difference(indoor).area
                 continue
             if 'ממ"ד' in r.name:
                 mg = rp.buffer(0.30, join_style=2).intersection(g).area
@@ -1498,12 +1509,11 @@ def check_site():
             add("WARN", cat, f"Parking space {i + 1} does not reach the street boundary (direct access)")
         # obstacles: building, columns, lot boundary, pergola posts
         cr = sbox(x0, y0, x1, y1)
-        bld = unary_union([g for g in (gross_poly("G"), gross_poly("U")) if g is not None])
         if cr.intersection(gross_poly("G")).area > 0.002:
             nx0 = max(x0, M.X_E)
             add("ERROR", cat, f"Parking space {i + 1} {rr((x0, y0, x1, y1))} overlaps the building / its corner column "
                 f"({cr.intersection(gross_poly('G')).area:.2f} m²)",
-                fix=f"CARS[{i}] = ({nx0:.2f}, {y0:.2f}, {min(nx0 + R['park_l'], M.LOT['x1']):.2f}, {y1:.2f})",
+                fix=f"CARS[{i}] {rr((x0, y0, x1, y1))} → ({nx0:.2f}, {y0:.2f}, {min(nx0 + R['park_l'], M.LOT['x1']):.2f}, {y1:.2f})",
                 key=f"park_bld:{i}")
         if not sbox(M.LOT["x0"], M.LOT["y0"], M.LOT["x1"], M.LOT["y1"]).buffer(0.01).contains(cr):
             add("ERROR", cat, f"Parking space {i + 1} extends outside the lot")
@@ -1672,7 +1682,7 @@ def check_furniture():
                 if ia > 0.003 and min_dim(sh.intersection(fp)) > 0.02:
                     add("ERROR", cat, f"{furn_label(f)} collides with wall {wid(w)} ({ia:.3f} m²)",
                         key=f"furn_wall:{f.kind}:{f.x}:{f.y}")
-            for c in cols_on(lvl) if lvl != "R" else []:
+            for c in cols_on(lvl) if lvl != "R" and f.kind not in NOT_OBSTACLE else []:
                 if sh.intersection(col_fp(c)).area > 0.003:
                     add("ERROR", cat, f"{furn_label(f)} collides with column ({c.x},{c.y})")
             obs = stair_obstacles(lvl)
@@ -1852,12 +1862,16 @@ def check_planning_quality():
         for r in wet[up]:
             p = room_poly(r)
             below = [q for q in wet[lo] if room_poly(q).intersection(p).area > 0.3]
+            risers = [sbox(*q[:4]) for q in getattr(M, "RISERS", [])]
+            if not below and any(rz.intersects(p.buffer(0.35)) for rz in risers):
+                add("INFO", cat, f"{room_label(r)} ({up}) drains via a riser shaft (RISERS) – OK")
+                continue
             if not below:
                 under = [q for q in rooms_on(lo) if room_poly(q).intersection(p).area > 0.3]
                 add("INFO" if up == "G" else "WARN", cat,
                     f"{room_label(r)} ({up}) is not stacked over a wet room – drains/risers pass over "
                     f"{', '.join(room_label(q) for q in under) or 'nothing'}; provide a riser shaft "
-                    "(e.g. in the 13.06 core wall / beside the lift) and a suspended ceiling below",
+                    "down to the basement and a suspended ceiling below",
                     key=f"wetstack:{r.no}")
     # --- circulation reachability from the entrance
     E = adjacency()
@@ -1909,7 +1923,8 @@ CURATED = {
     "roofroom_setback": ("the flush north wall continues the stair 'lantern' glazing AL-08/AL-34/AL-35 (intended); if the "
                          "takanon requires a setback ask for an הקלה – the stacked stair cannot move. Keep its parapet "
                          "top ≤ +10.00 and show it in the north elevation height dimension"),
-    "wetstack:U7": ("riser shaft 30×30 for bath 3 at (12.40, 31.40)–(12.70, 31.70) on U, continuing down behind the "
+    "wetstack:U7": ("add RISERS = [(12.40, 31.40, 12.70, 31.70), (19.72, 31.40, 20.02, 31.70)] to model.py (QA reads it) – "
+                    "riser shaft 30×30 for bath 3 at (12.40, 31.40)–(12.70, 31.70) on U, continuing down behind the "
                     "living-room bookcase on G (x 12.25–12.70) and in the cinema/gym corner on B to the sewer; "
                     "bath-3 floor drains run in the 10 cm fill (FIN) – note 'ריצוף על מילוי, שיפוע 1.5%'"),
     "wetstack:U9": ("shared riser for laundry + bath 2 at (19.72, 31.40)–(20.02, 31.70): U bath-2 NW corner → G inside "
@@ -1953,8 +1968,72 @@ FALLBACK = {
 
 
 # =========================================================================== #
+#  Exact model.py edits proposed by QA (old → new).  Shown in the report only while `old` is still
+#  present in model.py, so the list prunes itself as the lead applies them.
+#  `python3 qa_check.py --try-fixes DIR` applies all applicable edits to DIR/model.py and re-checks.
+# =========================================================================== #
+PROPOSED_EDITS = [
+    dict(id="E1", why="B10 room polygon overlaps the 10 cm lift-lobby screen (x=15.60) – split it at the screen",
+         old='room("מבואה ומדרגות", "B", [(13.00, 27.60, 15.70, 31.70), (15.70, 27.60, 19.00, 29.58)]',
+         new='room("מבואה ומדרגות", "B", [(13.00, 27.60, 15.55, 31.70), (15.65, 27.60, 19.00, 29.58), '
+             '(15.55, 29.70, 15.70, 31.70)]'),
+    dict(id="E2", why="parking bay 2 runs 30 cm into the building corner/column; both bays 5.00 m from the façade "
+                      "line to the street boundary",
+         old="CARS = [(24.70, 15.95, 29.80, 18.45), (24.70, 18.95, 29.80, 21.45)]",
+         new="CARS = [(25.00, 15.95, 30.00, 18.45), (25.00, 18.95, 30.00, 21.45)]"),
+    dict(id="E3", why="30 cm strip between living and dining (x 12.70–13.00, under the column line) belongs to no room",
+         old='room("סלון", "G", [(6.30, 21.30, 12.70, 31.70)]',
+         new='room("סלון", "G", [(6.30, 21.30, 12.70, 31.70), (12.70, 21.30, 13.00, 25.00)]'),
+    dict(id="E4", why="stair zone north of the gallery on U belongs to no room",
+         old='room("גלריה משפחתית", "U", [(13.12, 25.30, 19.60, 29.58)]',
+         new='room("גלריה משפחתית", "U", [(13.12, 25.30, 19.60, 29.58), (13.10, 29.58, 15.70, 31.70)]'),
+    dict(id="E5", why="paved route carport → service path → front door inside the lot",
+         old='    planting=[(X_E, 21.8, LOT["x1"] - 0.3, 25.8),',
+         new='    planting=[(X_E + 1.20, 21.8, LOT["x1"] - 0.3, 25.8),'),
+    dict(id="E5b", why="(with E5) the 1.2 m path strip itself",
+         old="            (X_E, 25.80, X_E + 1.20, 28.80)],",
+         new="            (X_E, 25.80, X_E + 1.20, 28.80), (X_E, 21.80, X_E + 1.20, 25.80)],"),
+    dict(id="E6", why="sunken patio needs a stair to the garden (egress for the basement guest room); draw it in "
+                      "plans/sections",
+         old="    bbq=(22.0, 19.9, 24.4, 20.55),",
+         new="    bbq=(22.0, 19.9, 24.4, 20.55),\n    patio_stair=(14.10, 17.00, 20.42, 18.00),   # 20R × 16.9/28, w 1.00, "
+             "top landing x 19.42–20.42"),
+    dict(id="E7", why='ממ"ד load path: column under the free ממ"ד corner (G + B) …',
+         old="for x, y in [(6.15, 21.15), (12.85, 21.15), (19.06, 21.15), (24.85, 21.15), (12.85, 25.15), (19.06, 25.15)]:",
+         new="for x, y in [(6.15, 21.15), (12.85, 21.15), (19.06, 21.15), (24.85, 21.15), (12.85, 25.15), (19.06, 25.15),\n"
+             "             (11.05, 27.11)]:   # ממ\"ד SE corner (transfer beams x=11.05 / y=27.11 in the U slab)"),
+    dict(id="E7b", why='… and an RC pier under the ממ"ד SW corner: shift the picture window 1.0 m north (same 3.2 m size)',
+         old='op("G", V, 6.15, 26.40, 29.60, 0.45, 3.00, "fixed", "AL-06")',
+         new='op("G", V, 6.15, 27.40, 30.60, 0.45, 3.00, "fixed", "AL-06")'),
+    dict(id="E8", why="wet rooms on U are not above wet rooms – declare the two riser shafts (drawn on U/G/B)",
+         old="CARS = [",
+         new="RISERS = [(12.40, 31.40, 12.70, 31.70), (19.72, 31.40, 20.02, 31.70)]   # wet-room riser shafts U→G→B\n"
+             "CARS = [", once=True),
+]
+
+
+def applicable_edits(src):
+    return [e for e in PROPOSED_EDITS if e["old"] in src]
+
+
+def try_fixes(dst):
+    src = open(os.path.join(HERE, "model.py"), encoding="utf-8").read()
+    ok = applicable_edits(src)
+    for e in ok:
+        src = src.replace(e["old"], e["new"], 1)
+    os.makedirs(dst, exist_ok=True)
+    with open(os.path.join(dst, "model.py"), "w", encoding="utf-8") as fh:
+        fh.write(src)
+    print(f"applied {len(ok)} edit(s): {', '.join(e['id'] for e in ok) or '–'} → {dst}/model.py")
+    return dst
+
+
+# =========================================================================== #
 #  Report
 # =========================================================================== #
+CAT_RANK = {5: 0, 4: 1, 3: 2, 7: 3, 2: 4, 9: 5, 8: 6, 1: 7, 6: 8, 10: 9, 11: 10, 0: -1}
+
+
 def write_report(path, quiet=False):
     sev_order = {"ERROR": 0, "WARN": 1, "INFO": 2}
     # de-duplicate identical messages
@@ -1983,9 +2062,19 @@ def write_report(path, quiet=False):
              "Door swing: `swing=+1` opens to +normal (north for horizontal walls, east for vertical), hinge `a` at "
              "`pos`, `b` at `end`; furniture `w` = x-extent, `d` = y-extent.\n")
     # ranked
+    L.append("Checks: walls (overlaps, junction gaps, free ends, closed outlines) · openings (extents, overlaps, jambs at "
+             "junctions/columns, sill/head, door widths, swings vs walls/furniture/doors/stairs, clear approach, fall "
+             "guarding of low sills) · rooms (net areas, bedroom 9 m²/2.60, ממ\"ד 9 m²/RC 25/door 80-200/window "
+             "100-100/opens outward, room vs walls/rooms, unassigned floor) · stairs (2R+T, R, T, riser count, landing, "
+             "width, stacking, lift shaft, slab holes, headroom per tread, void-edge guards, stair-wall gaps) · clear "
+             "heights · load paths · setbacks/coverage/main/service/area table/roof structures · pool · railings & "
+             "roof access · furniture fit & clearances · parking & entrance · planning review (daylight, ventilation, "
+             "wet stacking, circulation, patio egress).\n")
     L.append("## Ranked list of ERROR/WARN with proposed fixes\n")
+    L.append("Ranked: severity, then life-safety first (guards → stairs/lift → ממ\"ד/rooms → structure → openings → "
+             "site → planning law → geometry → heights → furniture → planning quality).\n")
     n = 0
-    for f in sorted(uniq, key=lambda f: (sev_order[f["sev"]], int(f["cat"].split()[0]))):
+    for f in sorted(uniq, key=lambda f: (sev_order[f["sev"]], CAT_RANK.get(int(f["cat"].split()[0]), 99))):
         if f["sev"] == "INFO":
             continue
         n += 1
@@ -1995,6 +2084,21 @@ def write_report(path, quiet=False):
         L.append("")
     if n == 0:
         L.append("No ERROR or WARN findings.\n")
+    # exact edits
+    try:
+        src = open(os.path.join(MODEL_DIR or HERE, "model.py"), encoding="utf-8").read()
+    except OSError:
+        src = ""
+    ed = applicable_edits(src)
+    L.append("## Exact model.py edits proposed (old → new)\n")
+    if ed:
+        L.append("Only edits whose *old* text is still in model.py are listed. Preview them all with "
+                 "`python3 src/qa_check.py --try-fixes /tmp/qa_try` (writes a patched copy and re-runs the QA on it).\n")
+        for e in ed:
+            L.append(f"**{e['id']}** – {e['why']}\n")
+            L.append("```python\n# old\n" + e["old"] + "\n# new\n" + e["new"] + "\n```\n")
+    else:
+        L.append("All proposed edits are applied.\n")
     # all by category
     L.append("\n## All findings by category\n")
     for c in cats:
@@ -2059,6 +2163,12 @@ def write_report(path, quiet=False):
 
 def main():
     quiet = "--quiet" in sys.argv
+    if "--try-fixes" in sys.argv:
+        dst = os.path.abspath(sys.argv[sys.argv.index("--try-fixes") + 1])
+        try_fixes(dst)
+        import subprocess
+        return subprocess.call([sys.executable, os.path.abspath(__file__), "--model-dir", dst] +
+                               (["--quiet"] if quiet else []))
     for fn in (check_walls, check_openings, check_rooms, check_stairs, check_heights, check_support,
                check_planning, check_site, check_furniture, check_planning_quality):
         try:

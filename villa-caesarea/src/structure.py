@@ -18,11 +18,14 @@ BEAMS = {
         ("ק-3", 6.15, 21.15, 24.85, 21.15, 0.30, 60, "down"),         # south façade – carries UF walls
         ("ק-4", 12.85, 25.15, 19.06, 25.15, 0.30, 60, "down"),        # grid 3 – carries UF façade wall
         ("ק-5", 19.06, 21.15, 19.06, 25.15, 0.30, 50, "down"),
+        ("ק-7", 6.15, 27.11, 12.85, 27.11, 0.30, 80, "down"),        # transfer beam under the ממ"ד south wall
+        ("ק-8", 11.05, 27.11, 11.05, 31.85, 0.30, 70, "down"),       # transfer beam under the ממ"ד east wall
     ],
     "R": [  # roof slab (UF ceiling) – storey-high wall beams
         ("קק-1", 6.15, 16.15, 6.15, 31.85, 0.20, 340, "wall"),       # west wall-beam (cantilever 5.0 m)
         ("קק-2", 12.85, 16.15, 12.85, 25.15, 0.20, 340, "wall"),     # east wall-beam of the cantilever
         ("ק-6", 6.15, 16.15, 12.85, 16.15, 0.30, 60, "up"),           # loggia frame head beam (upstand)
+        ("ק-9", 12.90, 26.60, 17.80, 26.60, 0.30, 50, "down"),       # carries the roof-exit south wall
     ],
     "RX": [],
 }

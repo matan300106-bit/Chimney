@@ -286,6 +286,30 @@ def draw_stairs(v: View, level, scale):
                weight=500)
 
 
+def draw_patio_stair(v: View, level, scale):
+    ps = getattr(M, "PATIO_STAIR", None)
+    if not ps or level not in ("B", "G"):
+        return
+    for i in range(ps["n"] - 1):
+        x0 = ps["x0"] + i * ps["t"]
+        v.rect(x0, ps["y0"], x0 + ps["t"], ps["y1"], fill="#fff", lw="xs")
+    xl = ps["x0"] + (ps["n"] - 1) * ps["t"]
+    v.rect(xl, ps["y0"], xl + 1.0, ps["y1"], fill="#fff", lw="xs")
+    cy = (ps["y0"] + ps["y1"]) / 2
+    v.line(ps["x0"] + 0.1, cy, xl - 0.15, cy, lw="xs")
+    v.polygon([(xl - 0.35, cy - 0.09), (xl - 0.35, cy + 0.09), (xl - 0.15, cy)], fill="#000", lw="xs")
+    if level == "B":
+        v.text(ps["x0"] + 1.4, cy + 0.12, f'עולה לגן  {ps["n"]}×{(ps["z1"] - ps["z0"]) / ps["n"] * 100:.1f}/28',
+               size=1.7 if scale >= 100 else 2.1)
+
+
+def draw_risers(v: View, level, scale):
+    for (x0, y0, x1, y1) in getattr(M, "RISERS", []):
+        v.rect(x0, y0, x1, y1, fill="#fff", lw="s")
+        v.line(x0, y0, x1, y1, lw="xxs")
+        v.line(x0, y1, x1, y0, lw="xxs")
+
+
 def room_area(r):
     return unary_union([sbox(*q) for q in r.rects]).area
 
@@ -532,7 +556,10 @@ def plan(v: View, level, scale=100, dims=True, grid=True, sections=True, terrace
     if furniture:
         draw_furniture(v, level, scale)
     draw_stairs(v, level, scale)
+    draw_patio_stair(v, level, scale)
     draw_walls(v, level, scale)
+    if level in ("B", "G", "U"):
+        draw_risers(v, level, scale)
     draw_openings(v, level, scale)
     draw_overheads(v, level)
     draw_room_tags(v, level, scale)

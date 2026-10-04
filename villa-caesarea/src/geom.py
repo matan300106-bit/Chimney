@@ -219,7 +219,18 @@ def all_boxes(include_site=True, include_furn=True):
         bx.append(B(c.x - c.w / 2, c.y - c.d / 2, c.z0, c.x + c.w / 2, c.y + c.d / 2, c.z1, "rc", "column"))
     for st in M.STAIRS:
         bx += stair_boxes(st)
+    ps = getattr(M, "PATIO_STAIR", None)
+    if ps:
+        r = (ps["z1"] - ps["z0"]) / ps["n"]
+        for i in range(ps["n"] - 1):
+            x0 = ps["x0"] + i * ps["t"]
+            zt = ps["z0"] + (i + 1) * r
+            bx.append(B(x0, ps["y0"], ps["z0"], x0 + ps["t"], ps["y1"], zt, "stone_white", "stair", "B"))
+        xl = ps["x0"] + (ps["n"] - 1) * ps["t"]
+        bx.append(B(xl, ps["y0"], ps["z0"], xl + 1.0, ps["y1"], ps["z1"], "stone_white", "stair", "B"))
     for r in M.RAILS:
+        if r.get("kind") == "handrail" or r["h"] <= 0:
+            continue
         t = 0.02
         if abs(r["y0"] - r["y1"]) < 1e-6:
             bx.append(B(r["x0"], r["y0"] - t / 2, r["z0"], r["x1"], r["y0"] + t / 2, r["z0"] + r["h"], "glass", "rail"))

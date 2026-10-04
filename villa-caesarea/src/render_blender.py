@@ -57,11 +57,11 @@ CAMS = {
                    desc="aerial south-west 3/4 view: roof terrace, whole lot"),
     "ext_05": dict(mode="dusk", loc=(20.95, 17.35, -2.0), tgt=(15.0, 21.0, -1.0), lens=19, level=True, exposure=0.8,
                    desc="sunken patio + covered terrace under the cantilever"),
-    "int_01": dict(mode="int_day", loc=(12.55, 28.1, 1.32), tgt=(7.0, 21.6, 1.15), lens=18, level=True, exposure=1.2,
+    "int_01": dict(mode="int_day", loc=(12.0, 30.95, 1.30), tgt=(8.2, 22.0, 1.10), lens=18, level=True, exposure=1.2,
                    desc="living room toward the garden"),
-    "int_02": dict(mode="int_day", loc=(13.55, 24.95, 1.40), tgt=(22.0, 22.9, 1.10), lens=18, level=True, exposure=1.2,
+    "int_02": dict(mode="int_day", loc=(13.55, 24.95, 1.40), tgt=(22.0, 22.9, 1.10), lens=18, level=True, exposure=1.6,
                    desc="kitchen, island and dining"),
-    "int_03": dict(mode="int_dusk", loc=(6.65, 21.35, 4.95), tgt=(11.0, 17.8, 4.75), lens=18, level=True,
+    "int_03": dict(mode="int_dusk", loc=(12.35, 21.3, 4.95), tgt=(8.0, 17.4, 4.80), lens=18, level=True,
                    exposure=0.9, desc="master bedroom toward the loggia"),
 }
 
@@ -74,8 +74,8 @@ MODES = {
                  sun_col=(1.0, 0.50, 0.24), sky=float(os.environ.get("BK_SKY", 0.35)), dust=2.5,
                  lights=dict(interior=1.0, downlight=1.0, pendant=1.0, garden=1.0, pool=1.0, soffit=1.0,
                              neighbour=1.0, fire=1.0, lamp=1.0, portal=0.0)),
-    "int_day": dict(sun_el=38.0, sun_az=232.0, sun_E=4.0, sun_col=(1.0, 0.95, 0.88), sky=0.32, dust=0.6,
-                    lights=dict(interior=0.0, downlight=0.0, pendant=0.35, garden=0.0, pool=0.0, soffit=0.0,
+    "int_day": dict(sun_el=38.0, sun_az=232.0, sun_E=4.5, sun_col=(1.0, 0.95, 0.88), sky=0.25, dust=0.6,
+                    lights=dict(interior=0.12, downlight=0.0, pendant=0.35, garden=0.0, pool=0.0, soffit=0.0,
                                 neighbour=0.0, fire=0.6, lamp=0.0, portal=1.0)),
     "int_dusk": dict(sun_el=1.5, sun_az=258.0, sun_E=1.2, sun_col=(1.0, 0.48, 0.22), sky=0.55, dust=2.5,
                      lights=dict(interior=0.55, downlight=0.8, pendant=1.0, garden=1.0, pool=1.0, soffit=1.0,
@@ -556,10 +556,14 @@ def build_materials():
     mk["lavender"] = m_leaves("lavender", "#8C7BB5", "#5D4F8A", transl=0.25, scale=30)
     mk["lav_leaf"] = m_leaves("lav_leaf", "#9AA488", "#6B7558", transl=0.2, scale=30)
     mk["grass_orn"] = m_leaves("grass_orn", "#B8AE78", "#7F7E4A", transl=0.35, scale=30)
+    mk["rug"] = m_fabric("rug", "#B5AA99", scale=70.0)
+    mk["parquet"] = m_wood("parquet", "#C8A47B", "#9A7550", rough=0.38, scale=5.0, planks=(0.19, 1.9, 0.0015), distort=4.0)
+    mk["carpet"] = m_fabric("carpet", "#5E5852", scale=300.0)
+    mk["stone_floor"] = m_tiles("stone_floor", "#DED3C0", "#D2C5AE", "#BDB09A", 0.6, 0.32, joint=0.0015, w=1.2)
     mk["default"] = m_simple("default", "#B5ADA2", 0.6)
     # emissive
     mk["em_down"] = m_emit("em_down", WARM2, 25.0, "downlight")
-    mk["em_pend"] = m_emit("em_pend", WARM, 9.0, "pendant")
+    mk["em_pend"] = m_emit("em_pend", WARM, 4.0, "pendant")
     mk["em_lamp"] = m_emit("em_lamp", WARM, 6.0, "lamp")
     mk["em_fire"] = m_emit("em_fire", (1.0, 0.42, 0.12), 14.0, "fire")
     mk["em_pool"] = m_emit("em_pool", POOLC, 8.0, "pool")
@@ -622,6 +626,22 @@ def elem_geo(e):
         faces += [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
         axes = [2, 2] + [0 if abs(math.cos(2 * math.pi * (i + .5) / n)) > .7 else 1 for i in range(n)]
         return v, faces, axes, [False, False] + [True] * n
+    if t == "prism":
+        pts = e["pts"]
+        n = len(pts)
+        z0, z1 = e["z0"], e["z1"]
+        v = [(x, y, z0) for x, y in pts] + [(x, y, z1) for x, y in pts]
+        area = sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1] for i in range(n))
+        if area < 0:   # make CCW
+            v = [(x, y, z0) for x, y in pts[::-1]] + [(x, y, z1) for x, y in pts[::-1]]
+        faces = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))]
+        axes = [2, 2]
+        for i in range(n):
+            j = (i + 1) % n
+            faces.append((i, j, n + j, n + i))
+            dx, dy = v[j][0] - v[i][0], v[j][1] - v[i][1]
+            axes.append(1 if abs(dx) > abs(dy) else 0)
+        return v, faces, axes, [False] * len(faces)
     raise ValueError(t)
 
 
@@ -848,6 +868,22 @@ def terrain_elems():
     return out
 
 
+def room_floor_elems():
+    """3 mm finish overlay per room from model.ROOMS[].floor (parquet / carpet / natural stone; porcelain = base)"""
+    out = []
+    for r in M.ROOMS:
+        if r.outdoor or r.level not in ("B", "G", "U"):
+            continue
+        m = "parquet" if "פרקט" in r.floor else "carpet" if "שטיח" in r.floor else \
+            "stone_floor" if "אבן" in r.floor else None
+        if not m:
+            continue
+        z = M.LV[r.level]
+        for (x0, y0, x1, y1) in r.rects:
+            out.append(B(x0, y0, z, x1, y1, z + 0.003, m, 0, cls="site"))
+    return out
+
+
 def derived_site_elems():
     """Things the model describes semantically but geom does not box (documented in report)."""
     out = []
@@ -874,35 +910,41 @@ def derived_site_elems():
 # =========================================================================== #
 #  Furniture (positions/footprints from model.FURN, detail added here)
 # =========================================================================== #
-FRONT = {0: "+y", 90: "+x", 180: "-y", 270: "-x"}
-VEC = {"+x": (1, 0), "-x": (-1, 0), "+y": (0, 1), "-y": (0, -1)}
+ROTV = {0: (1, 0), 90: (0, 1), 180: (-1, 0), 270: (0, -1)}     # model.Furn.rot = direction the FRONT faces
+UAX = {270: (1, 0), 90: (-1, 0), 0: (0, 1), 180: (0, -1)}      # +u direction (furniture2d.Local)
 
 
-def vec2s(v):
-    for k, vv in VEC.items():
+def vec2rot(v):
+    for k, vv in ROTV.items():
         if vv == (round(v[0]), round(v[1])):
             return k
+    raise ValueError(v)
 
 
 class Frame:
-    """local furniture frame: u across the front (width W), v from the front edge to the back (depth D)"""
+    """local furniture frame identical to furniture2d.Local: u along the front edge (0..W), v from the front
+    (0) to the back (D); rot = direction the front faces (0=E, 90=N, 180=W, 270=S)"""
 
-    def __init__(self, x0, y0, x1, y1, front, z=0.0):
-        self.r = (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
-        x0, y0, x1, y1 = self.r
-        fx, fy = VEC[front]
-        self.front = front
-        self.f = (fx, fy)
-        self.vb = (-fx, -fy)
-        self.ua = (fy, -fx)
-        cs = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-        self.o = min(cs, key=lambda c: c[0] * (self.ua[0] + self.vb[0]) + c[1] * (self.ua[1] + self.vb[1]))
-        self.W = abs((x1 - x0) * self.ua[0]) + abs((y1 - y0) * self.ua[1])
-        self.D = abs((x1 - x0) * self.vb[0]) + abs((y1 - y0) * self.vb[1])
+    def __init__(self, x0, y0, x1, y1, rot, z=0.0):
+        self.box = (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
+        x0, y0, x1, y1 = self.box
+        self.r = int(rot) % 360
+        if self.r in (90, 270):
+            self.W, self.D = x1 - x0, y1 - y0
+        else:
+            self.W, self.D = y1 - y0, x1 - x0
         self.z = z
 
     def pt(self, u, v):
-        return (self.o[0] + u * self.ua[0] + v * self.vb[0], self.o[1] + u * self.ua[1] + v * self.vb[1])
+        x0, y0, x1, y1 = self.box
+        r = self.r
+        if r == 270:
+            return x0 + u, y0 + v
+        if r == 90:
+            return x1 - u, y1 - v
+        if r == 0:
+            return x1 - v, y0 + u
+        return x0 + v, y1 - u
 
     def rect(self, u0, v0, u1, v1):
         a, b = self.pt(u0, v0), self.pt(u1, v1)
@@ -910,18 +952,28 @@ class Frame:
 
     def b(self, u0, v0, u1, v1, z0, z1, m, soft=1):
         x0, y0, x1, y1 = self.rect(u0, v0, u1, v1)
-        return B(x0, y0, self.z + z0, x1, y1, self.z + z1, m, soft)
+        return B(x0, y0, self.z + z0, x1, y1, self.z + z1, m, soft, cls="furn")
 
     def cyl(self, u, v, z0, z1, r, m, soft=1, seg=20, r1=None):
         x, y = self.pt(u, v)
         return dict(t="cyl", x=x, y=y, z0=self.z + z0, z1=self.z + z1, r=r, r1=r1 or r, mat=m, soft=soft, seg=seg)
 
     def dirv(self, local):
-        return {"front": self.f, "back": self.vb, "+u": self.ua, "-u": (-self.ua[0], -self.ua[1])}[local]
+        f = ROTV[self.r]
+        ua = UAX[self.r]
+        return {"front": f, "back": (-f[0], -f[1]), "+u": ua, "-u": (-ua[0], -ua[1])}[local]
 
     def sub(self, u0, v0, u1, v1, local_front):
         x0, y0, x1, y1 = self.rect(u0, v0, u1, v1)
-        return Frame(x0, y0, x1, y1, vec2s(self.dirv(local_front)), self.z)
+        return Frame(x0, y0, x1, y1, vec2rot(self.dirv(local_front)), self.z)
+
+    def chair_at(self, u, v, facing, m_seat="fabric", m_leg="wood", w=0.48, d=0.52):
+        """chair centred at local (u,v) whose front faces local direction `facing`"""
+        x, y = self.pt(u, v)
+        rot = vec2rot(self.dirv(facing))
+        if rot in (90, 270):
+            return f_chair(Frame(x - w / 2, y - d / 2, x + w / 2, y + d / 2, rot, self.z), m_seat, m_leg)
+        return f_chair(Frame(x - d / 2, y - w / 2, x + d / 2, y + w / 2, rot, self.z), m_seat, m_leg)
 
 
 def f_sofa(F, arms=(1, 1), back=True, pillows=True, H=0.42):
@@ -971,21 +1023,19 @@ def f_chair(F, m_seat="fabric", m_leg="wood"):
 def f_table(F, seats=0, top="wood", outdoor=False):
     W, D = F.W, F.D
     o = [F.b(0, 0, W, D, 0.715, 0.75, top), F.b(0.35, 0.18, 0.43, D - 0.18, 0, 0.715, top),
-         F.b(W - 0.43, 0.18, W - 0.35, D - 0.18, 0, 0.715, top), F.b(0.35, D / 2 - 0.03, W - 0.35, D / 2 + 0.03, 0.62, 0.715, top)]
+         F.b(W - 0.43, 0.18, W - 0.35, D - 0.18, 0, 0.715, top),
+         F.b(0.35, D / 2 - 0.03, W - 0.35, D / 2 + 0.03, 0.62, 0.715, top)]
+    ms, ml = ("outdoor_fab", "frame") if outdoor else ("fabric", "wood")
     if seats:
-        k = max(1, (seats - 2) // 2)
-        cw, cd = 0.50, 0.54
-        for i in range(k):
-            uc = W * (i + 0.5) / k
-            o += f_chair(Frame(*F.rect(uc - cw / 2, -0.38, uc + cw / 2, -0.38 + cd), vec2s(F.dirv("back")), F.z),
-                         m_seat="outdoor_fab" if outdoor else "fabric")
-            o += f_chair(Frame(*F.rect(uc - cw / 2, D + 0.38 - cd, uc + cw / 2, D + 0.38), vec2s(F.dirv("front")), F.z),
-                         m_seat="outdoor_fab" if outdoor else "fabric")
-        if seats - 2 * k >= 2:
-            o += f_chair(Frame(*F.rect(-0.38, D / 2 - cw / 2, -0.38 + cd, D / 2 + cw / 2), vec2s(F.dirv("+u")), F.z),
-                         m_seat="outdoor_fab" if outdoor else "fabric")
-            o += f_chair(Frame(*F.rect(W + 0.38 - cd, D / 2 - cw / 2, W + 0.38, D / 2 + cw / 2), vec2s(F.dirv("-u")), F.z),
-                         m_seat="outdoor_fab" if outdoor else "fabric")
+        n = max(1, int(round((W - 0.2) / 0.68)))
+        step = (W - 0.2) / n
+        for i in range(n):
+            cu = 0.1 + step * (i + 0.5)
+            o += F.chair_at(cu, -0.30, "back", ms, ml)
+            o += F.chair_at(cu, D + 0.30, "front", ms, ml)
+        if seats > 2 * n:
+            o += F.chair_at(-0.30, D / 2, "+u", ms, ml)
+            o += F.chair_at(W + 0.30, D / 2, "-u", ms, ml)
     return o
 
 
@@ -1044,17 +1094,18 @@ def f_coffee(F):
             F.cyl(W - 0.35, D / 2, 0.35, 0.47, 0.11, "black_gloss", 1, r1=0.14)]
 
 
-def f_island(F, stools_side="front", n_st=3):
+def f_island(F, stools_side="front", n_st=4):
     W, D = F.W, F.D
     o = [F.b(0, 0, 0.04, D, 0, 0.88, "marble", 0), F.b(W - 0.04, 0, W, D, 0, 0.88, "marble", 0),
-         F.b(0, 0, W, D, 0.88, 0.92, "marble", 1), F.b(0.04, 0.35, W - 0.04, D - 0.05, 0.0, 0.88, "furn", 0)]
+         F.b(0, 0, W, D, 0.88, 0.92, "marble", 1), F.b(0.04, 0.30, W - 0.04, D - 0.03, 0.0, 0.88, "furn", 0),
+         F.b(W * 0.5 - 0.4, D - 0.5, W * 0.5 + 0.4, D - 0.12, 0.905, 0.925, "steel", 0)]
     # stools on the overhang side
     for i in range(n_st):
         uc = W * (i + 0.5) / n_st
-        o.append(F.cyl(uc, -0.25, 0.0, 0.02, 0.2, "steel", 1))
-        o.append(F.cyl(uc, -0.25, 0.02, 0.62, 0.025, "steel", 1))
-        o.append(F.cyl(uc, -0.25, 0.62, 0.68, 0.2, "fabric_dark", 1))
-        o.append(F.b(uc - 0.17, -0.47, uc + 0.17, -0.43, 0.68, 0.90, "fabric_dark", 2))
+        o.append(F.cyl(uc, -0.30, 0.0, 0.02, 0.18, "steel", 1))
+        o.append(F.cyl(uc, -0.30, 0.02, 0.62, 0.022, "steel", 1))
+        o.append(F.cyl(uc, -0.30, 0.62, 0.68, 0.18, "fabric_dark", 1))
+        o.append(F.b(uc - 0.15, -0.50, uc + 0.15, -0.46, 0.68, 0.88, "fabric_dark", 2))
     return o
 
 
@@ -1102,30 +1153,39 @@ def f_fireplace(F):
 
 
 def f_piano(F):
+    """grand piano after the plan symbol: straight keyboard side at the back (v=D), curved tail toward v=0"""
     W, D = F.W, F.D
-    return [F.b(0.05, 0.0, W - 0.05, D * 0.8, 0.62, 1.0, "black_gloss", 1),
-            F.b(0.1, D * 0.8, W - 0.1, D, 0.62, 0.95, "black_gloss", 1),
-            F.b(0.1, 0.1, 0.18, 0.18, 0, 0.62, "black_gloss"), F.b(W - 0.18, 0.1, W - 0.1, 0.18, 0, 0.62, "black_gloss"),
-            F.b(W / 2 - 0.04, D - 0.25, W / 2 + 0.04, D - 0.17, 0, 0.62, "black_gloss"),
-            F.b(0.15, -0.35, W - 0.15, -0.05, 0.0, 0.48, "furn_dark", 1)]
+    poly = [(0, D), (W, D), (W, D * 0.45), (W * 0.75, D * 0.1), (W * 0.35, 0), (0, D * 0.35)]
+    # smooth the tail with a few interpolated points
+    pts = [F.pt(u, v) for (u, v) in poly]
+    o = [dict(t="prism", pts=pts, z0=F.z + 0.68, z1=F.z + 0.98, mat="black_gloss", soft=1),
+         dict(t="prism", pts=[F.pt(u, v) for (u, v) in [(0.04, D - 0.04), (W - 0.04, D - 0.04), (W - 0.04, D * 0.47),
+                                                         (W * 0.74, D * 0.13), (W * 0.36, 0.04), (0.04, D * 0.36)]],
+              z0=F.z + 0.98, z1=F.z + 1.0, mat="black_gloss", soft=0),
+         F.b(0.06, D - 0.02, W - 0.06, D + 0.02, 0.70, 0.80, "black_gloss", 0),
+         F.b(0.08, D - 0.18, W - 0.08, D - 0.02, 0.76, 0.80, "white", 0),
+         F.b(0.08, D - 0.08, W - 0.08, D - 0.02, 0.80, 0.81, "black_gloss", 0),
+         F.cyl(0.18, D - 0.18, 0, 0.68, 0.045, "black_gloss"), F.cyl(W - 0.18, D - 0.18, 0, 0.68, 0.045, "black_gloss"),
+         F.cyl(W * 0.4, D * 0.25, 0, 0.68, 0.045, "black_gloss"),
+         F.b(0.35, D + 0.30, W - 0.35, D + 0.65, 0.0, 0.48, "black_gloss", 1)]
+    return o
 
 
 def f_desk(F):
     W, D = F.W, F.D
     return [F.b(0, 0, W, D, 0.72, 0.75, "wood", 1), F.b(0.03, 0.03, 0.07, D - 0.03, 0, 0.72, "frame"),
-            F.b(W - 0.07, 0.03, W - 0.03, D - 0.03, 0, 0.72, "frame")]
+            F.b(W - 0.07, 0.03, W - 0.03, D - 0.03, 0, 0.72, "frame")] + F.chair_at(W / 2, -0.35, "back")
 
 
 def f_round_table(F, seats=4, outdoor=True):
     W, D = F.W, F.D
     cx, cy = W / 2, D / 2
     r = min(W, D) / 2
-    o = [F.cyl(cx, cy, 0.71, 0.75, r, "outdoor_fab" if not outdoor else "white", 1, seg=36),
-         F.cyl(cx, cy, 0.0, 0.71, 0.05, "frame", 1), F.cyl(cx, cy, 0.0, 0.03, 0.3, "frame", 1)]
-    for (du, dv, fr) in [(0, -r - 0.15, "back"), (0, r + 0.15, "front"), (-r - 0.15, 0, "+u"), (r + 0.15, 0, "-u")][:seats]:
-        u, v = cx + du, cy + dv
-        o += f_chair(Frame(*F.rect(u - 0.25, v - 0.27, u + 0.25, v + 0.27), vec2s(F.dirv(fr)), F.z), m_seat="outdoor_fab",
-                     m_leg="frame")
+    o = [F.cyl(cx, cy, 0.71, 0.75, r, "white", 1, seg=36), F.cyl(cx, cy, 0.0, 0.71, 0.05, "frame", 1),
+         F.cyl(cx, cy, 0.0, 0.03, 0.3, "frame", 1)]
+    for (du, dv, fr) in [(-1, -1, "back"), (1, 1, "front"), (-1, 1, "+u"), (1, -1, "-u")][:seats]:
+        k = (r + 0.3) / math.sqrt(2)
+        o += F.chair_at(cx + du * k, cy + dv * k, fr, "outdoor_fab", "frame")
     return o
 
 
@@ -1142,22 +1202,9 @@ def room_of(level, x, y):
     return None, None
 
 
-def face_room(f):
-    """front direction pointing to the room centre, along the piece's short axis"""
-    cx, cy = f.x + f.w / 2, f.y + f.d / 2
-    r, rc = room_of(f.level, cx, cy)
-    if not rc:
-        return FRONT.get(f.rot, "+y")
-    rx, ry = (rc[0] + rc[2]) / 2, (rc[1] + rc[3]) / 2
-    if f.w >= f.d:
-        return "+y" if ry > cy else "-y"
-    return "+x" if rx > cx else "-x"
-
-
 def furniture_elems():
     out = []
     P = M.SITE["pool"]
-    coffees = [f for f in M.FURN if f.kind == "coffee"]
     for f in M.FURN:
         if f.kind in ROOM_SKIP:
             continue
@@ -1167,17 +1214,9 @@ def furniture_elems():
             ISSUES.append(f"model.FURN {f.kind} at ({f.x},{f.y}) level {f.level} lies inside the pool "
                           f"({P['x0']}-{P['x1']} x {P['y0']}-{P['y1']}); not rendered.")
             continue
-        fr = FRONT.get(f.rot, "+y")
-        if f.kind in ("counter", "closet", "vanity", "vanity2", "tvunit", "fridge", "bench", "bar", "rack", "tech",
-                      "screen", "counter_l"):
-            fr = face_room(f)
-        if f.kind == "armchair":
-            near = [c for c in coffees if c.level == f.level and abs(c.x - f.x) < 5 and abs(c.y - f.y) < 5]
-            if near:
-                c = near[0]
-                dx, dy = c.x + c.w / 2 - cx, c.y + c.d / 2 - cy
-                fr = ("+x" if dx > 0 else "-x") if abs(dx) > abs(dy) else ("+y" if dy > 0 else "-y")
-        F = Frame(f.x, f.y, f.x + f.w, f.y + f.d, fr, z)
+        F = Frame(f.x, f.y, f.x + f.w, f.y + f.d, f.rot, z)
+        rm = room_of(f.level, cx, cy)[0]
+        outdoor = bool(rm and rm.outdoor)
         k = f.kind
         if k == "sofa":
             out += f_sofa(F)
@@ -1188,12 +1227,10 @@ def furniture_elems():
         elif k == "coffee":
             out += f_coffee(F)
         elif k == "rug":
-            out.append(F.b(0, 0, F.W, F.D, 0.0, 0.012, "fabric_dark", 0))
+            out.append(F.b(0, 0, F.W, F.D, 0.0, 0.012, "rug", 0))
         elif k == "table_rect":
             seats = int(f.label) if f.label.isdigit() else 6
-            if F.W < F.D:
-                F = Frame(f.x, f.y, f.x + f.w, f.y + f.d, "+x" if fr in ("+y", "-y") else "+y", z)
-            out += f_table(F, seats, outdoor=room_of(f.level, cx, cy)[0] is not None and room_of(f.level, cx, cy)[0].outdoor)
+            out += f_table(F, seats, outdoor=outdoor)
         elif k == "table_round":
             out += f_round_table(F)
         elif k in ("bed_k", "bed_q", "bed_s"):
@@ -1201,22 +1238,20 @@ def furniture_elems():
         elif k == "nightstand":
             out += f_nightstand(F)
         elif k == "island":
-            # long axis along the longer side, stools on the side facing away from the cooking counters
-            if f.d >= f.w:
-                F = Frame(f.x, f.y, f.x + f.w, f.y + f.d, "-x", z)
             out += f_island(F)
         elif k == "island_s":
             out += f_cabinets(F, 0.9, "marble", "wood", 0.45)
         elif k == "counter":
-            out += f_cabinets(F, splash=0.6 if f.level == "G" and f.y > 24.5 and f.x < 22.3 else 0.0)
+            out += f_cabinets(F, splash=0.55 if f.level == "G" and rm is not None and rm.no == "G3" else 0.0)
         elif k == "counter_l":
-            a = F.sub(0, F.D - 0.62, F.W, F.D, "front")
-            b = F.sub(F.W - 0.62, 0, F.W, F.D - 0.62, "-u")
-            out += f_cabinets(a) + f_cabinets(b)
+            a_ = F.sub(0, F.D - 0.62, F.W, F.D, "front")
+            b_ = F.sub(F.W - 0.62, 0, F.W, F.D - 0.62, "-u")
+            out += f_cabinets(a_) + f_cabinets(b_)
         elif k == "fridge":
-            out += f_tall(F, 2.6, "furn", 0.6)
+            out += f_tall(F, 2.4, "furn", 0.45)
         elif k == "closet":
-            out += f_tall(F, FURN_H("closet"), "wood")
+            body = "furn" if (rm is not None and rm.no == "G3") else "wood"
+            out += f_tall(F, 2.4 if body == "furn" else FURN_H("closet"), body)
         elif k == "lounger":
             out += f_lounger(F)
         elif k == "tub":
@@ -1235,20 +1270,22 @@ def furniture_elems():
             out += [F.b(0.1, 0.1, F.W - 0.1, F.D - 0.1, 0, 0.68, "furn_dark", 1), F.b(0, 0, F.W, F.D, 0.68, 0.8, "furn_dark", 1),
                     F.b(0.1, 0.1, F.W - 0.1, F.D - 0.1, 0.8, 0.805, "felt", 0)]
         elif k == "recliner_row":
-            n = max(1, round(F.W / 0.9))
+            n = max(2, int(F.W / 0.9))
             for i in range(n):
                 out += f_sofa(F.sub(i * F.W / n, 0, (i + 1) * F.W / n, F.D, "front"), pillows=False)
         elif k == "sauna":
             out.append(F.b(0, 0, F.W, F.D, 0, 2.1, "sauna", 1))
         elif k == "bar":
             out += f_cabinets(F, 1.02, "marble", "furn_dark", 0.6)
+        elif k == "bench":
+            out.append(F.b(0, 0, F.W, F.D, 0.0, 0.45, "wood", 1))
         else:
             h = G.FURN_H.get(k, 0.5)
             out.append(F.b(0, 0, F.W, F.D, 0, h, G.FURN_MAT.get(k, "furn"), 1))
-    # pool loungers (model.SITE) - head away from the pool
+    # pool loungers (model.SITE) - head away from the pool (front faces the pool)
     for (x, y) in M.SITE["loungers"]:
-        fr = "-y" if y > P["y1"] else "+y"
-        out += f_lounger(Frame(x, y, x + 0.7, y + 1.9, fr, M.GARDEN))
+        rot = 270 if y > P["y1"] else 90
+        out += f_lounger(Frame(x, y, x + 0.7, y + 1.9, rot, M.GARDEN))
     return out
 
 
@@ -2009,7 +2046,7 @@ def build_scene(veg=True, dense=True):
     sc = bpy.context.scene
     sc.unit_settings.system = "METRIC"
     build_materials()
-    arch = building_elems() + derived_site_elems()
+    arch = building_elems() + derived_site_elems() + room_floor_elems()
     add_elems(arch, "building")
     add_elems(terrain_elems(), "terrain", "ground_")
     add_elems(furniture_elems(), "furniture", "furn_")
