@@ -177,6 +177,15 @@ def ext_outline(level, pts, skin, skin_z, core_z=None, rc_segments=()):
     z0, z1 = core_z or storey_z(level)
     made = []
     n = len(pts)
+
+    def centre(i):
+        (ax, ay), (bx, by) = pts[i % n], pts[(i + 1) % n]
+        if abs(ay - by) < 1e-9:
+            inward = 1 if bx > ax else -1
+            return ay + inward * T_EXT / 2
+        inward = -1 if by > ay else 1
+        return ax + inward * T_EXT / 2
+
     for i in range(n):
         (ax, ay), (bx, by) = pts[i], pts[(i + 1) % n]
         # inward normal for CCW polygon = left of direction
@@ -184,12 +193,14 @@ def ext_outline(level, pts, skin, skin_z, core_z=None, rc_segments=()):
         if abs(dy) < 1e-9:  # horizontal edge
             inward = 1 if dx > 0 else -1  # left of +x is +y
             c = ay + inward * T_EXT / 2
-            w = Wall(min(ax, bx), c, max(ax, bx), c, T_EXT, z0, z1, kind="ext", out=-inward,
+            e0, e1 = sorted((centre(i - 1), centre(i + 1)))
+            w = Wall(e0, c, e1, c, T_EXT, z0, z1, kind="ext", out=-inward,
                      skin=skin, skin_z=skin_z, level=level)
         else:
             inward = -1 if dy > 0 else 1  # left of +y is -x
             c = ax + inward * T_EXT / 2
-            w = Wall(c, min(ay, by), c, max(ay, by), T_EXT, z0, z1, kind="ext", out=-inward,
+            e0, e1 = sorted((centre(i - 1), centre(i + 1)))
+            w = Wall(c, e0, c, e1, T_EXT, z0, z1, kind="ext", out=-inward,
                      skin=skin, skin_z=skin_z, level=level)
         WALLS.append(w)
         made.append(w)
@@ -273,10 +284,10 @@ wall("B", 15.6, 27.64, 15.6, 29.70, t=0.10)               # lift lobby screen (s
 # ------------------------------------------------------------------ GROUND
 ext_outline("G", [(X_W, Y_S_G), (X_E, Y_S_G), (X_E, Y_N), (X_W, Y_N)], skin="stone",
             skin_z=(GARDEN - 0.05, slab_top("U") + 0.05))
-wall("G", 13.06, 25.60, 13.06, 31.70)                     # living | core (fireplace back)
-wall("G", 19.06, 25.66, 19.06, 27.76)                     # hall | WC
-wall("G", 19.12, 25.66, 24.70, 25.66)                     # kitchen | pantry & WC
-wall("G", 20.96, 25.66, 20.96, 27.76)                     # WC | pantry
+wall("G", 12.85, 25.15, 12.85, 31.70, t=0.30, kind="rc", core="rc")   # living | core – RC shear wall (fireplace back)
+wall("G", 19.06, 25.15, 19.06, 27.76)                     # hall | WC
+wall("G", 19.06, 25.15, 24.70, 25.15, t=0.20)             # kitchen | pantry & WC (on grid 3, carries UF wall)
+wall("G", 20.96, 25.25, 20.96, 27.76)                     # WC | pantry
 wall("G", 19.12, 27.76, 24.70, 27.76, t=0.12)             # WC/pantry | foyer
 wall("G", 17.56, 29.70, 17.56, 31.70)                     # coats
 # ------------------------------------------------------------------ UPPER
@@ -344,11 +355,11 @@ op("G", H, 31.85, 11.50, 12.10, 0.30, 3.00, "fixed", "AL-07")
 op("G", H, 31.85, 13.40, 15.30, 0.00, 3.20, "fixed", "AL-08")              # stair glazing (continuous)
 op("G", H, 31.85, 19.60, 24.40, 2.10, 3.00, "window", "AL-09")             # foyer clerestory
 op("G", V, 24.85, 22.00, 25.00, 1.05, 2.40, "window", "AL-10")             # kitchen east
-op("G", V, 24.85, 26.20, 27.10, 0, 2.30, "door", "D-02", hinge="b", swing=1)   # pantry service door
+op("G", V, 24.85, 25.50, 26.40, 0, 2.30, "door", "D-02", hinge="a", swing=1)   # pantry service door
 op("G", V, 24.85, 29.10, 30.50, 0, 2.90, "pivot", "D-01")                 # entrance pivot door
 op("G", V, 24.85, 30.60, 31.50, 0, 2.90, "fixed", "AL-11")                 # side light
-op("G", V, 19.06, 26.30, 27.10, 0, 2.20, "door", "D-03", hinge="a", swing=1)   # guest WC
-op("G", H, 25.66, 21.30, 22.10, 0, 2.20, "door", "D-04", hinge="a", swing=1)   # pantry from kitchen
+op("G", V, 19.06, 25.40, 26.20, 0, 2.20, "door", "D-03", hinge="a", swing=1)   # guest WC
+op("G", H, 25.15, 21.20, 22.00, 0, 2.20, "door", "D-04", hinge="a", swing=1)   # pantry from kitchen
 # ---- Upper floor
 op("U", H, 16.15, 6.30, 12.70, 0, 3.00, "open", "")                        # loggia frame
 op("U", H, LOGGIA, 6.40, 12.60, 0, 3.00, "slide", "AL-21")                 # master bedroom glazing
@@ -413,7 +424,7 @@ for (x0, y0, x1, y1) in [(PATIO[0] - 0.15, PATIO[1] - 0.30, PATIO[0] - 0.15, Y_S
 # --------------------------------------------------------------------------- #
 #  COLUMNS (RC 30/30 unless noted) – GF supports for the UF wall-beams
 # --------------------------------------------------------------------------- #
-for x, y in [(6.15, 21.15), (12.85, 21.15), (19.06, 21.15), (24.85, 21.15), (12.95, 25.60)]:
+for x, y in [(6.15, 21.15), (12.85, 21.15), (19.06, 21.15), (24.85, 21.15), (12.85, 25.15), (19.06, 25.15)]:
     COLS.append(Column(x, y, 0.30, 0.30, slab_top("G"), slab_bot("U")))
     COLS.append(Column(x, y, 0.30, 0.30, slab_top("B"), slab_bot("G")))
 
@@ -520,12 +531,12 @@ room("מרתף יין", "B", [(17.62, 29.70, 19.00, 31.70)], floor="אבן טב�
 room("מבואה ומדרגות", "B", [(13.12, 27.64, 17.50, 31.70)], floor="פורצלן 120/120", ceil=2.90, no="B10")
 room("פטיו שקוע", "B", [(PATIO[0], PATIO[1], PATIO[2], Y_S_G)], floor="אבן כורכר", no="B11", outdoor=True)
 # Ground
-room("סלון", "G", [(6.30, 21.30, 13.00, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G1")
-room("פינת אוכל", "G", [(13.12, 21.30, 19.00, 25.60)], floor="פורצלן 120/120", ceil=3.10, no="G2", tag_at=(16.0, 23.6))
-room("מטבח", "G", [(19.12, 21.30, 24.70, 25.60)], floor="פורצלן 120/120", ceil=3.00, no="G3", tag_at=(21.4, 24.6))
-room("מבואה ומדרגות", "G", [(13.12, 25.60, 19.00, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G4", tag_at=(17.0, 26.6))
-room("שירותי אורחים", "G", [(19.12, 25.72, 20.90, 27.70)], floor="פורצלן 60/120", ceil=2.60, no="G5")
-room("מזווה / מטבח אחורי", "G", [(21.02, 25.72, 24.70, 27.70)], floor="פורצלן 60/60", ceil=2.60, no="G6")
+room("סלון", "G", [(6.30, 21.30, 12.70, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G1", tag_at=(9.6, 25.3))
+room("פינת אוכל", "G", [(13.00, 21.30, 19.00, 25.15)], floor="פורצלן 120/120", ceil=3.10, no="G2", tag_at=(16.1, 24.75))
+room("מטבח", "G", [(19.12, 21.30, 24.70, 25.05)], floor="פורצלן 120/120", ceil=3.00, no="G3", tag_at=(21.3, 23.9))
+room("מבואה ומדרגות", "G", [(13.00, 25.15, 19.00, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G4", tag_at=(17.0, 26.6))
+room("שירותי אורחים", "G", [(19.12, 25.25, 20.90, 27.70)], floor="פורצלן 60/120", ceil=2.60, no="G5")
+room("מזווה / מטבח אחורי", "G", [(21.02, 25.25, 24.70, 27.70)], floor="פורצלן 60/60", ceil=2.60, no="G6")
 room("לובי כניסה", "G", [(19.12, 27.82, 24.70, 31.70)], floor="אבן טבעית", ceil=3.10, no="G7")
 room("מרפסת מקורה", "G", [(X_W, Y_S_U, X_M, Y_S_G)], floor="דק עץ טיק", no="G8", outdoor=True)
 # Upper
@@ -548,34 +559,36 @@ room("מרפסת גג", "R", [(17.80, Y_NB, X_E, Y_N)], floor="דק עץ", no="R
 # --------------------------------------------------------------------------- #
 #  FURNITURE (plan symbols; simple ones also become 3-D blocks)
 # --------------------------------------------------------------------------- #
-# Ground – living
-furn("sofa_l", "G", 7.0, 23.2, 4.2, 3.0, rot=0, h=0.42)
-furn("armchair", "G", 11.3, 22.2, 0.9, 0.9, rot=90)
-furn("armchair", "G", 11.3, 23.6, 0.9, 0.9, rot=90)
-furn("coffee", "G", 8.6, 24.3, 1.6, 1.0, h=0.35)
-furn("rug", "G", 7.4, 22.0, 4.8, 4.2)
-furn("fireplace", "G", 8.45, 31.10, 2.40, 0.55, rot=180)
-furn("sofa", "G", 7.6, 28.4, 3.2, 1.0, rot=0, h=0.42)
-furn("piano", "G", 11.0, 28.6, 1.5, 1.9, rot=0)
-furn("tvunit", "G", 6.35, 22.4, 0.45, 2.8, rot=90)
+# Ground – living (front direction: 0=E 90=N 180=W 270=S)
+furn("rug", "G", 7.0, 26.7, 5.0, 3.9)
+furn("sofa_l", "G", 7.2, 26.0, 4.2, 2.6, rot=90, h=0.42)
+furn("coffee", "G", 8.7, 28.9, 1.6, 0.9, h=0.35)
+furn("armchair", "G", 11.4, 28.6, 0.9, 0.9, rot=180)
+furn("fireplace", "G", 8.45, 31.15, 2.40, 0.55, rot=270)
+furn("closet", "G", 12.25, 26.0, 0.45, 4.6, rot=180, label="ספרייה")
+furn("armchair", "G", 7.2, 22.4, 0.9, 0.9, rot=270)
+furn("armchair", "G", 8.5, 22.4, 0.9, 0.9, rot=270)
+furn("coffee", "G", 7.75, 23.55, 0.8, 0.6, h=0.45)
+furn("piano", "G", 10.6, 22.0, 1.5, 1.9, rot=270)
 # dining
-furn("table_rect", "G", 14.4, 22.6, 3.4, 1.2, h=0.75, label="10")
+furn("table_rect", "G", 14.4, 22.65, 3.4, 1.2, rot=270, h=0.75, label="10")
 # kitchen
-furn("counter_l", "G", 22.3, 22.6, 2.4, 3.0, rot=0)
-furn("island", "G", 19.9, 22.6, 1.1, 2.8, h=0.92)
-furn("counter", "G", 19.2, 25.0, 3.0, 0.62)
-furn("fridge", "G", 22.4, 25.0, 1.8, 0.62)
+furn("counter", "G", 24.08, 21.45, 0.62, 3.6, rot=180)
+furn("fridge", "G", 22.1, 24.43, 0.9, 0.62, rot=270)
+furn("closet", "G", 23.0, 24.43, 1.08, 0.62, rot=270, label="תנורים")
+furn("counter", "G", 19.2, 24.43, 1.8, 0.62, rot=270)
+furn("island", "G", 20.4, 22.2, 2.6, 1.1, rot=270, h=0.92)
 # pantry
 furn("counter", "G", 21.1, 27.05, 3.5, 0.6)
 # WC
-furn("wc", "G", 19.2, 26.4, 0.4, 0.6, rot=90)
-furn("basin", "G", 20.3, 27.2, 0.6, 0.45, rot=180)
+furn("wc", "G", 19.8, 27.10, 0.4, 0.6, rot=270)
+furn("basin", "G", 20.45, 25.60, 0.45, 0.6, rot=180)
 # foyer
 furn("closet", "G", 19.3, 31.05, 3.6, 0.6, rot=180)
 furn("bench", "G", 23.0, 31.15, 1.5, 0.45, rot=180)
 furn("closet", "G", 17.62, 29.75, 1.38, 0.55, rot=180)
 # covered terrace
-furn("table_rect", "G", 8.0, 18.4, 3.0, 1.1, h=0.75, label="8")
+furn("table_rect", "G", 8.0, 18.4, 3.0, 1.1, rot=270, h=0.75, label="8")
 furn("lounger", "G", 9.0, 11.0, 0.7, 2.0)
 # Upper – master
 furn("bed_k", "U", 7.9, 19.4, 2.0, 2.2, rot=270)
@@ -673,6 +686,17 @@ CARS = [(25.40, 16.15, 30.0 - 0.3, 18.65), (25.40, 19.05, 30.0 - 0.3, 21.55)]
 # --------------------------------------------------------------------------- #
 #  Convenience
 # --------------------------------------------------------------------------- #
+OUTLINES = {
+    "B": [(X_W, Y_S_G), (X_E, Y_S_G), (X_E, Y_N), (X_W, Y_N)],
+    "G": [(X_W, Y_S_G), (X_E, Y_S_G), (X_E, Y_N), (X_W, Y_N)],
+    "U": UF_OUT,
+    "R": RX_OUT,
+}
+# structural grid (wall / column centre lines)
+GRID_X = [("A", 6.15), ("B", 12.85), ("C", 19.06), ("D", 24.85)]
+GRID_Y = [("1", 16.15), ("2", 21.15), ("3", 25.15), ("4", 31.85)]
+
+
 def walls_on(level):
     return [w for w in WALLS if w.level == level]
 

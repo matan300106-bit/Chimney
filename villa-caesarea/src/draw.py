@@ -367,12 +367,11 @@ class View:
                 v = (b - a) * 100
                 s = fmt(v) if fmt else (f"{v:.0f}" if abs(v - round(v)) < 0.05 else f"{v:.1f}")
                 px, py = self.P(x, (a + b) / 2)
-                off = -0.8 if label_side > 0 else size + 0.2
+                tx = px - 0.8
                 if (b - a) * k < len(s) * size * 0.55:
-                    off -= label_side * size * 1.1
-                self.sh.text(px + (off if False else 0), py, s, size=size, rot=-90) if False else \
-                    self.sh.add(f'<text x="{px + (-0.8 if label_side > 0 else size):.3f}" y="{py:.3f}" font-family="{FONT}" '
-                                f'font-size="{size}" text-anchor="middle" transform="rotate(-90 {px + (-0.8 if label_side > 0 else size):.3f} {py:.3f})">{s}</text>')
+                    tx -= size * 1.1
+                self.sh.add(f'<text x="{tx:.3f}" y="{py:.3f}" font-family="{FONT}" font-size="{size}" '
+                            f'text-anchor="middle" transform="rotate(-90 {tx:.3f} {py:.3f})">{s}</text>')
 
     def level_mark(self, x, y, value, size=2.2, side="right", plan=False):
         """Elevation level marker (triangle + value), value in metres."""
