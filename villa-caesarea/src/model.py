@@ -340,7 +340,7 @@ op("B", V, 19.06, 23.60, 24.50, 0, 2.20, "door", "D-B3", hinge="a", swing=1)    
 op("B", H, 25.06, 22.20, 23.00, 0, 2.20, "door", "D-B4", hinge="a", swing=1)        # guest bath
 op("B", V, 19.06, 26.00, 26.90, 0, 2.20, "door", "D-B5", hinge="a", swing=1)        # spa
 op("B", V, 19.06, 28.40, 29.30, 0, 2.20, "door", "D-B6", hinge="b", swing=1)        # storage
-op("B", H, 27.66, 22.40, 23.30, 0, 2.20, "door", "D-B7", hinge="a", swing=1)        # tech
+op("B", V, 21.56, 28.40, 29.30, 0, 2.20, "door", "D-B7", hinge="a", swing=1)        # tech (from storage)
 op("B", H, 29.64, 17.90, 18.80, 0, 2.20, "door", "D-B8", hinge="a", swing=-1)       # wine (glass)
 op("B", H, 27.58, 15.70, 17.40, 0, 2.30, "passage")                                 # lobby
 # ---- Ground floor
@@ -361,33 +361,33 @@ op("G", V, 24.85, 30.60, 31.50, 0, 2.90, "fixed", "AL-11")                 # sid
 op("G", V, 19.06, 25.40, 26.20, 0, 2.20, "door", "D-03", hinge="a", swing=1)   # guest WC
 op("G", H, 25.15, 21.20, 22.00, 0, 2.20, "door", "D-04", hinge="a", swing=1)   # pantry from kitchen
 # ---- Upper floor
-op("U", H, 16.15, 6.30, 12.70, 0, 3.00, "open", "")                        # loggia frame
-op("U", H, LOGGIA, 6.40, 12.60, 0, 3.00, "slide", "AL-21")                 # master bedroom glazing
-op("U", V, 6.15, 17.90, 21.40, 0, 3.00, "slide", "AL-22")                  # master west (behind fins)
+op("U", H, 16.15, 6.30, 12.70, 0, 2.80, "open", "")                        # loggia frame
+op("U", H, LOGGIA, 6.40, 12.60, 0, 2.80, "slide", "AL-21")                 # master bedroom glazing
+op("U", V, 6.15, 17.90, 21.40, 0, 2.80, "slide", "AL-22")                  # master west (behind fins)
 op("U", V, 6.15, 22.20, 24.60, 1.00, 2.70, "window", "AL-23", frosted=True)  # master bath
-op("U", V, 6.15, 25.50, 26.75, 0, 3.00, "fixed", "AL-24")                  # corridor end
+op("U", V, 6.15, 25.50, 26.75, 0, 2.70, "fixed", "AL-24")                  # corridor end
 op("U", V, 6.15, 28.60, 29.60, 1.00, 2.00, "mamad_win", "M-1")             # mamad
-op("U", V, 12.85, 18.00, 21.30, 0.50, 3.00, "window", "AL-25")             # master east
+op("U", V, 12.85, 18.00, 21.30, 0.50, 2.80, "window", "AL-25")             # master east
 op("U", V, 12.85, 22.10, 24.80, 1.70, 2.70, "window", "AL-26")             # dressing high window
 op("U", H, 31.85, 11.70, 12.70, 1.50, 2.40, "window", "AL-27", frosted=True)   # bath 3
-op("U", H, 31.85, 13.40, 15.30, -0.40, 3.20, "fixed", "AL-08")             # stair glazing
+op("U", H, 31.85, 13.40, 15.30, -0.40, 3.20, "fixed", "AL-34")             # stair glazing (continuous with AL-08)
 op("U", H, 31.85, 17.90, 19.20, 1.40, 2.40, "window", "AL-28")             # laundry
 op("U", H, 31.85, 22.30, 24.20, 1.50, 2.40, "window", "AL-29", frosted=True)   # bath 2
-op("U", V, 24.85, 25.70, 28.70, 0.50, 3.00, "window", "AL-30")             # bedroom 2 east (fins)
-op("U", H, 25.15, 13.40, 15.50, 0.00, 3.00, "fixed", "AL-31")              # stair/gallery south
-op("U", H, 25.15, 15.80, 19.40, 0.00, 3.00, "slide", "AL-32")              # lounge -> terrace
-op("U", H, 25.15, 20.00, 24.40, 0.00, 3.00, "slide", "AL-33")              # bedroom 2 -> terrace
+op("U", V, 24.85, 25.70, 28.70, 0.50, 2.80, "window", "AL-30")             # bedroom 2 east (fins)
+op("U", H, 25.15, 13.40, 15.50, 0.00, 2.80, "fixed", "AL-31")              # stair/gallery south
+op("U", H, 25.15, 15.80, 19.40, 0.00, 2.80, "slide", "AL-32")              # lounge -> terrace
+op("U", H, 25.15, 20.00, 24.40, 0.00, 2.80, "slide", "AL-33")              # bedroom 2 -> terrace
 op("U", H, 25.30, 11.50, 12.40, 0, 2.20, "door", "D-21", hinge="a", swing=-1)    # master suite entry
-op("U", V, 9.56, 22.40, 23.30, 0, 2.20, "door", "D-22", hinge="b", swing=-1)     # master bath
+op("U", V, 9.56, 24.20, 25.00, 0, 2.20, "door", "D-22", hinge="b", swing=-1)     # master bath
 op("U", H, 21.66, 10.60, 12.40, 0, 2.40, "passage")                              # dressing -> bedroom
 op("U", H, 27.11, 9.00, 9.80, 0, 2.00, "mamad_door", "M-D", hinge="b", swing=-1) # mamad blast door
 op("U", H, 26.96, 11.40, 12.20, 0, 2.20, "door", "D-23", hinge="a", swing=1)     # bath 3
 op("U", V, 19.66, 26.00, 26.90, 0, 2.20, "door", "D-24", hinge="a", swing=1)     # bedroom 2
-op("U", H, 29.46, 23.20, 24.00, 0, 2.20, "door", "D-25", hinge="b", swing=1)     # bath 2
+op("U", H, 29.46, 21.40, 22.20, 0, 2.20, "door", "D-25", hinge="a", swing=1)     # bath 2
 op("U", H, 29.64, 18.30, 19.10, 0, 2.20, "door", "D-26", hinge="a", swing=1)     # laundry
 # ---- Roof exit
 op("R", H, 27.15, 14.35, 15.35, 0, 2.20, "door", "D-31", hinge="a", swing=-1)    # roof door
-op("R", H, 31.85, 13.40, 15.30, -0.40, 2.20, "fixed", "AL-08")                   # stair glazing top
+op("R", H, 31.85, 13.40, 15.30, -0.20, 2.20, "fixed", "AL-35")                   # stair glazing top
 
 # --------------------------------------------------------------------------- #
 #  SLABS
@@ -528,12 +528,12 @@ room("ספא – סאונה ומקלחת", "B", [(19.12, 25.12, 21.50, 27.60)], 
 room("מחסן", "B", [(19.12, 27.72, 21.50, 31.70)], floor="פורצלן 60/60", ceil=2.60, no="B7", service=True)
 room("חדר טכני", "B", [(21.62, 27.72, 24.70, 31.70)], floor="בטון מוחלק", ceil=2.90, no="B8", service=True)
 room("מרתף יין", "B", [(17.62, 29.70, 19.00, 31.70)], floor="אבן טבעית", ceil=2.60, no="B9", service=True)
-room("מבואה ומדרגות", "B", [(13.12, 27.64, 17.50, 31.70)], floor="פורצלן 120/120", ceil=2.90, no="B10")
+room("מבואה ומדרגות", "B", [(13.12, 27.64, 17.50, 31.70), (17.50, 27.64, 19.00, 29.58)], floor="פורצלן 120/120", ceil=2.90, no="B10")
 room("פטיו שקוע", "B", [(PATIO[0], PATIO[1], PATIO[2], Y_S_G)], floor="אבן כורכר", no="B11", outdoor=True)
 # Ground
 room("סלון", "G", [(6.30, 21.30, 12.70, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G1", tag_at=(9.6, 25.3))
 room("פינת אוכל", "G", [(13.00, 21.30, 19.00, 25.15)], floor="פורצלן 120/120", ceil=3.10, no="G2", tag_at=(16.1, 24.75))
-room("מטבח", "G", [(19.12, 21.30, 24.70, 25.05)], floor="פורצלן 120/120", ceil=3.00, no="G3", tag_at=(21.3, 23.9))
+room("מטבח", "G", [(19.12, 21.30, 24.70, 25.05)], floor="פורצלן 120/120", ceil=3.00, no="G3", tag_at=(21.3, 24.25))
 room("מבואה ומדרגות", "G", [(13.00, 25.15, 19.00, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G4", tag_at=(17.0, 26.6))
 room("שירותי אורחים", "G", [(19.12, 25.25, 20.90, 27.70)], floor="פורצלן 60/120", ceil=2.60, no="G5")
 room("מזווה / מטבח אחורי", "G", [(21.02, 25.25, 24.70, 27.70)], floor="פורצלן 60/60", ceil=2.60, no="G6")
@@ -589,41 +589,43 @@ furn("bench", "G", 23.0, 31.15, 1.5, 0.45, rot=180)
 furn("closet", "G", 17.62, 29.75, 1.38, 0.55, rot=180)
 # covered terrace
 furn("table_rect", "G", 8.0, 18.4, 3.0, 1.1, rot=270, h=0.75, label="8")
-furn("lounger", "G", 9.0, 11.0, 0.7, 2.0)
 # Upper – master
-furn("bed_k", "U", 7.9, 19.4, 2.0, 2.2, rot=270)
-furn("nightstand", "U", 10.05, 19.2, 0.5, 0.45)
-furn("nightstand", "U", 10.05, 21.0, 0.5, 0.45)
-furn("armchair", "U", 11.4, 18.1, 0.9, 0.9, rot=180)
-furn("tub", "U", 6.45, 22.0, 0.8, 1.8, rot=90)
-furn("vanity2", "U", 8.85, 22.6, 0.55, 2.2, rot=90)
-furn("shower", "U", 6.4, 24.0, 1.6, 1.1)
-furn("wc", "U", 8.4, 24.75, 0.4, 0.6, rot=0)
-furn("closet", "U", 9.7, 21.8, 0.6, 3.35, rot=90)
-furn("closet", "U", 12.05, 21.8, 0.6, 3.3, rot=270)
-furn("island_s", "U", 10.65, 22.6, 0.9, 1.6)
+furn("bed_k", "U", 8.50, 19.40, 2.0, 2.2, rot=270)
+furn("nightstand", "U", 7.90, 21.05, 0.5, 0.5)
+furn("nightstand", "U", 10.60, 21.05, 0.5, 0.5)
+furn("armchair", "U", 11.40, 18.00, 0.9, 0.9, rot=180)
+furn("bench", "U", 8.60, 18.85, 1.8, 0.45)
+furn("tub", "U", 6.45, 22.00, 0.8, 1.8, rot=0)
+furn("vanity2", "U", 8.95, 21.85, 0.55, 2.2, rot=180)
+furn("shower", "U", 6.35, 24.05, 1.5, 1.15)
+furn("wc", "U", 7.95, 24.64, 0.4, 0.6, rot=270)
+furn("closet", "U", 9.65, 21.80, 0.6, 3.35, rot=0)
+furn("closet", "U", 12.05, 21.80, 0.6, 2.45, rot=180)
+furn("bench", "U", 10.85, 22.60, 0.6, 1.2)
 # corridor / mamad
-furn("bed_s", "U", 7.0, 29.4, 1.2, 2.0, rot=0)
-furn("desk", "U", 9.0, 30.95, 1.6, 0.6, rot=180)
-furn("closet", "U", 6.55, 27.4, 2.2, 0.6)
+furn("bed_s", "U", 7.0, 29.4, 1.2, 2.0, rot=270)
+furn("desk", "U", 9.0, 30.95, 1.6, 0.6, rot=270)
+furn("closet", "U", 6.55, 27.4, 2.2, 0.6, rot=90)
 # bath 3
-furn("vanity", "U", 12.4, 29.0, 0.55, 1.2, rot=270)
+furn("vanity", "U", 12.45, 29.0, 0.55, 1.2, rot=180)
 furn("shower", "U", 11.3, 30.4, 1.6, 1.2)
-furn("wc", "U", 12.45, 27.4, 0.4, 0.6, rot=270)
+furn("wc", "U", 12.40, 27.10, 0.4, 0.6, rot=90)
 # gallery
-furn("sofa", "U", 16.0, 25.6, 3.0, 0.95, rot=180, h=0.42)
-furn("desk", "U", 15.8, 27.95, 1.6, 0.7, rot=0)
-furn("armchair", "U", 18.4, 27.6, 0.9, 0.9, rot=270)
+furn("sofa", "U", 15.9, 26.45, 3.0, 0.95, rot=270, h=0.42)
+furn("coffee", "U", 16.8, 25.55, 1.2, 0.6, h=0.35)
+furn("desk", "U", 18.95, 27.55, 0.6, 1.5, rot=180)
 # laundry
-furn("counter", "U", 17.7, 31.05, 1.8, 0.6, rot=180)
+furn("counter", "U", 17.7, 31.05, 1.8, 0.6, rot=270)
 # bedroom 2
-furn("bed_q", "U", 22.2, 26.4, 1.6, 2.0, rot=270)
-furn("closet", "U", 19.8, 28.8, 3.4, 0.6, rot=180)
-furn("desk", "U", 23.8, 28.2, 0.6, 1.1, rot=270)
+furn("bed_q", "U", 21.6, 27.4, 1.6, 2.0, rot=270)
+furn("nightstand", "U", 21.05, 28.9, 0.5, 0.45)
+furn("nightstand", "U", 23.25, 28.9, 0.5, 0.45)
+furn("closet", "U", 19.75, 27.05, 0.6, 2.35, rot=0)
+furn("desk", "U", 24.1, 25.6, 0.6, 1.3, rot=180)
 # bath 2
-furn("vanity", "U", 20.0, 29.6, 1.4, 0.55)
-furn("shower", "U", 23.0, 30.3, 1.6, 1.3)
-furn("wc", "U", 21.8, 31.05, 0.4, 0.6, rot=180)
+furn("vanity", "U", 19.8, 29.55, 1.4, 0.55, rot=90)
+furn("shower", "U", 23.1, 30.4, 1.55, 1.25)
+furn("wc", "U", 22.5, 31.10, 0.4, 0.6, rot=270)
 # terrace
 furn("lounger", "U", 14.2, 21.6, 0.7, 2.0, rot=0)
 furn("lounger", "U", 15.2, 21.6, 0.7, 2.0, rot=0)

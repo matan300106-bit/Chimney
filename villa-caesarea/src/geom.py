@@ -309,6 +309,13 @@ def site_boxes():
     # pool
     P = S["pool"]
     out.append(B(P["x0"], P["y0"], P["water"] - P["depth"], P["x1"], P["y1"], P["water"], "water", "pool"))
+    zb = P["water"] - P["depth"]
+    # RC pool shell 25 cm walls / 30 cm floor
+    out.append(B(P["x0"] - 0.25, P["y0"] - 0.25, zb - 0.30, P["x1"] + 0.25, P["y1"] + 0.25, zb, "rc", "pool"))
+    for (x0, y0, x1, y1) in [(P["x0"] - 0.25, P["y0"] - 0.25, P["x1"] + 0.25, P["y0"]),
+                             (P["x0"] - 0.25, P["y1"], P["x1"] + 0.25, P["y1"] + 0.25),
+                             (P["x0"] - 0.25, P["y0"], P["x0"], P["y1"]), (P["x1"], P["y0"], P["x1"] + 0.25, P["y1"])]:
+        out.append(B(x0, y0, zb, x1, y1, g - 0.05, "rc", "pool"))
     for (x0, y0, x1, y1) in [(P["x0"] - 0.3, P["y0"] - 0.3, P["x1"] + 0.3, P["y0"]),
                              (P["x0"] - 0.3, P["y1"], P["x1"] + 0.3, P["y1"] + 0.3),
                              (P["x0"] - 0.3, P["y0"], P["x0"], P["y1"]), (P["x1"], P["y0"], P["x1"] + 0.3, P["y1"])]:

@@ -20,8 +20,8 @@ SHEETS = [
     (1, "שער", "", "cover:sheet_cover"),
     (2, "קונספט ומחקר", "", "concept:sheet_concept"),
     (3, "ניתוח אתר וסביבה", "", "concept:sheet_site_analysis"),
-    (4, "תכנית העמדה וטבלת שטחים", "1:250", "site:sheet_site"),
-    (5, "תכנית פיתוח שטח", "1:100", "site:sheet_development"),
+    (4, "תכנית העמדה וטבלת שטחים", "1:200", "siteplan:sheet_site"),
+    (5, "תכנית פיתוח שטח", "1:100", "siteplan:sheet_development"),
     (6, "תכניות מרתף וקרקע", "1:100", "plans:sheet_plans_bg"),
     (7, "תכניות קומה א' וגג", "1:100", "plans:sheet_plans_ur"),
     (8, "חזיתות", "1:100", "elev:sheet_elevations_100"),
@@ -30,18 +30,19 @@ SHEETS = [
     (11, "תכנית קומת קרקע", "1:50", "plans:sheet_ground_50"),
     (12, "תכנית קומה א'", "1:50", "plans:sheet_upper_50"),
     (13, "חזיתות", "1:50", "elev:sheet_elevations_50"),
-    (14, "חתכים", "1:50", "elev:sheet_sections_50"),
-    (15, "גיליון מדרגות", "1:25, 1:5", "details:sheet_stairs"),
-    (16, "פרטי בניין", "1:20, 1:5", "details:sheet_details"),
-    (17, "רשימת אלומיניום ונגרות", "1:50", "schedule:sheet_schedule"),
-    (18, "עיצוב פנים – חלל המגורים", "1:50", "interior:sheet_interior"),
-    (19, "עיצוב ריהוט – אי המטבח", "1:25, 1:10, 1:2", "joinery:sheet_joinery"),
-    (20, "הדמיות חוץ", "", "renders:sheet_ext_renders"),
-    (21, "הדמיות פנים", "", "renders:sheet_int_renders"),
-    (22, "תודה", "", "cover:sheet_thanks"),
+    (14, "חתך A-A", "1:50", "elev:sheet_section_a_50"),
+    (15, "חתך B-B", "1:50", "elev:sheet_section_b_50"),
+    (16, "גיליון מדרגות", "1:25, 1:5", "details:sheet_stairs"),
+    (17, "פרטי בניין", "1:20, 1:5", "details:sheet_details"),
+    (18, "רשימת אלומיניום ונגרות", "1:50", "schedule:sheet_schedule"),
+    (19, "עיצוב פנים – חלל המגורים", "1:50", "interior:sheet_interior"),
+    (20, "עיצוב ריהוט – אי המטבח", "1:25, 1:10, 1:2", "joinery:sheet_joinery"),
+    (21, "הדמיות חוץ", "", "renders:sheet_ext_renders"),
+    (22, "הדמיות פנים", "", "renders:sheet_int_renders"),
+    (23, "תודה", "", "cover:sheet_thanks"),
 ]
 
-FULLBLEED = {1, 22}  # sheets without title block
+FULLBLEED = {1, 23}  # sheets without title block
 
 
 def title_block(sh: Sheet, no: int, title: str, scale: str):

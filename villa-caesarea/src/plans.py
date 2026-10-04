@@ -339,8 +339,10 @@ def ext_dims(v: View, level, scale, extra_x=(), extra_y=()):
     xs = [p[0] for p in out]
     ys = [p[1] for p in out]
     minx, maxx, miny, maxy = min(xs), max(xs), min(ys), max(ys)
+    ex0, ey0, ex1, ey1 = plan_extent(level)
     gap = 0.75 * scale / 100 * (1.0 if scale >= 100 else 1.6)
     k = scale / 100
+    clear = {"S": miny - ey0, "N": ey1 - maxy, "W": minx - ex0, "E": ex1 - maxx}
     for side in ("S", "N", "W", "E"):
         horiz = side in ("S", "N")
         pts_open = set()
@@ -365,22 +367,25 @@ def ext_dims(v: View, level, scale, extra_x=(), extra_y=()):
         if horiz:
             base = miny if side == "S" else maxy
             sgn = -1 if side == "S" else 1
+            base += sgn * clear[side]
             outer_pts = sorted(set(xs))
-            grid = [g[1] for g in M.GRID_X]
             v.dim_chain(sorted(pts_open | {minx, maxx}), 0, axis="x", at=base + sgn * (1.0 * k + gap), size=1.9 if scale >= 100 else 2.3,
                         ext_from=base + sgn * 0.3, label_side=1)
-            v.dim_chain(sorted(set(outer_pts) | set(extra_x)), 0, axis="x", at=base + sgn * (1.0 * k + 2 * gap),
-                        size=1.9 if scale >= 100 else 2.3, label_side=1)
+            if len(set(outer_pts) | set(extra_x)) > 2:
+                v.dim_chain(sorted(set(outer_pts) | set(extra_x)), 0, axis="x", at=base + sgn * (1.0 * k + 2 * gap),
+                            size=1.9 if scale >= 100 else 2.3, label_side=1)
             v.dim_chain([minx, maxx], 0, axis="x", at=base + sgn * (1.0 * k + 3 * gap), size=2.1 if scale >= 100 else 2.6,
                         label_side=1)
         else:
             base = minx if side == "W" else maxx
             sgn = -1 if side == "W" else 1
+            base += sgn * clear[side]
             outer_pts = sorted(set(ys))
             v.dim_chain(sorted(pts_open | {miny, maxy}), 0, axis="y", at=base + sgn * (1.0 * k + gap), size=1.9 if scale >= 100 else 2.3,
                         ext_from=base + sgn * 0.3)
-            v.dim_chain(sorted(set(outer_pts) | set(extra_y)), 0, axis="y", at=base + sgn * (1.0 * k + 2 * gap),
-                        size=1.9 if scale >= 100 else 2.3)
+            if len(set(outer_pts) | set(extra_y)) > 2:
+                v.dim_chain(sorted(set(outer_pts) | set(extra_y)), 0, axis="y", at=base + sgn * (1.0 * k + 2 * gap),
+                            size=1.9 if scale >= 100 else 2.3)
             v.dim_chain([miny, maxy], 0, axis="y", at=base + sgn * (1.0 * k + 3 * gap), size=2.1 if scale >= 100 else 2.6)
 
 
@@ -407,32 +412,47 @@ def scan_dims(v: View, level, axis, c, a0, a1, scale, size=None):
 
 
 def grid_lines(v: View, level, scale, ext=(1.6, 1.6)):
-    out = M.OUTLINES[level]
-    xs = [p[0] for p in out]
-    ys = [p[1] for p in out]
+    ex0, ey0, ex1, ey1 = plan_extent(level)
     k = scale / 100
-    y_lo = min(ys) - 4.2 * k - 1.6
-    x_lo = min(xs) - 4.2 * k - 1.6
-    y_hi = max(ys) + 0.6
-    x_hi = max(xs) + 0.6
+    gap = 0.75 * k * (1.0 if scale >= 100 else 1.6)
+    y_lo = ey0 - (1.0 * k + 3 * gap) - 1.1 * k - 0.6
+    x_lo = ex0 - (1.0 * k + 3 * gap) - 1.1 * k - 0.6
+    y_hi = ey1 + 0.6
+    x_hi = ex1 + 0.6
     for name, x in M.GRID_X:
         v.line(x, y_lo + 0.35 * k * 3, x, y_hi, lw="xxs", color="#b03030", dash="6 1 1 1")
         grid_bubble(v, x, y_lo, name, r=2.6 if scale >= 100 else 3.2)
     for name, y in M.GRID_Y:
-        if level in ("B", "G") and y < 20:
+        if level in ("B", "G", "R") and y < 20 and level != "R":
             continue
         v.line(x_lo + 0.35 * k * 3, y, x_hi, y, lw="xxs", color="#b03030", dash="6 1 1 1")
         grid_bubble(v, x_lo, y, name, r=2.6 if scale >= 100 else 3.2)
 
 
-def section_marks(v: View, level, which=("A", "B", "C")):
+def plan_extent(level):
+    xs = [p[0] for p in M.OUTLINES[level]]
+    ys = [p[1] for p in M.OUTLINES[level]]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    if level in ("B", "G"):
+        y0 = min(y0, 16.0)
+        x1 = max(x1, 27.7 if level == "G" else x1)
+    if level == "U":
+        y0 = min(y0, 16.0)
+    if level == "R":
+        x0, x1, y0, y1 = 6.0, 25.0, 16.0, 32.0
+    return x0, y0, x1, y1
+
+
+def section_marks(v: View, level, which=("A", "B", "C"), scale=100):
+    x0, y0, x1, y1 = plan_extent(level)
+    m = 2.2 * scale / 100 + (1.2 if scale < 100 else 0)
     for key in which:
         s = SECTIONS[key]
-        if s["axis"] == "x":
-            # along x at y=c ; look north => arrows point +y (up on paper)
-            section_marker(v, s["a0"] - 1.5, s["c"], s["a1"] + 0.5, s["c"], key, look=-s["look"])
-        else:
-            section_marker(v, s["c"], s["a0"] - 0.8, s["c"], s["a1"] - 2.0, key, look=s["look"])
+        if s["axis"] == "x":   # cut along x, looking north (+y) -> paper up
+            section_marker(v, x0 - m, s["c"], x1 + m * 0.6, s["c"], key, look=1)
+        else:                  # cut along y; look west(-1) / east(+1)
+            # line drawn bottom->top on paper; left normal = west
+            section_marker(v, s["c"], y0 - m, s["c"], y1 + m * 0.6, key, look=1 if s["look"] < 0 else -1)
 
 
 def draw_overheads(v: View, level):
@@ -467,10 +487,6 @@ def draw_terraces(v: View, level, scale):
         v.text((M.PATIO[0] + M.PATIO[2]) / 2, 18.1, "חלל פטיו שקוע", size=2.0 if scale >= 100 else 2.6, weight=500)
         v.level_mark(M.PATIO[0] + 0.5, 17.5, M.LV["B"] - 0.02, size=1.8 if scale >= 100 else 2.2, plan=True)
         # pool edge (partial)
-        P = M.SITE["pool"]
-        v.rect(P["x0"], P["y0"], P["x1"], P["y1"], fill="pat:water", lw="s")
-        v.rect(6.5, 13.5, 24.5, 16.7, fill="none", lw="xxs", color="#888")
-        v.text(15.0, 11.4, "בריכת שחייה 14.00×4.00", size=2.2 if scale >= 100 else 2.8, weight=500)
         # entrance path & canopy
         v.rect(M.X_E, 28.8, M.X_E + 2.6, 30.8, fill="pat:paving", lw="xs")
     if level == "U":
@@ -519,7 +535,7 @@ def plan(v: View, level, scale=100, dims=True, grid=True, sections=True, terrace
     if dims:
         ext_dims(v, level, scale, extra_x=[g[1] for g in M.GRID_X] if False else (), extra_y=())
     if sections:
-        section_marks(v, level)
+        section_marks(v, level, scale=scale)
 
 
 def _view(sh, ox, oy, scale, key):
@@ -647,4 +663,4 @@ def notes_block(sh, x, y, upper=False):
         "6. אלומיניום: פרופיל תרמי, צבע תנור דרגת ים, זיגוג בידודי Low-E.",
     ]
     for i, t in enumerate(lines):
-        sh.text(x, y + 4 + i * 4.4, t, size=2.6 if i else 3.0, anchor="left", weight=700 if i == 0 else 400)
+        sh.text(x + 120, y + 4 + i * 4.4, t, size=2.6 if i else 3.0, anchor="right", weight=700 if i == 0 else 400)

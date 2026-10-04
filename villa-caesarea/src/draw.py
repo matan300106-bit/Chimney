@@ -411,20 +411,23 @@ def drawing_title(sh: Sheet, x, y, title, scale_txt, width=95, size=7.5):
         sh.text(x, y + 3.0 + size * 0.95, scale_txt, size=size * 0.7, anchor="right", weight=500)
 
 
-def section_marker(v: View, x1, y1, x2, y2, label, look=1, size=2.8, r=3.2):
-    """Section cut line from (x1,y1) to (x2,y2) with circle heads; look = side of view arrows (+1 left normal)."""
+def section_marker(v: View, x1, y1, x2, y2, label, look=1, size=2.8, r=3.0):
+    """Section cut line (x1,y1)->(x2,y2). look=+1: viewing direction = left normal of the line on paper."""
     a, b = v.P(x1, y1), v.P(x2, y2)
     sh = v.sh
-    sh.line(*a, *b, lw="m", dash="6 1.5 1 1.5")
     dx, dy = b[0] - a[0], b[1] - a[1]
     L = math.hypot(dx, dy)
     ux, uy = dx / L, dy / L
-    nx, ny = -uy * look, ux * look
-    for p, s in ((a, -1), (b, 1)):
-        cx, cy = p[0] + ux * s * r * 1.3, p[1] + uy * s * r * 1.3
+    nx, ny = uy * look, -ux * look   # paper normal toward viewing direction
+    sh.line(*a, *b, lw="xs", dash="7 1.5 1.2 1.5")
+    for p, s in ((a, 1), (b, -1)):
+        sh.line(p[0], p[1], p[0] + ux * s * 8, p[1] + uy * s * 8, lw="xl")
+        cx, cy = p[0] - ux * s * (r + 1.0), p[1] - uy * s * (r + 1.0)
+        # arrow pointing to the viewing side
+        tx, ty = cx + nx * r * 2.1, cy + ny * r * 2.1
+        sh.path(f"M{tx:.3f},{ty:.3f} L{cx + ux * r * 0.9:.3f},{cy + uy * r * 0.9:.3f} "
+                f"L{cx - ux * r * 0.9:.3f},{cy - uy * r * 0.9:.3f} Z", lw="xs", fill="#000")
         sh.circle(cx, cy, r, lw="m", fill="#fff")
-        sh.path(f"M{cx + nx * r * 1.9},{cy + ny * r * 1.9} L{cx + ux * r * 0.95},{cy + uy * r * 0.95} "
-                f"L{cx - ux * r * 0.95},{cy - uy * r * 0.95} Z", lw="xs", fill="#000")
         sh.text(cx, cy + size * 0.36, label, size=size, weight=700)
 
 
