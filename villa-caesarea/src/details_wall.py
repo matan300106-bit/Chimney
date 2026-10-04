@@ -23,7 +23,7 @@ Y_CUT = 23.00
 
 S_ALUW = dict(fill="dx:aluwood", lw="s")
 S_TEAK = dict(fill="dx:teak", lw="s")
-S_EARTHL = dict(fill="pat:earth", lw="none", color="none")
+S_EARTHL = dict(fill="pat:earth", lw="xxs", color="none")
 S_GRAV = dict(fill="pat:gravel", lw="xxs")
 S_WATER = dict(fill="dx:water", lw="xs")
 S_RUB = dict(fill="dx:rubber", lw="xxs")
@@ -655,7 +655,7 @@ def det_patio(sh, x, y, w, h):
     fr = _frame_in(sh, (x, y, w, h), 10, xa, xb, -0.85, ztop + hrail + 0.06, frac=0.55, bands=bands)
     it = []
     it.append((R(xa, -0.85, xw0 - 0.03, gard - 0.25), S_EARTHL))
-    it.append((R(xa, gard - 0.25, xw0 - 0.03, gard), dict(fill="dx:sandx", lw="none", color="none")))
+    it.append((R(xa, gard - 0.25, xw0 - 0.03, gard), dict(fill="dx:sandx", lw="xxs", color="none")))
     it.append((R(xw0 - 0.25, -0.85, xw0 - 0.03, gard - 0.30), S_GRAV))
     it.append((R(xw0 - 0.008, -0.85, xw0, gard + 0.02), S_MEMB))
     it.append((R(xw0 - 0.028, -0.85, xw0 - 0.008, gard - 0.02), S_DRAIN))
