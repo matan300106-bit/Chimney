@@ -90,7 +90,7 @@ def wall_section(sh, x0, y0, w, h):
     ceil_U = w_head
 
     xa, xb = 4.95, 7.45
-    bands = [(raft_b - 0.15, -2.70), (-1.45, 0.95), (2.15, 4.95), (5.60, par_top + 0.12)]
+    bands = [(raft_b - 0.15, -2.45), (-1.40, 1.20), (2.15, 4.95), (5.60, par_top + 0.12)]
     k = 50.0
     ox = x0 + 66
     fr = Frame(sh, ox, 0, 20, x0=xa, bands=bands, gap=5.0, clip=(xa, xb))
@@ -216,7 +216,7 @@ def wall_section(sh, x0, y0, w, h):
     items.append((R(XC0, par_top - 0.06, XC1, par_top - 0.04), dict(fill="dx:teak", lw="xxs")))
     # ---------------------------------------------------------------- louvres (beyond) + brackets (cut)
     if fin:
-        items.append((R(fx0, fin["z0"], fx1, fin["z1"]), dict(fill="dx:aluwood", lw="s", color="#6b4a26", fop=0.65)))
+        items.append((R(fx0, fin["z0"], fx1, fin["z1"]), dict(fill="dx:aluwood", lw="s", color="#6b4a26", fop=0.35)))
     for zb in (fin["z0"] + 0.06, LV["U"] + 0.70, w_head + 0.15, par_top - 0.15):
         items.append((R(fx1 - 0.10, zb - 0.02, XC0 + 0.02, zb + 0.02), S_SS))
         items.append((R(XC0 - 0.004, zb - 0.06, XC0 + 0.004, zb + 0.06), S_SS))
@@ -244,10 +244,10 @@ def wall_section(sh, x0, y0, w, h):
     # ---------------------------------------------------------------- annotations
     P = fr.P
     # level tags inside
-    xl = fr.X(7.12)
+    xl = fr.X(6.52)
     for zz_, txt in ((raft_b, fmt_lv(raft_b)), (LV["B"], fmt_lv(LV["B"])), (LV["G"], "±0.00"), (LV["U"], fmt_lv(LV["U"])),
-                     (w_sill, fmt_lv(w_sill)), (sR, fmt_lv(sR)), (par_top, fmt_lv(par_top))):
-        level_tag(sh, xl, fr.Y(zz_), txt, side="right", size=SZS, line=5)
+                     (w_sill, fmt_lv(w_sill)), (w_head, fmt_lv(w_head)), (par_top, fmt_lv(par_top))):
+        level_tag(sh, xl, fr.Y(zz_), txt, side="right", size=SZS, line=5, bg=True)
     level_tag(sh, fr.X(5.15), fr.Y(-0.02), fmt_lv(-0.02), side="right", size=SZS, line=4, filled=False)
     # vertical dim chains (right of the crop)
     xd1 = fr.X(xb) + 5
@@ -290,20 +290,13 @@ def wall_section(sh, x0, y0, w, h):
     ]
     left = [(a, b, c) for (a, b, c) in left]
     callout_col(sh, left, xL, side="left", y_min=y0 + 8, y_max=fr.Y(raft_b - 0.15), size=SZS, gap=1.3)
-    # callouts – interior (right): build-up stacks
+    # callouts – interior (right): build-up stacks + single callouts in one column
     xR = xd2 + 8
     xs_ = 7.30
-    # roof stack
-    stack_callout(sh, [P(xs_, (a + b) / 2) for a, b in reversed(zz)] + [P(xs_, sR - 0.15)], xR - 3, fr.Y(par_top + 0.05),
-                  ["חצץ 5 / פאנלים PV על קונסטרוקציה", "יריעה גיאוטכנית", "בידוד XPS 5 ס\"מ", "יריעות ביטומניות 2×4 מ\"מ",
-                   "בטון שיפועים מינ' 3 ס\"מ, 1.5%", "תקרת גג ב\"מ 30 ס\"מ"], size=SZS, lh=1.3)
-    for (zf, ztop, name, yy, slab_txt) in ((LV["U"], sU, "U", None, "תקרה ב\"מ 30"), (LV["G"], sG, "G", None, "תקרה ב\"מ 30"),
-                                           (LV["B"], sB, "B", None, "רפסודת ב\"מ 50")):
-        tz = [P(xs_, zf - 0.01), P(xs_, zf - 0.025), P(xs_, zf - 0.065), P(xs_, ztop - 0.15)]
-        ty = tz[0][1] - 9
-        stack_callout(sh, tz, xR - 3, ty, ["ריצוף פורצלן 120/120 – 2", "דבק 1", "מילוי בטון קל/חול 7", slab_txt],
-                      size=SZS, lh=1.3)
     right = [
+        ([P(xs_, (a + b) / 2) for a, b in reversed(zz)] + [P(xs_, sR - 0.15)],
+         ["חצץ 5 / פאנלים PV על קונסטרוקציה", "יריעה גיאוטכנית", "בידוד XPS 5 ס\"מ", "יריעות ביטומניות 2×4 מ\"מ",
+          "בטון שיפועים מינ' 3 ס\"מ, 1.5%", "תקרת גג ב\"מ 30 ס\"מ"]),
         (*P(XC1 + 0.015, par_top - 0.25), ["הגבהת איטום 20+ מעל החצץ,", "XPS 3 + פס קיבוע נירוסטה"]),
         (*P(7.0, ceil_U + 0.15), ["תעלת מיזוג בחלל תקרה 30"]),
         (*P(7.25, ceil_U + 0.006), ["תקרה מונמכת גבס 1.25"]),
@@ -313,19 +306,24 @@ def wall_section(sh, x0, y0, w, h):
         (*P(7.0, ceil_B + 0.12), ["תעלת מיזוג, תקרת גבס", "(חלל 20 ס\"מ)"]),
         (*P(XC1 + 0.007, -1.0), ["קיר מרתף ב\"מ 30 אטום", "+ טיח פנים"]),
     ]
-    callout_col(sh, right, xR, side="right", size=SZS, gap=1.3)
+    for (zf, ztop, slab_txt, flo) in ((LV["U"], sU, "תקרה ב\"מ 30", "ריצוף אבן 60/120 – 2"),
+                                      (LV["G"], sG, "תקרה ב\"מ 30", "ריצוף פורצלן 120/120 – 2"),
+                                      (LV["B"], sB, "רפסודת ב\"מ 50", "ריצוף פורצלן 120/120 – 2")):
+        right.append(([P(xs_, zf - 0.01), P(xs_, zf - 0.025), P(xs_, zf - 0.065), P(xs_, ztop - 0.15)],
+                      [flo, "דבק 1", "מילוי בטון קל/חול 7", slab_txt]))
+    callout_col(sh, right, xR, side="right", y_min=y0 + 8, size=SZS, gap=1.4)
     # detail references
     detail_ref(sh, *P(XF + 0.12, par_top - 0.08), 5.5, "1", SN, ang=-150)
     detail_ref(sh, *P(XF - 0.05, -0.02), 5.0, "3", SN, ang=140)
     detail_ref(sh, *P(XF + 0.02, zst1 - 0.25), 4.0, "4", SN, ang=-160)
     # room labels
-    for zz_, lab in ((LV["U"] + 0.35, "רחצת הורים"), (LV["G"] + 0.35, "סלון"), (LV["B"] + 0.35, "קולנוע / חדר כושר")):
+    for zz_, lab in ((LV["U"] + 0.35, "רחצת הורים"), (LV["G"] + 0.35, "סלון"), (LV["B"] + 0.35, "קולנוע ביתי")):
         sh.text(fr.X(6.95), fr.Y(zz_), lab, size=SZ, color="#555")
     sh.text(fr.X(5.25), fr.Y(LV["U"] + 0.20), "חוץ", size=SZ, color="#555")
     # title
     yt_ = yb_ + 18
     D.drawing_title(sh, x0 + w - 6, yt_, "חתך קיר – חזית מערבית", 'קנ"מ 1:20', width=92, size=6.0)
-    sh.text(x0 + w - 6, yt_ + 11.5, f"(חתך ב-y={Y_CUT:.2f} דרך דלת AL-05 וחלון AL-23, מבט צפונה)", size=SZS,
+    sh.text(x0 + w - 6, yt_ + 11.5, "(חתך ב-" + ltr(f"y={Y_CUT:.2f}") + " דרך דלת AL-05 וחלון AL-23, מבט צפונה)", size=SZS,
             anchor="right", color="#444")
     legend(sh, x0 + 2, yt_ + 15, w - 4, y0 + h - (yt_ + 15))
 
@@ -375,7 +373,7 @@ def det_parapet(sh, x, y, w, h):
     par_top = LV["R"] + 0.50
     win = _op("U", "AL-23")
     w_head = LV["U"] + (win.head if win else 2.7)
-    xa, xb = 5.45, 6.85
+    xa, xb = 5.50, 6.75
     fr = _frame_in(sh, (x, y, w, h), 10, xa, xb, w_head - 0.12, par_top + 0.08, frac=0.55)
     it = []
     rc = U(R(XC0, w_head, XC1, M.slab_bot("R")), R(XC0, M.slab_bot("R"), xb, sR), R(XC0, sR, XC1, par_top - 0.06))
@@ -405,7 +403,7 @@ def det_parapet(sh, x, y, w, h):
     it.append((cop, S_ALU))
     fin = next((f for f in M.FINS if f["axis"] == "y" and f["c"] < XF), None)
     fx0, fx1 = fin["c"] - fin["depth"] / 2, fin["c"] + fin["depth"] / 2
-    it.append((R(fx0, w_head - 0.2, fx1, fin["z1"]), dict(fill="dx:aluwood", lw="s", color="#6b4a26", fop=0.6)))
+    it.append((R(fx0, w_head - 0.2, fx1, fin["z1"]), dict(fill="dx:aluwood", lw="s", color="#6b4a26", fop=0.35)))
     for zb in (w_head + 0.15, par_top - 0.15):
         it.append((R(fx1 - 0.10, zb - 0.02, XC0 + 0.02, zb + 0.02), S_SS))
         it.append((R(XC0 - 0.004, zb - 0.06, XC0 + 0.004, zb + 0.06), S_SS))
@@ -426,8 +424,8 @@ def det_parapet(sh, x, y, w, h):
     dim_chain_v(sh, [fr.Y(M.slab_bot("R")), fr.Y(sR)], xd, texts=["30"], size=SZS, left=False)
     dimh(sh, fr.X(XF), fr.X(XC1), fr.Y(par_top + 0.06) - 2, "30", ext=fr.Y(par_top), size=SZS)
     dimh(sh, fr.X(fx0), fr.X(fx1), fr.Y(par_top + 0.06) - 2, "20", ext=fr.Y(fin["z1"]), size=SZS)
-    level_tag(sh, fr.X(6.55), fr.Y(par_top), fmt_lv(par_top), size=SZS, line=4)
-    level_tag(sh, fr.X(6.55), fr.Y(sR), fmt_lv(sR), size=SZS, line=4)
+    level_tag(sh, fr.X(6.45), fr.Y(par_top), fmt_lv(par_top), size=SZS, line=4)
+    level_tag(sh, fr.X(6.45), fr.Y(sR) + 7, fmt_lv(sR) + " עליון תקרה", size=SZS, line=4, bg=True)
     callout_col(sh, [
         (*P(XF + 0.02, par_top - 0.01), ["קופינג אלומיניום 2 מ\"מ צבוע", "בתנור, שיפוע 5% פנימה"]),
         (*P(XC1 + 0.033, par_top - 0.06), ["אף מים 3 ס\"מ משני הצדדים"]),
@@ -443,7 +441,7 @@ def det_parapet(sh, x, y, w, h):
         (*P(fx0 + 0.02, par_top - 0.40), ["רפפה 50×200 דמוי עץ"]),
         (*P(5.95, par_top - 0.15), ["זרוע נירוסטה 316 + רפידה"]),
         (*P(XF + 0.005, sR - 0.05), ["EIFS: צמר סלעים 9 + טיח"]),
-    ], x + w * 0.58 + 6, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.0)
+    ], fr.X(xb) + 13, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.0)
     detail_title(sh, x + w - 3, y + h - 7, "1", "מעקה גג וקופינג", 'קנ"מ 1:10', size=4.0)
 
 
@@ -459,12 +457,12 @@ def det_soffit(sh, x, y, w, h):
     it = []
     rc = R(ye, zb, xb, zt)
     # top: loggia deck on pedestals over membrane & slope screed
-    it.append((PG([(ye, zt), (xb, zt), (xb, zt + 0.035), (ye, zt + 0.025)]), dict(fill="pat:screed", lw="xs")))
-    it.append((PG([(ye, zt + 0.025), (xb, zt + 0.035), (xb, zt + 0.043), (ye, zt + 0.033)]), S_MEMB))
-    for px_ in (ye + 0.20, ye + 0.38):
-        it.append((R(px_ - 0.03, zt + 0.04, px_ + 0.03, zf - 0.065), dict(fill="#777", lw="xxs")))
-    it.append((R(ye + 0.10, zf - 0.065, xb, zf - 0.025), S_TEAK))
-    it.append((R(ye + 0.10, zf - 0.025, xb, zf), S_TEAK))
+    it.append((PG([(ye, zt), (xb, zt), (xb, zt + 0.032), (ye, zt + 0.022)]), dict(fill="pat:screed", lw="xs")))
+    it.append((PG([(ye, zt + 0.022), (xb, zt + 0.032), (xb, zt + 0.040), (ye, zt + 0.030)]), S_MEMB))
+    for px_ in (ye + 0.16, ye + 0.34):
+        it.append((R(px_ - 0.03, zt + 0.040 - 0.004 * (1 - (px_ - ye) / 0.5), px_ + 0.03, zt + 0.050), S_RUB))
+    it.append((R(ye + 0.10, zt + 0.050, xb, zt + 0.075), dict(fill="pat:wood", lw="xs")))
+    it.append((R(ye + 0.10, zt + 0.075, xb, zf), S_TEAK))
     # glass channel cast in the slab edge + glass 12+12
     chan = PG([(ye + 0.01, zt - 0.11), (ye + 0.09, zt - 0.11), (ye + 0.09, zt + 0.04), (ye + 0.083, zt + 0.04),
                (ye + 0.083, zt - 0.103), (ye + 0.017, zt - 0.103), (ye + 0.017, zt + 0.04), (ye + 0.01, zt + 0.04)])
@@ -508,22 +506,23 @@ def det_soffit(sh, x, y, w, h):
         (*P(ye + 0.05, zf + 0.15), ["מעקה זכוכית 12+12, גובה 105"]),
         (*P(ye + 0.086, zt - 0.05), ["פרופיל U נירוסטה יצוק בשפה"]),
         (*P(ys + 0.0, zt + 0.048), ["כיסוי אלומיניום + אף מים"]),
-        (*P(ye + 0.30, zf - 0.01), ["דק עץ טיק על פדסטלים"]),
+        (*P(ye + 0.30, zf - 0.01), ["דק עץ טיק 2.5 על קורות 2.5"]),
+        (*P(ye + 0.16, zt + 0.045), ["רפידות גומי מפלסות"]),
         (*P(ye + 0.42, zt + 0.039), ["יריעת איטום + מדה בשיפוע"]),
         (*P(ye + 0.25, zt - 0.15), ["זיז תקרה ב\"מ 30"]),
         (*P(ys + 0.006, zb + 0.10), ["פס בידוד + טיח לבן"]),
         (*P(led_x0 + 0.03, zc + 0.016), ["פרופיל לד שקוע IP67 3000K"]),
         (*P(ye + 0.30, zc + 0.006), ["תקרת לוחות צמנטבורד 12.5", "+ טיח לבן, על פרופילי אלו'"]),
         (*P(ys - 0.001, zc - 0.012), ["פרופיל אף מים בשפת התקרה"]),
-    ], x + w * 0.60 + 6, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
+    ], fr.X(xb) + 13, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
     detail_title(sh, x + w - 3, y + h - 7, "2", "שפת זיז ותקרת חוץ", 'קנ"מ 1:5', size=4.0)
 
 
 def det_threshold(sh, x, y, w, h):
     """3 – lift & slide threshold flush to the exterior paving with drainage channel (1:5)."""
     sG = M.slab_top("G")
-    xa, xb = XF - 0.32, XC1 + 0.26
-    fr = _frame_in(sh, (x, y, w, h), 5, xa, xb, -0.36, 0.20, frac=0.62)
+    xa, xb = XF - 0.22, XC1 + 0.20
+    fr = _frame_in(sh, (x, y, w, h), 5, xa, xb, -0.36, 0.30, frac=0.62)
     it = []
     rc = U(R(XF, -0.36, XC1, sG), R(XC1, -0.36 + 0.06, xb, sG))
     # outside: base, RC 12, bed, paving + channel
@@ -541,14 +540,14 @@ def det_threshold(sh, x, y, w, h):
     # waterproofing: up the wall, under the sub-sill
     it.append((R(XF - 0.008, -0.36, XF, -0.06), S_MEMB))
     it.append((R(XF - 0.028, -0.36, XF - 0.008, -0.21), S_DRAIN))
-    it.append((R(XF - 0.008, -0.06, XC0 + 0.10, -0.052), S_MEMB))
+    it.append((R(XF - 0.008, -0.06, XC1, -0.052), S_MEMB))
     # inside floor
     it.append((R(XC1, sG, xb, -0.03), S_FILL))
     it.append((R(XC1, -0.03, xb, -0.02), S_MORTAR))
     it.append((R(XC1 + 0.004, -0.02, xb, 0.0), S_PORC))
     # thermal sub-sill + threshold frame (thermally broken)
     it.append((R(XC0 - 0.04, -0.052, XC1, -0.03), dict(fill="dx:xps", lw="xs")))
-    it.append((R(XF - 0.008, sG, XC0 - 0.04, -0.052), dict(fill="dx:xps", lw="xs")))
+    it.append((R(XF - 0.008, sG, XC1, -0.06), dict(fill="dx:xps", lw="xs")))
     frm = U(R(XC0 - 0.04, -0.03, XC1, -0.022), R(XC0 - 0.04, -0.022, XC0 - 0.032, -0.0),
             R(XC0 + 0.03, -0.022, XC0 + 0.04, 0.0), R(XC0 + 0.12, -0.022, XC0 + 0.13, 0.0), R(XC1 - 0.008, -0.022, XC1, 0.0))
     it.append((frm, S_ALU))
@@ -556,19 +555,19 @@ def det_threshold(sh, x, y, w, h):
     for (gx0, gx1) in ((XC0 - 0.025, XC0 + 0.025), (XC0 + 0.065, XC0 + 0.115)):
         it.append((R(gx0, 0.004, gx1, 0.10), S_ALU))
         gm = (gx0 + gx1) / 2
-        it.append((R(gm - 0.016, 0.10, gm + 0.016, 0.20), S_GLASS))
+        it.append((R(gm - 0.016, 0.10, gm + 0.016, 0.30), S_GLASS))
         it.append((circle_poly(gm, 0.012, 0.008), S_SS))
     # brush seal
     it.append((R(XC0 + 0.03, 0.0, XC0 + 0.04, 0.004), S_RUB))
     fr.render(it)
     fr.render([(rc, S_RC)])
     breakline(sh, fr.X(xa) - 2, fr.Y(-0.36), fr.X(xb) + 2, fr.Y(-0.36), amp=1.2)
-    breakline(sh, fr.X(xa) - 2, fr.Y(0.20), fr.X(xb) + 2, fr.Y(0.20), amp=1.2)
+    breakline(sh, fr.X(xa) - 2, fr.Y(0.30), fr.X(xb) + 2, fr.Y(0.30), amp=1.2)
     # drainage arrows / slope
-    sh.text(fr.X(xa + 0.08), fr.Y(-0.02) - 1.5, "1.5% ←", size=SZS)
     P = fr.P
     level_tag(sh, fr.X(XC1 + 0.12), fr.Y(0.0), "±0.00", size=SZS, line=4)
-    level_tag(sh, fr.X(xa + 0.04), fr.Y(-0.02), "-0.02", size=SZS, line=4)
+    level_tag(sh, fr.X(xa + 0.02), fr.Y(-0.02) - 7, "-0.02", size=SZS, line=3)
+    sh.line(fr.X(xa + 0.02), fr.Y(-0.02) - 7, fr.X(xa + 0.02), fr.Y(-0.02), lw="xxs")
     dimv(sh, fr.Y(-0.02), fr.Y(0.0), fr.X(XF - 0.15) - 0.5, "2", size=SZS)
     dimh(sh, fr.X(XF - 0.15), fr.X(XF - 0.008), fr.Y(-0.36) + 5, "14", ext=fr.Y(-0.20), size=SZS, above=False)
     dimh(sh, fr.X(XC0 - 0.04), fr.X(XC1), fr.Y(-0.36) + 5, "24", ext=fr.Y(-0.052), size=SZS, above=False)
@@ -581,10 +580,10 @@ def det_threshold(sh, x, y, w, h):
         (*P(XC0 - 0.02, -0.04), ["תת-סף בידודי קשיח (XPS)"]),
         (*P(XC0 + 0.06, -0.056), ["יריעת איטום מתחת לסף, עולה", "15 ס\"מ מעל מפלס החוץ"]),
         (*P(XF - 0.08, -0.028), ["תעלת ניקוז פולימר-בטון", "+ רשת חריצים נירוסטה 316"]),
-        (*P(XF - 0.24, -0.035), ["אבן כורכר 3 על מצע 3"]),
-        (*P(XF - 0.24, -0.15), ["משטח בטון 12 + מצע מהודק"]),
+        (*P(XF - 0.19, -0.035), ["אבן כורכר 3 על מצע 3,", "שיפוע 1.5% מהבית"]),
+        (*P(XF - 0.19, -0.15), ["משטח בטון 12 + מצע מהודק"]),
         (*P(XC1 - 0.10, -0.25), ["קיר מרתף ב\"מ 30 / תקרה"]),
-    ], x + w * 0.66 + 4, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
+    ], fr.X(xb) + 7, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
     detail_title(sh, x + w - 3, y + h - 7, "3", "סף דלת הרמה-הזזה", 'קנ"מ 1:5', size=4.0)
 
 
@@ -592,13 +591,13 @@ def det_anchor(sh, x, y, w, h):
     """4 – natural limestone dry-fix anchor (vertical section at a horizontal joint) 1:5."""
     xa, xb = XF - 0.06, XC1 + 0.10
     zj = 0.0
-    fr = _frame_in(sh, (x, y, w, h), 5, xa, xb, -0.26, 0.26, frac=0.52)
+    fr = _frame_in(sh, (x, y, w, h), 5, xa, xb, -0.38, 0.38, frac=0.52)
     it = []
-    blk = R(XC0, -0.26, XC1, 0.26)
-    it.append((R(XC1, -0.26, XC1 + 0.015, 0.26), S_PLAST))
-    it.append((R(XF + 0.05, -0.26, XC0, 0.26), S_WOOLV))
-    st_up = R(XF, zj + 0.003, XF + 0.03, 0.26)
-    st_lo = R(XF, -0.26, XF + 0.03, zj - 0.003)
+    blk = R(XC0, -0.38, XC1, 0.38)
+    it.append((R(XC1, -0.38, XC1 + 0.015, 0.38), S_PLAST))
+    it.append((R(XF + 0.05, -0.38, XC0, 0.38), S_WOOLV))
+    st_up = R(XF, zj + 0.003, XF + 0.03, 0.38)
+    st_lo = R(XF, -0.38, XF + 0.03, zj - 0.003)
     it.append((st_up, S_LIME))
     it.append((st_lo, S_LIME))
     # anchor: SS316 bracket (vertical plate on block, horizontal arm into the joint) + pin
@@ -618,10 +617,10 @@ def det_anchor(sh, x, y, w, h):
     # chemical anchor bolt
     sh.line(*fr.P(XC0 - 0.012, zj - 0.03), *fr.P(XC0 + 0.09, zj - 0.03), lw="l")
     sh.rect(fr.X(XC0 - 0.02), fr.Y(zj - 0.03) - 1.2, fr.L(0.008), 2.4, lw="xs", fill="#8e969e")
-    for zz in (-0.26, 0.26):
+    for zz in (-0.38, 0.38):
         breakline(sh, fr.X(xa) - 2, fr.Y(zz), fr.X(xb) + 2, fr.Y(zz), amp=1.2)
     P = fr.P
-    yb_ = fr.Y(-0.26) + 5
+    yb_ = fr.Y(-0.38) + 5
     dim_chain_h(sh, [fr.X(XF), fr.X(XF + 0.03), fr.X(XF + 0.05), fr.X(XC0), fr.X(XC1)], yb_,
                 texts=["3", "2", "5", "20"], size=SZS)
     dimv(sh, fr.Y(zj - 0.003), fr.Y(zj + 0.003), fr.X(xa) - 2, None, size=SZS)
@@ -638,7 +637,7 @@ def det_anchor(sh, x, y, w, h):
         (*P(XC0 + 0.05, zj - 0.03), ["בורג עיגון כימי M8"]),
         (*P(XC0 + 0.10, -0.15), ["בלוק בטון 20 (חלול)"]),
         (*P(XC1 + 0.007, -0.20), ["טיח פנים + צבע"]),
-    ], x + w * 0.56 + 6, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
+    ], fr.X(xb) + 8, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
     detail_title(sh, x + w - 3, y + h - 7, "4", "עיגון יבש לחיפוי אבן", 'קנ"מ 1:5', size=4.0)
 
 
@@ -686,12 +685,12 @@ def det_patio(sh, x, y, w, h):
     sh.text(xd + 1.5, (fr.Y(0.12) + fr.Y(ztop + hrail - 0.17, 1)) / 2 + 1, f"{hrail * 100:.0f}", size=SZS,
             weight=700, anchor="left")
     dimv(sh, fr.Y(gard), fr.Y(ztop), fr.X(xa) + 2, "10", size=SZS)
-    sh.text(fr.X(xa) + 4, (fr.Y(0.12) + fr.Y(ztop + hrail - 0.17, 1)) / 2 + 1,
-            f"{(ztop + hrail - gard) * 100:.0f} מעל הגינה", size=SZS, anchor="left", color="#333")
+    sh.text(xd + 1.5, (fr.Y(0.12) + fr.Y(ztop + hrail - 0.17, 1)) / 2 + 4,
+            "(" + ltr(f"{(ztop + hrail - gard) * 100:.0f}") + " מעל הגינה)", size=SZS, anchor="left", color="#333")
     dimh(sh, fr.X(xw0), fr.X(xw1), fr.Y(-0.85) + 5, "30", ext=fr.Y(-0.80), size=SZS, above=False)
     level_tag(sh, fr.X(-0.62), fr.Y(gard), fmt_lv(gard), size=SZS, line=4)
     level_tag(sh, fr.X(0.15), fr.Y(ztop), fmt_lv(ztop), size=SZS, line=4)
-    sh.text(fr.X(-0.52), fr.Y(-0.62), "גינה", size=SZ, color="#555")
+    sh.text(fr.X(-0.60), fr.Y(gard - 0.12), "גינה", size=SZ, color="#555")
     sh.text(fr.X(0.25), fr.Y(-0.50), "חלל הפטיו", size=SZ, color="#555")
     sh.text(fr.X(0.25), fr.Y(-0.50) + 3.0, f"(רצפה {ltr(fmt_lv(M.LV['B'] - 0.02))})", size=SZS, color="#555")
     callout_col(sh, [
@@ -704,15 +703,15 @@ def det_patio(sh, x, y, w, h):
         (*P(xw0 - 0.004, -0.55), ["איטום ביטומני + לוח ניקוז"]),
         (*P(xw0 - 0.15, -0.70), ["חצץ ניקוז + צינור בתחתית"]),
         (*P(-0.55, gard - 0.10), ["אדמת גן + צמחייה"]),
-    ], x + w * 0.58 + 6, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
+    ], fr.X(xb) + 10, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
     detail_title(sh, x + w - 3, y + h - 7, "5", "ראש קיר פטיו שקוע + מעקה", 'קנ"מ 1:10', size=4.0)
 
 
 def det_pool(sh, x, y, w, h):
     """6 – deck-level overflow pool edge (1:10)."""
     P_ = M.POOL
-    zw = P_["water"]
     zd = M.GARDEN                      # deck level
+    zw = zd - 0.03                     # overflow (deck-level) water line; model POOL["water"] is lower – see report
     xa, xb = -0.55, 0.85               # x<0: pool, 0 = inner face of pool wall
     fr = _frame_in(sh, (x, y, w, h), 10, xa, xb, -0.85, zd + 0.10, frac=0.58)
     it = []
@@ -727,8 +726,8 @@ def det_pool(sh, x, y, w, h):
     it.append((R(0.242, -0.542, 0.25, zd - 0.06), dict(fill="#9cc7d6", lw="xxs")))
     it.append((R(0.55, -0.542, 0.558, zd - 0.06), dict(fill="#9cc7d6", lw="xxs")))
     # overflow lip stone (rounded), grating
-    lip = PG([(-0.03, zd - 0.06), (0.25, zd - 0.06), (0.25, zd - 0.03), (0.0, zd - 0.025), (-0.02, zd - 0.03),
-              (-0.03, zd - 0.04)])
+    lip = PG([(-0.03, zd - 0.07), (0.25, zd - 0.07), (0.25, zd - 0.035), (0.03, zd - 0.032), (0.0, zd - 0.029),
+              (-0.02, zd - 0.035), (-0.03, zd - 0.05)])
     it.append((lip, S_LIME))
     it.append((R(0.25, zd - 0.03, 0.55, zd), dict(fill="#e8e8e8", lw="s")))
     for gx in range(10):
@@ -748,7 +747,7 @@ def det_pool(sh, x, y, w, h):
     sh.circle(px, pz, fr.L(0.04), lw="m", fill="#fff")
     # water level line + waves
     sh.line(*fr.P(xa, zw), *fr.P(-0.012, zw), lw="s", color="#2b6c86")
-    level_tag(sh, fr.X(-0.42), fr.Y(zw), f"מפלס מים {ltr(fmt_lv(zw))}", size=SZS, line=4)
+    level_tag(sh, fr.X(-0.45), fr.Y(zw), f"מפלס גלישה {ltr(fmt_lv(zw))}", size=SZS, line=4)
     level_tag(sh, fr.X(0.70), fr.Y(zd), fmt_lv(zd), size=SZS, line=3)
     breakline(sh, fr.X(xa) - 2, fr.Y(-0.85), fr.X(xb) + 2, fr.Y(-0.85), amp=1.2)
     breakline(sh, fr.X(xb), fr.Y(zd + 0.04), fr.X(xb), fr.Y(-0.84), amp=1.1)
@@ -766,5 +765,5 @@ def det_pool(sh, x, y, w, h):
         (*P(-0.006, -0.30), ["פסיפס זכוכית + איטום צמנטי"]),
         (*P(0.12, -0.70), ["קיר בריכה ב\"מ 25 אטום (ב-40)"]),
         (*P(0.80, -0.25), ["משטח בטון 15 + מצע מהודק"]),
-    ], x + w * 0.62 + 6, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
+    ], fr.X(xb) + 8, side="right", y_min=y + 5, y_max=y + h - 18, size=SZS, gap=1.2)
     detail_title(sh, x + w - 3, y + h - 7, "6", "שפת בריכה בגלישה", 'קנ"מ 1:10', size=4.0)

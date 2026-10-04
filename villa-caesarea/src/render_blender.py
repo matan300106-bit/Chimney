@@ -51,11 +51,11 @@ CAMS = {
                    desc="hero - south-west, eye level, dusk: cantilever over the pool"),
     "ext_02": dict(mode="day", loc=(9.6, 1.35, 1.6), tgt=(9.6, 17.0, 4.6), lens=24, level=True, exposure=0.0,
                    desc="garden / pool axis looking north at the cantilevered master loggia"),
-    "ext_03": dict(mode="dusk", loc=(40.6, 27.0, 1.35), tgt=(25.0, 24.2, 3.4), lens=22, level=True, exposure=0.9,
+    "ext_03": dict(mode="dusk", loc=(40.4, 26.8, 1.40), tgt=(25.0, 24.2, 4.6), lens=22, level=True, exposure=0.9,
                    desc="street (east) facade: pivot door, canopy, carport"),
-    "ext_04": dict(mode="day", loc=(-21.0, -17.0, 30.0), tgt=(15.0, 19.0, 1.0), lens=32, level=False, exposure=0.0,
+    "ext_04": dict(mode="day", loc=(-16.0, -13.0, 25.0), tgt=(15.5, 20.0, 1.5), lens=30, level=False, exposure=0.0,
                    desc="aerial south-west 3/4 view: roof terrace, whole lot"),
-    "ext_05": dict(mode="dusk", loc=(20.95, 17.35, -2.0), tgt=(15.0, 21.0, -1.0), lens=19, level=True, exposure=0.8,
+    "ext_05": dict(mode="dusk", loc=(21.1, 19.0, -1.9), tgt=(15.0, 19.6, -1.2), lens=19, level=True, exposure=0.8,
                    desc="sunken patio + covered terrace under the cantilever"),
     "int_01": dict(mode="int_day", loc=(12.0, 30.95, 1.30), tgt=(8.2, 22.0, 1.10), lens=18, level=True, exposure=1.2,
                    desc="living room toward the garden"),
@@ -67,7 +67,7 @@ CAMS = {
 
 # per mode: sun / sky / light-group multipliers
 MODES = {
-    "day": dict(sun_el=46.0, sun_az=218.0, sun_E=5.5, sun_col=(1.0, 0.95, 0.88), sky=0.22, dust=0.6,
+    "day": dict(sun_el=46.0, sun_az=218.0, sun_E=5.5, sun_col=(1.0, 0.95, 0.88), sky=0.22, dust=0.6, look="AgX - Punchy",
                 lights=dict(interior=0.0, downlight=0.0, pendant=0.0, garden=0.0, pool=0.0, soffit=0.0,
                             neighbour=0.0, fire=0.0, lamp=0.0, portal=0.0)),
     "dusk": dict(sun_el=float(os.environ.get("BK_EL", -1.0)), sun_az=256.0, sun_E=float(os.environ.get("BK_SUNE", 0.0)),
@@ -542,6 +542,8 @@ def build_materials():
     mk["car"] = m_simple("car", "#3A3D42", 0.32, 0.6, Coat_Weight=1.0)
     mk["car_white"] = m_simple("car_white", "#D9D9D6", 0.3, 0.1, Coat_Weight=1.0)
     mk["tire"] = m_simple("tire", "#141414", 0.8)
+    mk["tail"] = m_simple("tail", "#7A0F0F", 0.2, Coat_Weight=1.0)
+    mk["n_beige"] = m_plaster("n_beige", "#E4DCCD", 0.88, 0.05)
     mk["felt"] = m_fabric("felt", "#2F5B45")
     mk["sauna"] = m_wood("sauna", "#C8A275", "#9E7A50", rough=0.6)
     mk["pv"] = m_pv()
@@ -622,6 +624,8 @@ def elem_geo(e):
         r1 = e.get("r1", r)
         v = [(x + r * math.cos(2 * math.pi * i / n), y + r * math.sin(2 * math.pi * i / n), z0) for i in range(n)]
         v += [(x + r1 * math.cos(2 * math.pi * i / n), y + r1 * math.sin(2 * math.pi * i / n), z1) for i in range(n)]
+        if e.get("axis") == "y":   # x,y = centre in x/z plane, z0..z1 = extent along y
+            v = [(px, e["zc"] + pz, py) for (px, py, pz) in v]
         faces = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))]
         faces += [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
         axes = [2, 2] + [0 if abs(math.cos(2 * math.pi * (i + .5) / n)) > .7 else 1 for i in range(n)]
@@ -630,10 +634,12 @@ def elem_geo(e):
         pts = e["pts"]
         n = len(pts)
         z0, z1 = e["z0"], e["z1"]
-        v = [(x, y, z0) for x, y in pts] + [(x, y, z1) for x, y in pts]
         area = sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1] for i in range(n))
         if area < 0:   # make CCW
-            v = [(x, y, z0) for x, y in pts[::-1]] + [(x, y, z1) for x, y in pts[::-1]]
+            pts = pts[::-1]
+        v = [(x, y, z0) for x, y in pts] + [(x, y, z1) for x, y in pts]
+        if e.get("axis") == "y":   # pts are (x, z) profile, extruded over y = z0..z1
+            v = [(px, pz, py) for (px, py, pz) in v]
         faces = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))]
         axes = [2, 2]
         for i in range(n):
@@ -661,6 +667,12 @@ def mesh_from_elems(name, elems):
             smooth.append(s)
     me = bpy.data.meshes.new(name)
     me.from_pydata(verts, [], faces)
+    if any(e.get("t") in ("prism", "cyl") and e.get("axis") for e in elems):
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        bm.to_mesh(me)
+        bm.free()
     uvl = me.uv_layers.new(name="UVMap")
     uvl.data.foreach_set("uv", uvs)
     me.polygons.foreach_set("use_smooth", smooth)
@@ -1294,20 +1306,31 @@ def FURN_H(k):
 
 
 def car_elems():
+    """simple but car-like models inside model.CARS footprints (nose toward the house / west)"""
     out = []
+    prof = [(0.0, 0.32), (0.0, 0.78), (0.22, 0.96), (1.05, 1.02), (1.45, 1.44), (2.95, 1.46), (3.55, 1.04),
+            (4.40, 0.92), (4.62, 0.72), (4.60, 0.32)]
+    win = [(1.12, 1.03), (1.50, 1.40), (2.92, 1.42), (3.45, 1.05)]
     for i, (x0, y0, x1, y1) in enumerate(M.CARS):
         z = M.STREET
-        bx0, bx1, by0, by1 = x0 + 0.25, x1 - 0.25, y0 + 0.30, y1 - 0.30
+        Lc, Wc = 4.62, 1.86
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        xr = cx + Lc / 2          # rear at east (street side), nose west
         paint = "car" if i == 0 else "car_white"
-        L = bx1 - bx0
-        out += [B(bx0, by0, z + 0.30, bx1, by1, z + 0.78, paint, 2),
-                B(bx0 + 0.95, by0 + 0.08, z + 0.78, bx1 - 0.85, by1 - 0.08, z + 1.32, "car_glass", 2),
-                B(bx0 + 1.05, by0 + 0.12, z + 1.30, bx1 - 0.95, by1 - 0.12, z + 1.38, paint, 2),
-                B(bx0 - 0.02, by0 + 0.25, z + 0.50, bx0, by1 - 0.25, z + 0.62, "frame", 0),
-                B(bx1, by0 + 0.2, z + 0.55, bx1 + 0.02, by0 + 0.45, z + 0.66, "frame", 0)]
-        for (wx, wy) in [(bx0 + 0.75, by0 + 0.12), (bx1 - 0.75, by0 + 0.12), (bx0 + 0.75, by1 - 0.12), (bx1 - 0.75, by1 - 0.12)]:
-            out.append(dict(t="obox", c=(wx, wy, z + 0.34), size=(0.66, 0.24, 0.66), rot=(0, 0, 0), mat="tire", soft=2))
-        del L
+        P = [(xr - a, z + b) for (a, b) in prof]
+        out.append(dict(t="prism", pts=P, z0=cy - Wc / 2, z1=cy + Wc / 2, axis="y", mat=paint, soft=1))
+        Wn = [(xr - a, z + b) for (a, b) in win]
+        out.append(dict(t="prism", pts=Wn, z0=cy - Wc / 2 - 0.01, z1=cy + Wc / 2 + 0.01, axis="y", mat="car_glass", soft=0))
+        out.append(dict(t="prism", pts=[(xr - 3.50, z + 1.05), (xr - 2.98, z + 1.43), (xr - 1.50, z + 1.43), (xr - 1.08, z + 1.05)],
+                        z0=cy - Wc / 2 + 0.12, z1=cy + Wc / 2 - 0.12, axis="y", mat="car_glass", soft=0))
+        for (wx, wy) in [(xr - 0.95, cy - Wc / 2 + 0.12), (xr - 3.75, cy - Wc / 2 + 0.12),
+                         (xr - 0.95, cy + Wc / 2 - 0.12), (xr - 3.75, cy + Wc / 2 - 0.12)]:
+            out.append(dict(t="cyl", axis="y", x=wx, y=z + 0.34, zc=wy, z0=-0.13, z1=0.13, r=0.34, seg=24, mat="tire", soft=1))
+            out.append(dict(t="cyl", axis="y", x=wx, y=z + 0.34, zc=wy, z0=-0.135, z1=0.135, r=0.21, seg=20, mat="steel", soft=0))
+        # lights
+        out.append(B(xr - 4.62, cy - 0.85, z + 0.68, xr - 4.58, cy - 0.55, z + 0.76, "white", 0, cls="car"))
+        out.append(B(xr - 4.62, cy + 0.55, z + 0.68, xr - 4.58, cy + 0.85, z + 0.76, "white", 0, cls="car"))
+        out.append(B(xr - 0.02, cy - 0.9, z + 0.74, xr + 0.005, cy + 0.9, z + 0.80, "tail", 0, cls="car"))
     return out
 
 
@@ -1360,13 +1383,17 @@ def tree_olive(x, y, r, rng, name, z0):
     trunk_bm = bm
     leaves = bmesh.new()
     zc = h0 + 1.15 + r * 0.25
-    n = int(40 + r * 26)
-    for i in range(n):
+    # several sub-crowns (olive canopies are clumpy and airy), each made of many small leaf clusters
+    subs = []
+    for k in range(5 + int(r)):
         a = rng.random() * 2 * math.pi
-        rad = r * 0.85 * rng.random() ** 0.35
-        dz = (1 - min(1, rad / r) ** 2) ** .5
-        c = (math.cos(a) * rad + lean.x, math.sin(a) * rad + lean.y, zc + rng.uniform(-0.6, 0.8) * dz * r * 0.42)
-        _blob(leaves, c, r * rng.uniform(0.13, 0.21), rng, 2, 0.8, 0.35)
+        rad = r * 0.55 * rng.random() ** 0.5
+        subs.append((math.cos(a) * rad + lean.x, math.sin(a) * rad + lean.y, zc + rng.uniform(-0.25, 0.45) * r * 0.5,
+                     r * rng.uniform(0.38, 0.55)))
+    for (sx, sy, sz, sr) in subs:
+        for i in range(int(22 + sr * 22)):
+            d = Vector((rng.gauss(0, 1), rng.gauss(0, 1), rng.gauss(0, 0.6))).normalized() * sr * rng.random() ** 0.3
+            _blob(leaves, (sx + d.x, sy + d.y, sz + d.z), r * rng.uniform(0.06, 0.10), rng, 2, 0.8, 0.4)
     o1 = bm_object(name + "_trunk", trunk_bm, "bark", "veg", (x, y, z0), True)
     o2 = bm_object(name + "_leaves", leaves, "olive_leaf", "veg", (x, y, z0), True)
     return [o1, o2]
@@ -1627,13 +1654,14 @@ def villa(x0, y0, x1, y1, rng, glow_side):
     z = M.GARDEN
     o = []
     h1, h2 = 3.5, 3.3
-    o.append(B(x0, y0, z, x1, y1, z + h1, "plaster", 0))
+    pm = rng.choice(["plaster", "plaster", "n_beige"])
+    o.append(B(x0, y0, z, x1, y1, z + h1, pm, 0))
     ux0 = x0 + rng.uniform(0, 3)
     uy0 = y0 + rng.uniform(0, 3)
     ux1 = x1 - rng.uniform(0, 4)
     uy1 = y1 - rng.uniform(0, 4)
     o.append(B(ux0, uy0, z + h1, ux1, uy1, z + h1 + h2, "plaster", 0))
-    o.append(B(x0, y0, z + h1, x1, y1, z + h1 + 0.4, "plaster", 0))  # parapet band
+    o.append(B(x0, y0, z + h1, x1, y1, z + h1 + 0.4, pm, 0))  # parapet band
     for (a0, a1, c, horiz, zz, hh) in [(x0, x1, y0, True, z, h1), (x0, x1, y1, True, z, h1), (y0, y1, x0, False, z, h1),
                                        (y0, y1, x1, False, z, h1), (ux0, ux1, uy0, True, z + h1, h2),
                                        (ux0, ux1, uy1, True, z + h1, h2), (uy0, uy1, ux0, False, z + h1, h2),
@@ -1671,11 +1699,27 @@ def build_context():
         # their boundary walls on the street side
         if east:
             el.append(B(a, b + 0.5, M.STREET + 0.05, a + 0.2, d - 0.5, M.STREET + 1.5, "plaster", 0))
-        for _ in range(3):
+        for _ in range(9):
             tx, ty = rng.uniform(a + 2, c - 2), rng.uniform(b + 2, d - 2)
-            if bx0 - 1 < tx < bx1 + 1 and by0 - 1 < ty < by1 + 1:
+            if bx0 - 1.5 < tx < bx1 + 1.5 and by0 - 1.5 < ty < by1 + 1.5:
                 continue
-            tree_pine(tx, ty, rng.uniform(1.6, 2.6), rng, f"ntree_{len(el)}_{_}", M.GARDEN, h=rng.uniform(3.0, 5.5))
+            kind = rng.choice(["pine", "olive", "palm", "carob"])
+            nm = f"ntree_{len(el)}_{_}"
+            if kind == "olive":
+                tree_olive(tx, ty, rng.uniform(1.6, 2.4), rng, nm, M.GARDEN)
+            elif kind == "palm":
+                tree_palm(tx, ty, rng.uniform(1.3, 1.6), rng, nm, M.GARDEN)
+            elif kind == "carob":
+                tree_carob(tx, ty, rng.uniform(1.8, 2.6), rng, nm, M.GARDEN)
+            else:
+                tree_pine(tx, ty, rng.uniform(1.8, 2.8), rng, nm, M.GARDEN, h=rng.uniform(3.5, 6.0))
+        if abs(b) < 1 or abs(d) < 1 or east:   # hedge screening the lots next to ours / along the street
+            if east:
+                hedge(a + 0.4, b + 1.0, a + 1.1, d - 1.0, 1.8, rng, f"nhedge_{len(el)}", M.GARDEN)
+            elif d > 36 - 1e-6 and b > 1:
+                hedge(a + 0.6, b + 0.4, c - 0.6, b + 1.1, 1.8, rng, f"nhedge_{len(el)}", M.GARDEN)
+            elif abs(d) < 1:
+                hedge(a + 0.6, d - 1.1, c - 0.6, d - 0.4, 1.8, rng, f"nhedge_{len(el)}", M.GARDEN)
         # fences between lots (simple white walls)
         if not east:
             el.append(B(a, d - 0.1 if d > 36 else b, M.GARDEN - 0.05, c, (d if d > 36 else b + 0.1), M.GARDEN + 1.5, "plaster", 0)) \
@@ -1951,6 +1995,7 @@ def set_mode(mode_name, cam_cfg):
             sock.default_value = s0 * f
     sc = bpy.context.scene
     sc.view_settings.exposure = cam_cfg.get("exposure", 0.0)
+    sc.view_settings.look = cam_cfg.get("look", md.get("look", "AgX - Medium High Contrast"))
 
 
 def setup_render(samples, width, threads):

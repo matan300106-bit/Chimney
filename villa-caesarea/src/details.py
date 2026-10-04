@@ -190,7 +190,7 @@ def headroom_report():
         mA = 9.9
         for y in [yA[0] + j * 0.01 for j in range(int((M.ST["yl"] - yA[0]) / 0.01) + 1)]:
             zn = nosing_A(st, y)
-            if y < hole:
+            if y <= hole + 1e-6:
                 above = slab_bot_above
             elif nxt:
                 above = nosing_A(nxt, y) - T_OAK - T_PLATE - 0.12
@@ -712,7 +712,7 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
         sh.text(*P(14.35, 30.90), f"(משטח תחתון {ltr(fmt_lv(dn['zl'], 3))})" if up else f"משטח ביניים {ltr(fmt_lv(dn['zl'], 3))}",
                 size=SZS, color="#444" if up else "#000", weight=400 if up else 700)
     # floor level (plan symbol)
-    v.level_mark(16.0, 28.55, M.LV[lvl], size=SZ, plan=True)
+    v.level_mark(16.45, 28.15, M.LV[lvl], size=SZ, plan=True)
     # riser / tread note
     st_n = up or dn
     nn = st_n["nA"] + st_n["nB"]
@@ -744,8 +744,9 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
             arrow_line(sh, [P(14.85, 27.60), P(14.85, ya + 0.02)], lw="s", head=1.5)
     # dims: x chain below
     ydm = cy + 2 + ph + 5.5
-    xs = [P(xx, ya)[0] for xx in (13.20, 14.30, 14.40, 15.50, 15.70, 17.50)]
-    dim_chain_h(sh, xs, ydm, texts=["110", "10", "110", "20", "180"], size=SZS)
+    xs = [P(xx, ya)[0] for xx in (M.ST["x0"], x1A, x0B, x1B, M.LIFT["x0"])]
+    dim_chain_h(sh, xs, ydm, texts=[f"{(b - a) * 100:.0f}" for a, b in
+                                    zip((M.ST["x0"], x1A, x0B, x1B), (x1A, x0B, x1B, M.LIFT["x0"]))], size=SZS)
     # y chain right
     xdm = cx + 2 + pw + 5
     stn = up or dn
@@ -1028,7 +1029,7 @@ def detail_D(sh, x, y, w, h):
     L(0.05, 0.012, fr.Y(0.08) + 8, ["זרוע נירוסטה Ø16", "+ אוכף מרותך"])
     L(0.004, -0.025, fr.Y(0.08) + 16, ["רוזטה Ø70 + 2 ברגים", "ודיבלים כימיים"])
     L(-0.03, -0.07, fr.Y(0.08) + 24, ["קיר בטון/בלוק + טיח"])
-    detail_title(sh, x + w - 10, y + h - 6, "D", "תושבת מאחז יד", 'קנ"מ 1:5', size=4.0)
+    detail_title(sh, x + w - 10, y + h - 8.5, "D", "תושבת מאחז יד", 'קנ"מ 1:5', size=4.0)
     # notes (left part)
     notes = ["הערות:",
              "1. מידות בס\"מ, מפלסים במ' (±0.00 = +18.50).",

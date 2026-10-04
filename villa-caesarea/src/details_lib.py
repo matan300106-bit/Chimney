@@ -407,9 +407,14 @@ def dim_chain_v(sh, ys, x, texts=None, ext=None, size=2.0, left=True):
                    f'transform="rotate(-90 {tx:.3f} {ty:.3f})">{D.esc(t)}</text>')
 
 
-def level_tag(sh, x, y, text, side="right", size=2.2, line=8.0, filled=True, note=None):
+def level_tag(sh, x, y, text, side="right", size=2.2, line=8.0, filled=True, note=None, bg=False):
     """section level marker: triangle with apex on (x,y), horizontal line, value above."""
     t = 1.4
+    if bg:
+        sgn_ = 1 if side == "right" else -1
+        wbg = tw(text, size) + 1.2
+        x0_ = x + sgn_ * (t + 0.2) if sgn_ > 0 else x - (t + 0.2) - wbg
+        sh.rect(x0_, y - t * 1.35 - 0.5 - size * 0.85, wbg, size * 1.05, color="none", fill="#fff", opacity=0.9)
     sh.path(f"M{x:.3f},{y:.3f} L{x - t:.3f},{y - t * 1.35:.3f} L{x + t:.3f},{y - t * 1.35:.3f} Z", lw="xs",
             fill="#000" if filled else "#fff")
     sgn = 1 if side == "right" else -1
@@ -417,7 +422,7 @@ def level_tag(sh, x, y, text, side="right", size=2.2, line=8.0, filled=True, not
     sh.text(x + sgn * (t + 0.6), y - t * 1.35 - 0.5, text, size=size, anchor="left" if side == "right" else "right",
             weight=500)
     if note:
-        sh.text(x + sgn * (t + 0.6), y + size + 0.3, note, size=size * 0.85, anchor="left" if side == "right" else "right",
+        sh.text(x + sgn * (t + 0.6), y + size + 0.3, note, size=max(2.0, size * 0.85), anchor="left" if side == "right" else "right",
                 color="#333")
 
 
@@ -433,12 +438,12 @@ def bubble(sh, x, y, label, sheet=None, r=4.2, size=None):
     if sheet is not None:
         sh.line(x - r, y, x + r, y, lw="xs")
         sh.text(x, y - 0.8, label, size=size or r * 0.75, weight=700)
-        sh.text(x, y + r * 0.62, str(sheet), size=r * 0.48)
+        sh.text(x, y + r * 0.66, str(sheet), size=max(2.0, r * 0.48))
     else:
         sh.text(x, y + (size or r * 0.9) * 0.36, label, size=size or r * 0.9, weight=700)
 
 
-def detail_ref(sh, cx, cy, r, label, sheet=None, ang=-40, br=3.4):
+def detail_ref(sh, cx, cy, r, label, sheet=None, ang=-40, br=4.0):
     """dashed circle around a region + bubble on its rim."""
     sh.circle(cx, cy, r, lw="s", dash="1.6 0.9")
     a = math.radians(ang)
@@ -483,16 +488,24 @@ def callout_col(sh, items, x_text, side="right", y_min=None, y_max=None, size=2.
                 elbow=3.0, dot=True):
     """Place a column of leader callouts without crossings.
 
-    items: list of (tx, ty, lines) – target in paper mm, lines = list[str].
-    Text block i starts at the shoulder at y_i; blocks are pushed apart (top-down)
-    and kept inside [y_min, y_max].
+    items: (tx, ty, lines) for a single target, or (targets, lines) for a build-up
+    stack (one leader through several layer points, one text line per layer).
+    Blocks are pushed apart top-down and kept inside [y_min, y_max].
     """
-    items = sorted(items, key=lambda it: it[1])
-    hs = [size * lh * (len(it[2]) - 1) + size * 0.9 for it in items]
+    norm = []
+    for it in items:
+        if len(it) == 2:
+            pts, lines = it
+            norm.append((pts, lines, min(p[1] for p in pts)))
+        else:
+            tx, ty, lines = it
+            norm.append(([(tx, ty)], lines, ty))
+    norm.sort(key=lambda it: it[2])
+    hs = [size * lh * (len(it[1]) - 1) + size * 0.9 for it in norm]
     ys = []
     cur = -1e9
-    for (tx, ty, lines), h in zip(items, hs):
-        y = max(ty, cur)
+    for it, h in zip(norm, hs):
+        y = max(it[2], cur)
         if y_min is not None:
             y = max(y, y_min)
         ys.append(y)
@@ -500,12 +513,22 @@ def callout_col(sh, items, x_text, side="right", y_min=None, y_max=None, size=2.
     if y_max is not None and ys:
         over = ys[-1] + hs[-1] - y_max
         if over > 0:
-            # push up from the bottom
             ys[-1] -= over
             for i in range(len(ys) - 2, -1, -1):
                 ys[i] = min(ys[i], ys[i + 1] - hs[i] - gap)
     sgn = 1 if side == "right" else -1
-    for (tx, ty, lines), y in zip(items, ys):
+    for (pts, lines, _), y in zip(norm, ys):
         ex = x_text - sgn * elbow
-        leader(sh, tx, ty, ex, y, lines, side=side, size=size, shoulder=elbow - 0.8, dot=dot)
+        if len(pts) == 1:
+            leader(sh, pts[0][0], pts[0][1], ex, y, lines, side=side, size=size, shoulder=elbow - 0.8, dot=dot)
+        else:
+            # leader through all layer points (ordered from the elbow outward)
+            far = max(pts, key=lambda p: abs(p[0] - ex) + abs(p[1] - y))
+            sh.line(far[0], far[1], ex, y, lw="xs")
+            for (px, py) in pts:
+                sh.circle(px, py, 0.4, lw="xxs", fill="#000")
+            sh.line(ex, y, ex + sgn * (elbow - 0.8), y, lw="xs")
+            for i, t in enumerate(lines):
+                sh.text(x_text, y + size * 0.35 + i * size * lh, t, size=size,
+                        anchor="left" if side == "right" else "right")
     return ys
