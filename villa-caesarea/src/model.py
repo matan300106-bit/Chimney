@@ -31,7 +31,7 @@ ENVELOPE = (LOT["x0"] + SETBACK["rear"], LOT["y0"] + SETBACK["side"],
             LOT["x1"] - SETBACK["front"], LOT["y1"] - SETBACK["side"])
 
 # Levels (finished floor) and slabs
-LV = {"B": -3.50, "G": 0.00, "U": 3.60, "R": 7.00, "RX": 9.80}
+LV = {"B": -3.50, "G": 0.00, "U": 3.60, "R": 7.00, "RX": 10.00}
 FIN = 0.10           # floor finish build-up
 SLAB = 0.30          # typical RC slab
 RAFT = 0.50          # basement raft
@@ -258,7 +258,7 @@ Y_NB = 25.0                                       # UF north-bar south face
 LOGGIA = 17.6                                     # master bedroom glazing line
 
 # Stair core (stacked U-stair) & lift
-ST = dict(x0=13.20, x1=15.50, ys=27.70, yl=30.50, yn=31.70, w=1.10, gap=0.10)
+ST = dict(x0=13.10, x1=15.60, ys=27.70, yl=30.50, yn=31.70, w=1.20, gap=0.10)
 LIFT = dict(x0=15.70, x1=17.50, y0=29.70, y1=31.70)
 
 # ------------------------------------------------------------------ BASEMENT
@@ -270,9 +270,8 @@ for w in bw:
     w.core = "rc"
 
 # interior walls – basement
-wall("B", 13.06, 21.30, 13.06, 31.70)                     # cinema/gym | lounge
-wall("B", 6.30, 25.34, 13.0, 25.34, t=0.12)               # gym | cinema
-wall("B", 13.12, 27.58, 19.06, 27.58)                     # lounge | core
+wall("B", 12.85, 21.30, 12.85, 31.70, t=0.30, kind="rc", core="rc")   # cinema/gym | lounge (under GF RC wall)
+wall("B", 6.30, 25.15, 12.70, 25.15, t=0.30, kind="rc", core="rc")    # cinema | gym (grid 3)
 wall("B", 19.06, 21.30, 19.06, 31.70)                     # lounge | guest/spa
 wall("B", 19.12, 25.06, 24.70, 25.06)                     # guest bedroom | bath/spa
 wall("B", 21.56, 25.06, 21.56, 31.70)                     # spa | guest bath / storage | tech
@@ -293,38 +292,70 @@ wall("G", 17.56, 29.70, 17.56, 31.70)                     # coats
 # ------------------------------------------------------------------ UPPER
 UF_OUT = [(X_W, Y_S_U), (X_M, Y_S_U), (X_M, Y_NB), (X_E, Y_NB), (X_E, Y_N), (X_W, Y_N)]
 uf = ext_outline("U", UF_OUT, skin="plaster", skin_z=(slab_top("U") - SLAB - 0.05, LV["R"] + 0.50))
+
+
+def split_wall(w, at, rc_side):
+    """split wall w at axis coordinate `at` (a wall-junction centre line); rc_side 'lo'|'hi' gets an RC core."""
+    import copy
+    a = copy.deepcopy(w)
+    b = copy.deepcopy(w)
+    if w.horiz:
+        a.x0, a.x1 = w.a0, at - T_EXT / 2
+        b.x0, b.x1 = at + T_EXT / 2, w.a1
+    else:
+        a.y0, a.y1 = w.a0, at - T_EXT / 2
+        b.y0, b.y1 = at + T_EXT / 2, w.a1
+    (a if rc_side == "lo" else b).core = "rc"
+    (a if rc_side == "lo" else b).kind = "ext"
+    i = WALLS.index(w)
+    WALLS[i:i + 1] = [a, b]
+    return a, b
+
+
+_west = next(w for w in uf if not w.horiz and w.out == -1)
+split_wall(_west, 26.96, "hi")           # mamad west wall RC (y 26.96 → 32.0)
+_north = next(w for w in WALLS if w.level == "U" and w.kind == "ext" and w.horiz and w.out == 1)
+split_wall(_north, 11.20, "lo")          # mamad north wall RC (x 6.0 → 11.20)
 # The loggia: south edge (6,16)-(13,16) becomes an open frame (opening added below).
 # master suite
 wall("U", 6.30, LOGGIA, 12.70, LOGGIA, t=0.20, kind="glass")      # bedroom glazing line
 wall("U", 6.30, 21.66, 12.70, 21.66)                               # bedroom | bath & dressing
 wall("U", 9.56, 21.72, 9.56, 25.24)                                # bath | dressing
-wall("U", 6.30, 25.30, 13.30, 25.30)                               # suite | corridor
+wall("U", 6.30, 25.30, 12.70, 25.30)                               # suite | corridor
 # north strip
-wall("U", 6.30, 26.96, 13.12, 26.96)                               # corridor | mamad & bath3
+wall("U", 11.20, 26.96, 13.12, 26.96)                              # corridor | bath3
 wall("U", 11.05, 26.96, 11.05, 31.70, t=0.30, kind="mamad", core="rc")        # mamad east wall
 wall("U", 6.30, 27.11, 10.90, 27.11, t=0.30, kind="mamad", core="rc")         # mamad south wall
-wall("U", 13.06, 26.96, 13.06, 31.70)                              # bath3 | stair
+wall("U", 6.35, 27.26, 6.35, 31.60, t=0.10, kind="mamad", core="rc")          # RC liner → W wall 30 RC
+wall("U", 6.30, 31.65, 10.90, 31.65, t=0.10, kind="mamad", core="rc")         # RC liner → N wall 30 RC
+wall("U", 13.04, 26.96, 13.04, 31.70)                              # bath3 | stair
 wall("U", 17.56, 29.70, 17.56, 31.70)                              # laundry | lift
 wall("U", 19.66, 25.30, 19.66, 31.70)                              # lounge | bedroom 2
 wall("U", 17.56, 29.64, 19.66, 29.64)                              # laundry south
 wall("U", 19.72, 29.46, 24.70, 29.46)                              # bedroom2 | bath2
 
 # ------------------------------------------------------------------ ROOF EXIT
-RX_OUT = [(12.90, 27.00), (17.80, 27.00), (17.80, Y_N), (12.90, Y_N)]
+RX_OUT = [(12.90, 26.45), (17.80, 26.45), (17.80, Y_N), (12.90, Y_N)]
 rxz = (slab_top("R"), LV["RX"] - 0.30)
 ext_outline("R", RX_OUT, skin="plaster", skin_z=(slab_top("R"), LV["RX"] + 0.20), core_z=rxz)
-wall("R", 15.6, 27.30, 15.6, 29.60, t=0.10, z=rxz)
 
 # lift shaft walls (all storeys) – RC
 for lvl in ("B", "G", "U"):
     z = storey_z(lvl)
     wall(lvl, LIFT["x0"] + 0.10, LIFT["y0"], LIFT["x0"] + 0.10, 31.70, t=0.20, kind="shaft", core="rc")
     wall(lvl, LIFT["x1"] - 0.10, LIFT["y0"], LIFT["x1"] - 0.10, 31.70, t=0.20, kind="shaft", core="rc")
-    wall(lvl, LIFT["x0"], LIFT["y0"] + 0.10, 16.30, LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc")
-    wall(lvl, 16.90, LIFT["y0"] + 0.10, LIFT["x1"], LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc")
+    wall(lvl, LIFT["x0"], LIFT["y0"] + 0.10, 16.15, LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc")
+    wall(lvl, 17.05, LIFT["y0"] + 0.10, LIFT["x1"], LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc")
 wall("R", LIFT["x0"] + 0.10, LIFT["y0"], LIFT["x0"] + 0.10, 31.70, t=0.20, kind="shaft", core="rc", z=rxz)
-wall("R", LIFT["x0"], LIFT["y0"] + 0.10, 16.30, LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc", z=rxz)
-wall("R", 16.90, LIFT["y0"] + 0.10, LIFT["x1"], LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc", z=rxz)
+wall("R", LIFT["x1"] - 0.10, LIFT["y0"], LIFT["x1"] - 0.10, 31.70, t=0.20, kind="shaft", core="rc", z=rxz)
+wall("R", LIFT["x0"], LIFT["y0"] + 0.10, 16.15, LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc", z=rxz)
+wall("R", 17.05, LIFT["y0"] + 0.10, LIFT["x1"], LIFT["y0"] + 0.10, t=0.20, kind="shaft", core="rc", z=rxz)
+
+COURT_N = (6.60, 32.00, 12.40, 33.40)        # English court (חצר אנגלית) for the basement gym
+for (x0, y0, x1, y1) in [(COURT_N[0] - 0.15, Y_N - 0.1, COURT_N[0] - 0.15, COURT_N[3] + 0.30),
+                         (COURT_N[2] + 0.15, Y_N - 0.1, COURT_N[2] + 0.15, COURT_N[3] + 0.30),
+                         (COURT_N[0] - 0.30, COURT_N[3] + 0.15, COURT_N[2] + 0.30, COURT_N[3] + 0.15)]:
+    WALLS.append(Wall(x0, y0, x1, y1, 0.30, LV["B"] - 0.40, GARDEN + 0.10, kind="retain", level="B", core="rc"))
 
 # --------------------------------------------------------------------------- #
 #  OPENINGS  (sill/head relative to storey floor level)
@@ -334,17 +365,17 @@ V = False
 # ---- Basement
 op("B", H, 21.15, 13.40, 18.80, 0.0, 2.90, "slide", "AL-B1")               # lounge -> patio
 op("B", H, 21.15, 19.40, 21.40, 0.0, 2.90, "slide", "AL-B2")               # guest -> patio
-op("B", V, 13.06, 22.40, 23.30, 0, 2.20, "door", "D-B1", hinge="a", swing=-1)       # gym
-op("B", V, 13.06, 28.20, 29.10, 0, 2.20, "door", "D-B2", hinge="b", swing=-1)       # cinema (from lounge? via lobby)
-op("B", V, 19.06, 23.60, 24.50, 0, 2.20, "door", "D-B3", hinge="a", swing=1)        # guest
+op("B", H, 31.85, 7.10, 11.90, 0.0, 2.70, "slide", "AL-B3")                # gym -> English court
+op("B", V, 12.85, 23.60, 24.50, 0, 2.20, "door", "D-B1", hinge="b", swing=-1)       # cinema (acoustic)
+op("B", V, 12.85, 26.40, 27.30, 0, 2.20, "door", "D-B2", hinge="a", swing=-1)       # gym
+op("B", V, 19.06, 21.40, 22.30, 0, 2.20, "door", "D-B3", hinge="a", swing=1)        # guest
 op("B", H, 25.06, 22.20, 23.00, 0, 2.20, "door", "D-B4", hinge="a", swing=1)        # guest bath
-op("B", V, 19.06, 26.00, 26.90, 0, 2.20, "door", "D-B5", hinge="a", swing=1)        # spa
+op("B", V, 19.06, 26.65, 27.45, 0, 2.20, "door", "D-B5", hinge="b", swing=1)        # spa
 op("B", V, 19.06, 28.40, 29.30, 0, 2.20, "door", "D-B6", hinge="b", swing=1)        # storage
 op("B", V, 21.56, 28.40, 29.30, 0, 2.20, "door", "D-B7", hinge="a", swing=1)        # tech (from storage)
 op("B", H, 29.64, 17.90, 18.80, 0, 2.20, "door", "D-B8", hinge="a", swing=-1)       # wine (glass)
-op("B", H, 27.58, 15.70, 17.40, 0, 2.30, "passage")                                 # lobby
 # ---- Ground floor
-op("G", H, 21.15, 6.45, 12.70, 0, 3.00, "slide", "AL-01")                  # living south
+op("G", H, 21.15, 6.45, 12.55, 0, 3.00, "slide", "AL-01")                  # living south
 op("G", H, 21.15, 13.30, 18.80, 0, 3.00, "slide", "AL-02")                 # dining south
 op("G", H, 21.15, 19.40, 21.80, 0, 3.00, "slide", "AL-03")                 # kitchen -> BBQ terrace
 op("G", H, 21.15, 22.30, 24.40, 1.05, 2.40, "window", "AL-04")             # kitchen window
@@ -383,31 +414,32 @@ op("U", H, 21.66, 10.60, 12.40, 0, 2.40, "passage")                             
 op("U", H, 27.11, 9.00, 9.80, 0, 2.00, "mamad_door", "M-D", hinge="b", swing=-1) # mamad blast door
 op("U", H, 26.96, 11.40, 12.20, 0, 2.20, "door", "D-23", hinge="a", swing=1)     # bath 3
 op("U", V, 19.66, 26.00, 26.90, 0, 2.20, "door", "D-24", hinge="a", swing=1)     # bedroom 2
-op("U", H, 29.46, 21.40, 22.20, 0, 2.20, "door", "D-25", hinge="a", swing=1)     # bath 2
+op("U", H, 29.46, 20.50, 21.30, 0, 2.20, "door", "D-25", hinge="a", swing=1)     # bath 2
 op("U", H, 29.64, 18.30, 19.10, 0, 2.20, "door", "D-26", hinge="a", swing=1)     # laundry
 # ---- Roof exit
-op("R", H, 27.15, 14.35, 15.35, 0, 2.20, "door", "D-31", hinge="a", swing=-1)    # roof door
+op("R", H, 26.60, 14.35, 15.35, 0, 2.20, "door", "D-31", hinge="a", swing=-1)    # roof door
 op("R", H, 31.85, 13.40, 15.30, -0.20, 2.20, "fixed", "AL-35")                   # stair glazing top
 
 # --------------------------------------------------------------------------- #
 #  SLABS
 # --------------------------------------------------------------------------- #
-stair_hole = (ST["x0"], 27.98, ST["x1"], ST["yn"])
+stair_hole = (ST["x0"], 27.98, 15.70, ST["yn"])
+stair_hole_g = (13.00, 27.98, 15.70, ST["yn"])
 lift_hole = (LIFT["x0"] + 0.2, LIFT["y0"] + 0.2, LIFT["x1"] - 0.2, 31.70)
 SLABS += [
     Slab([(X_W - 0.35, Y_S_G - 0.35, X_E + 0.35, Y_N + 0.35)], slab_top("B"), RAFT, "raft", holes=[]),
     Slab([(X_W + 0.10, Y_S_G + 0.10, X_E - 0.10, Y_N - 0.10)], slab_top("G"), SLAB, "slab",
-         holes=[stair_hole, lift_hole], finish="פורצלן 120/120 + מילוי"),
+         holes=[stair_hole_g, lift_hole], finish="פורצלן 120/120 + מילוי"),
     # UF slab: building + cantilever + GF-roof terrace
     Slab([(X_W + 0.10, Y_S_U + 0.10, X_M - 0.10, Y_S_G + 0.10),
           (X_W + 0.10, Y_S_G + 0.10, X_E - 0.10, Y_N - 0.10)], slab_top("U"), SLAB, "slab",
          holes=[stair_hole, lift_hole], finish="פרקט עץ אלון / פורצלן"),
     Slab([(X_W + 0.10, Y_S_U + 0.10, X_M - 0.10, Y_NB + 0.10),
           (X_W + 0.10, Y_NB + 0.10, X_E - 0.10, Y_N - 0.10)], slab_top("R"), SLAB, "roof",
-         holes=[(ST["x0"], 27.98, ST["x1"], ST["yn"]), lift_hole]),
-    Slab([(12.90 + 0.10, 27.10, 17.80 - 0.10, Y_N - 0.10)], LV["RX"] - 0.10 + 0.0, 0.25, "roof"),
+         holes=[stair_hole, lift_hole]),
+    Slab([(12.90 + 0.10, 26.55, 17.80 - 0.10, Y_N - 0.10)], LV["RX"] - 0.10 + 0.0, 0.25, "roof"),
     # entrance canopy (concrete plate)
-    Slab([(X_E - 0.1, 28.40, X_E + 2.20, 31.80)], 3.05, 0.20, "canopy"),
+    Slab([(X_E - 0.1, 28.40, X_E + 2.00, 31.80)], 3.05, 0.20, "canopy"),
 ]
 # Sunken patio floor
 PATIO = (14.00, 17.00, 21.50, 21.00)
@@ -437,8 +469,12 @@ for i in range(len(UF_OUT)):
     if abs(ay - by) < 1e-9:
         inward = 1 if bx > ax else -1
         c = ay + inward * 0.10
-        WALLS.append(Wall(min(ax, bx), c, max(ax, bx), c, 0.20, slab_top("R"), LV["R"] + 0.50,
-                          kind="parapet", level="R", out=-inward, skin="plaster"))
+        segs = [(min(ax, bx), max(ax, bx))]
+        if abs(ay - Y_N) < 1e-6:   # north edge: interrupted by the roof-exit wall
+            segs = [(min(ax, bx), RX_OUT[0][0]), (RX_OUT[1][0], max(ax, bx))]
+        for (s0, s1) in segs:
+            WALLS.append(Wall(s0, c, s1, c, 0.20, slab_top("R"), LV["R"] + 0.50,
+                              kind="parapet", level="R", out=-inward, skin="plaster"))
     else:
         inward = -1 if by > ay else 1
         c = ax + inward * 0.10
@@ -463,6 +499,26 @@ RAILS += [
     dict(x0=PATIO[2], y0=PATIO[1], x1=PATIO[2], y1=19.6, z0=GARDEN + 0.10, h=0.95, kind="glass"),
     dict(x0=PATIO[0], y0=PATIO[1], x1=PATIO[2], y1=PATIO[1], z0=GARDEN + 0.10, h=0.95, kind="glass"),
     dict(x0=PATIO[0], y0=19.6, x1=PATIO[2], y1=19.6, z0=-0.02, h=1.05, kind="glass"),
+    # stair-void guards (over flight A of the run below)
+    dict(x0=13.10, y0=27.98, x1=14.35, y1=27.98, z0=LV["U"], h=1.05, kind="glass"),
+    dict(x0=13.20, y0=27.98, x1=14.35, y1=27.98, z0=LV["R"], h=1.05, kind="glass"),
+    # stair-void side guards next to the lift lobby
+    dict(x0=15.70, y0=27.98, x1=15.70, y1=29.70, z0=LV["G"], h=1.05, kind="glass"),
+    dict(x0=15.70, y0=27.98, x1=15.70, y1=29.70, z0=LV["U"], h=1.05, kind="glass"),
+    dict(x0=15.70, y0=27.98, x1=15.70, y1=29.70, z0=LV["R"], h=1.05, kind="glass"),
+    dict(x0=15.60, y0=27.98, x1=15.70, y1=27.98, z0=LV["U"], h=1.05, kind="glass"),
+    dict(x0=15.60, y0=27.98, x1=15.70, y1=27.98, z0=LV["R"], h=1.05, kind="glass"),
+    # roof path from the roof door to the roof terrace
+    dict(x0=12.95, y0=Y_NB + 0.20, x1=17.90, y1=Y_NB + 0.20, z0=LV["R"] + 0.50, h=0.60, kind="glass"),
+    dict(x0=12.95, y0=Y_NB + 0.20, x1=12.95, y1=26.45, z0=LV["R"], h=1.10, kind="glass"),
+    # French-balcony guards in front of low-sill UF glazing
+    dict(x0=X_W - 0.04, y0=17.90, x1=X_W - 0.04, y1=21.40, z0=LV["U"], h=1.05, kind="glass"),
+    dict(x0=X_M + 0.04, y0=18.00, x1=X_M + 0.04, y1=21.30, z0=LV["U"], h=1.05, kind="glass"),
+    dict(x0=X_E + 0.04, y0=25.70, x1=X_E + 0.04, y1=28.70, z0=LV["U"], h=1.05, kind="glass"),
+    # English court guard
+    dict(x0=COURT_N[0], y0=COURT_N[3], x1=COURT_N[2], y1=COURT_N[3], z0=GARDEN + 0.10, h=0.95, kind="glass"),
+    dict(x0=COURT_N[0], y0=Y_N, x1=COURT_N[0], y1=COURT_N[3], z0=GARDEN + 0.10, h=0.95, kind="glass"),
+    dict(x0=COURT_N[2], y0=Y_N, x1=COURT_N[2], y1=COURT_N[3], z0=GARDEN + 0.10, h=0.95, kind="glass"),
 ]
 
 # --------------------------------------------------------------------------- #
@@ -482,9 +538,9 @@ FINS += [
 # --------------------------------------------------------------------------- #
 PERGOLAS += [
     # carport pergola (front setback) – aluminium louvres on steel frame
-    dict(x0=25.30, y0=15.80, x1=30.0 - 0.20, y1=21.80, z=2.60 + STREET, beam="y", step=0.25, posts=[(25.45, 15.95), (25.45, 21.65), (29.65, 15.95), (29.65, 21.65)]),
+    dict(x0=24.60, y0=15.70, x1=30.0 - 0.20, y1=21.70, z=2.60 + STREET, beam="y", step=0.25, posts=[(24.75, 15.85), (24.75, 21.55), (29.65, 15.85), (29.65, 21.55)]),
     # BBQ terrace pergola
-    dict(x0=21.80, y0=16.80, x1=X_E, y1=Y_S_G, z=2.90, beam="x", step=0.30, posts=[(21.95, 16.95), (24.85, 16.95)]),
+    dict(x0=21.80, y0=16.80, x1=24.45, y1=Y_S_G, z=2.90, beam="x", step=0.30, posts=[(21.95, 16.95), (24.30, 16.95)]),
     # roof terrace pergola
     dict(x0=18.20, y0=27.40, x1=X_E - 0.3, y1=Y_N - 0.3, z=LV["R"] + 2.70, beam="x", step=0.30,
          posts=[(18.35, 27.55), (24.55, 27.55), (18.35, 31.55), (24.55, 31.55)], base=LV["R"]),
@@ -519,42 +575,43 @@ u_stair(LV["U"], LV["R"], 20, 10, "U")
 #  ROOMS
 # --------------------------------------------------------------------------- #
 # Basement
-room("קולנוע ביתי", "B", [(6.30, 25.40, 13.00, 31.70)], floor="שטיח אקוסטי", ceil=2.90, no="B1")
-room("חדר כושר / יוגה", "B", [(6.30, 21.30, 13.00, 25.28)], floor="פרקט ספורט", ceil=2.90, no="B2")
-room("טרקלין ובר", "B", [(13.12, 21.30, 19.00, 27.52)], floor="פורצלן 120/120", ceil=2.90, no="B3")
+room("קולנוע ביתי", "B", [(6.30, 21.30, 12.70, 25.00)], floor="שטיח אקוסטי", ceil=2.90, no="B1")
+room("חדר כושר / יוגה", "B", [(6.30, 25.30, 12.70, 31.70)], floor="פרקט ספורט", ceil=2.90, no="B2")
+room("טרקלין ובר", "B", [(13.00, 21.30, 19.00, 27.60)], floor="פורצלן 120/120", ceil=2.90, no="B3")
 room("חדר אורחים", "B", [(19.12, 21.30, 24.70, 25.00)], floor="פרקט עץ", ceil=2.90, no="B4")
 room("רחצה אורחים", "B", [(21.62, 25.12, 24.70, 27.60)], floor="פורצלן 60/120", ceil=2.60, no="B5")
 room("ספא – סאונה ומקלחת", "B", [(19.12, 25.12, 21.50, 27.60)], floor="אבן טבעית", ceil=2.60, no="B6")
 room("מחסן", "B", [(19.12, 27.72, 21.50, 31.70)], floor="פורצלן 60/60", ceil=2.60, no="B7", service=True)
 room("חדר טכני", "B", [(21.62, 27.72, 24.70, 31.70)], floor="בטון מוחלק", ceil=2.90, no="B8", service=True)
 room("מרתף יין", "B", [(17.62, 29.70, 19.00, 31.70)], floor="אבן טבעית", ceil=2.60, no="B9", service=True)
-room("מבואה ומדרגות", "B", [(13.12, 27.64, 17.50, 31.70), (17.50, 27.64, 19.00, 29.58)], floor="פורצלן 120/120", ceil=2.90, no="B10")
+room("מבואה ומדרגות", "B", [(13.00, 27.60, 15.70, 31.70), (15.70, 27.60, 19.00, 29.58)], floor="פורצלן 120/120", ceil=2.90, no="B10")
 room("פטיו שקוע", "B", [(PATIO[0], PATIO[1], PATIO[2], Y_S_G)], floor="אבן כורכר", no="B11", outdoor=True)
 # Ground
 room("סלון", "G", [(6.30, 21.30, 12.70, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G1", tag_at=(9.6, 25.3))
 room("פינת אוכל", "G", [(13.00, 21.30, 19.00, 25.15)], floor="פורצלן 120/120", ceil=3.10, no="G2", tag_at=(16.1, 24.75))
 room("מטבח", "G", [(19.12, 21.30, 24.70, 25.05)], floor="פורצלן 120/120", ceil=3.00, no="G3", tag_at=(21.3, 24.25))
-room("מבואה ומדרגות", "G", [(13.00, 25.15, 19.00, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G4", tag_at=(17.0, 26.6))
+room("מבואה ומדרגות", "G", [(13.00, 25.15, 19.00, 29.70), (13.00, 29.70, 15.70, 31.70), (17.62, 29.76, 19.00, 31.70)], floor="פורצלן 120/120", ceil=3.10, no="G4", tag_at=(17.0, 26.6))
 room("שירותי אורחים", "G", [(19.12, 25.25, 20.90, 27.70)], floor="פורצלן 60/120", ceil=2.60, no="G5")
 room("מזווה / מטבח אחורי", "G", [(21.02, 25.25, 24.70, 27.70)], floor="פורצלן 60/60", ceil=2.60, no="G6")
 room("לובי כניסה", "G", [(19.12, 27.82, 24.70, 31.70)], floor="אבן טבעית", ceil=3.10, no="G7")
 room("מרפסת מקורה", "G", [(X_W, Y_S_U, X_M, Y_S_G)], floor="דק עץ טיק", no="G8", outdoor=True)
 # Upper
-room("חדר שינה הורים", "U", [(6.30, LOGGIA + 0.10, 12.70, 21.60)], floor="פרקט אלון", ceil=3.00, no="U1")
+room("חדר שינה הורים", "U", [(6.30, LOGGIA + 0.10, 12.70, 21.60)], floor="פרקט אלון", ceil=2.80, no="U1")
 room("לוג'יה", "U", [(6.30, 16.30, 12.70, LOGGIA - 0.10)], floor="דק עץ", no="U2", outdoor=True)
 room("רחצת הורים", "U", [(6.30, 21.72, 9.50, 25.24)], floor="אבן טבעית 60/120", ceil=2.70, no="U3")
 room("חדר הלבשה", "U", [(9.62, 21.72, 12.70, 25.24)], floor="פרקט אלון", ceil=2.70, no="U4")
 room("פרוזדור", "U", [(6.30, 25.36, 13.00, 26.90)], floor="פרקט אלון", ceil=2.70, no="U5")
-room('ממ"ד / חדר ילד', "U", [(6.45, 27.26, 10.90, 31.55)], floor="פרקט אלון", ceil=2.60, no="U6", service=True)
+room('ממ"ד / חדר ילד', "U", [(6.40, 27.26, 10.90, 31.60)], floor="פרקט אלון", ceil=2.60, no="U6", service=True)
 room("רחצה 3", "U", [(11.20, 27.02, 13.00, 31.70)], floor="פורצלן 60/120", ceil=2.60, no="U7")
-room("גלריה משפחתית", "U", [(13.12, 25.30, 19.60, 29.58)], floor="פרקט אלון", ceil=3.00, no="U8", tag_at=(17.6, 27.4))
+room("גלריה משפחתית", "U", [(13.12, 25.30, 19.60, 29.58)], floor="פרקט אלון", ceil=2.80, no="U8", tag_at=(17.6, 27.4))
 room("כביסה", "U", [(17.62, 29.70, 19.60, 31.70)], floor="פורצלן 60/60", ceil=2.60, no="U9", service=True)
-room("חדר שינה 2", "U", [(19.72, 25.30, 24.70, 29.40)], floor="פרקט אלון", ceil=3.00, no="U10")
+room("חדר שינה 2", "U", [(19.72, 25.30, 24.70, 29.40)], floor="פרקט אלון", ceil=2.80, no="U10")
 room("רחצה 2", "U", [(19.72, 29.52, 24.70, 31.70)], floor="פורצלן 60/120", ceil=2.60, no="U11")
 room("מרפסת גג משפחתית", "U", [(X_M, Y_S_G, X_E, Y_NB)], floor="דק עץ / אבן", no="U12", outdoor=True)
 # Roof
-room("יציאה לגג", "R", [(13.10, 27.20, 17.60, 31.70)], floor="פורצלן", no="R1", service=True)
+room("יציאה לגג", "R", [(13.20, 26.75, 15.70, 31.70), (15.70, 26.75, 17.50, 29.70)], floor="פורצלן", no="R1", service=True)
 room("מרפסת גג", "R", [(17.80, Y_NB, X_E, Y_N)], floor="דק עץ", no="R2", outdoor=True)
+room("שביל גג", "R", [(12.90, Y_NB + 0.20, 17.80, 26.45)], floor="אריחי דק", no="R3", outdoor=True)
 
 # --------------------------------------------------------------------------- #
 #  FURNITURE (plan symbols; simple ones also become 3-D blocks)
@@ -565,7 +622,6 @@ furn("sofa_l", "G", 7.2, 26.0, 4.2, 2.6, rot=90, h=0.42)
 furn("coffee", "G", 8.7, 28.9, 1.6, 0.9, h=0.35)
 furn("armchair", "G", 11.4, 28.6, 0.9, 0.9, rot=180)
 furn("fireplace", "G", 8.45, 31.15, 2.40, 0.55, rot=270)
-furn("closet", "G", 12.25, 26.0, 0.45, 4.6, rot=180, label="ספרייה")
 furn("armchair", "G", 7.2, 22.4, 0.9, 0.9, rot=270)
 furn("armchair", "G", 8.5, 22.4, 0.9, 0.9, rot=270)
 furn("coffee", "G", 7.75, 23.55, 0.8, 0.6, h=0.45)
@@ -577,7 +633,7 @@ furn("counter", "G", 24.08, 21.45, 0.62, 3.6, rot=180)
 furn("fridge", "G", 22.1, 24.43, 0.9, 0.62, rot=270)
 furn("closet", "G", 23.0, 24.43, 1.08, 0.62, rot=270, label="תנורים")
 furn("counter", "G", 19.2, 24.43, 1.8, 0.62, rot=270)
-furn("island", "G", 20.4, 22.2, 2.6, 1.1, rot=270, h=0.92)
+furn("island", "G", 20.4, 22.3, 2.6, 1.1, rot=270, h=0.92)
 # pantry
 furn("counter", "G", 21.1, 27.05, 3.5, 0.6)
 # WC
@@ -586,7 +642,7 @@ furn("basin", "G", 20.45, 25.60, 0.45, 0.6, rot=180)
 # foyer
 furn("closet", "G", 19.3, 31.05, 3.6, 0.6, rot=180)
 furn("bench", "G", 23.0, 31.15, 1.5, 0.45, rot=180)
-furn("closet", "G", 17.62, 29.75, 1.38, 0.55, rot=180)
+furn("closet", "G", 17.62, 31.10, 1.38, 0.55, rot=270)
 # covered terrace
 furn("table_rect", "G", 8.0, 18.4, 3.0, 1.1, rot=270, h=0.75, label="8")
 # Upper – master
@@ -594,59 +650,58 @@ furn("bed_k", "U", 8.50, 19.40, 2.0, 2.2, rot=270)
 furn("nightstand", "U", 7.90, 21.05, 0.5, 0.5)
 furn("nightstand", "U", 10.60, 21.05, 0.5, 0.5)
 furn("armchair", "U", 11.40, 18.00, 0.9, 0.9, rot=180)
-furn("bench", "U", 8.60, 18.85, 1.8, 0.45)
 furn("tub", "U", 6.45, 22.00, 0.8, 1.8, rot=0)
 furn("vanity2", "U", 8.95, 21.85, 0.55, 2.2, rot=180)
 furn("shower", "U", 6.35, 24.05, 1.5, 1.15)
 furn("wc", "U", 7.95, 24.64, 0.4, 0.6, rot=270)
-furn("closet", "U", 9.65, 21.80, 0.6, 3.35, rot=0)
+furn("closet", "U", 9.65, 21.80, 0.6, 2.20, rot=0)
 furn("closet", "U", 12.05, 21.80, 0.6, 2.45, rot=180)
-furn("bench", "U", 10.85, 22.60, 0.6, 1.2)
 # corridor / mamad
 furn("bed_s", "U", 7.0, 29.4, 1.2, 2.0, rot=270)
 furn("desk", "U", 9.0, 30.95, 1.6, 0.6, rot=270)
 furn("closet", "U", 6.55, 27.4, 2.2, 0.6, rot=90)
 # bath 3
-furn("vanity", "U", 12.45, 29.0, 0.55, 1.2, rot=180)
+furn("vanity", "U", 12.40, 29.0, 0.55, 1.2, rot=180)
 furn("shower", "U", 11.3, 30.4, 1.6, 1.2)
 furn("wc", "U", 12.40, 27.10, 0.4, 0.6, rot=90)
 # gallery
 furn("sofa", "U", 15.9, 26.45, 3.0, 0.95, rot=270, h=0.42)
 furn("coffee", "U", 16.8, 25.55, 1.2, 0.6, h=0.35)
-furn("desk", "U", 18.95, 27.55, 0.6, 1.5, rot=180)
+furn("armchair", "U", 18.40, 27.80, 0.9, 0.9, rot=180)
 # laundry
 furn("counter", "U", 17.7, 31.05, 1.8, 0.6, rot=270)
 # bedroom 2
-furn("bed_q", "U", 21.6, 27.4, 1.6, 2.0, rot=270)
-furn("nightstand", "U", 21.05, 28.9, 0.5, 0.45)
-furn("nightstand", "U", 23.25, 28.9, 0.5, 0.45)
+furn("bed_q", "U", 22.3, 27.4, 1.6, 2.0, rot=270)
+furn("nightstand", "U", 21.75, 28.9, 0.5, 0.45)
+furn("nightstand", "U", 23.95, 28.9, 0.5, 0.45)
 furn("closet", "U", 19.75, 27.05, 0.6, 2.35, rot=0)
 furn("desk", "U", 24.1, 25.6, 0.6, 1.3, rot=180)
 # bath 2
-furn("vanity", "U", 19.8, 29.55, 1.4, 0.55, rot=90)
+furn("vanity", "U", 21.25, 31.12, 1.4, 0.55, rot=270)
 furn("shower", "U", 23.1, 30.4, 1.55, 1.25)
-furn("wc", "U", 22.5, 31.10, 0.4, 0.6, rot=270)
+furn("wc", "U", 19.75, 30.90, 0.6, 0.4, rot=0)
 # terrace
 furn("lounger", "U", 14.2, 21.6, 0.7, 2.0, rot=0)
 furn("lounger", "U", 15.2, 21.6, 0.7, 2.0, rot=0)
 furn("table_round", "U", 21.0, 22.8, 1.2, 1.2, h=0.75)
 # Basement
-furn("screen", "B", 6.35, 26.6, 0.15, 4.0, rot=90)
-furn("recliner_row", "B", 9.0, 26.8, 0.95, 3.6, rot=90)
-furn("recliner_row", "B", 10.6, 26.8, 0.95, 3.6, rot=90)
-furn("bar", "B", 13.2, 23.4, 0.7, 3.0, rot=90)
-furn("sofa_l", "B", 15.6, 21.7, 3.0, 2.4)
-furn("pool_table", "B", 15.6, 25.0, 2.5, 1.4)
-furn("bed_q", "B", 22.5, 21.6, 1.6, 2.0, rot=0)
-furn("closet", "B", 19.2, 24.35, 2.2, 0.6, rot=180)
-furn("sauna", "B", 19.2, 25.2, 1.6, 1.4)
-furn("shower", "B", 19.2, 26.65, 1.2, 0.9)
+furn("screen", "B", 6.35, 21.70, 0.15, 3.0, rot=0)
+furn("recliner_row", "B", 8.90, 21.65, 0.95, 3.0, rot=180)
+furn("recliner_row", "B", 10.60, 21.65, 0.95, 3.0, rot=180)
+furn("bar", "B", 14.0, 26.6, 3.0, 0.7, rot=270)
+furn("sofa_l", "B", 13.9, 21.7, 3.0, 2.4)
+furn("pool_table", "B", 17.2, 23.0, 1.4, 2.5)
+furn("bed_q", "B", 19.15, 22.80, 2.0, 1.6, rot=0)
+furn("closet", "B", 24.05, 22.40, 0.6, 2.2, rot=180)
+furn("sauna", "B", 19.85, 25.2, 1.6, 1.4)
+furn("shower", "B", 20.25, 26.65, 1.2, 0.9)
 furn("shower", "B", 23.4, 25.2, 1.25, 1.2)
-furn("vanity", "B", 21.7, 25.2, 1.2, 0.5)
-furn("wc", "B", 22.15, 27.0, 0.4, 0.6, rot=180)
-furn("gym", "B", 7.0, 22.0, 1.8, 0.8)
-furn("gym", "B", 9.4, 22.0, 1.8, 0.8)
-furn("mat", "B", 11.2, 22.0, 0.8, 1.9)
+furn("vanity", "B", 21.65, 25.95, 0.5, 1.2, rot=0)
+furn("wc", "B", 22.45, 27.0, 0.4, 0.6, rot=270)
+furn("gym", "B", 7.0, 25.6, 1.8, 0.8)
+furn("gym", "B", 9.4, 25.6, 1.8, 0.8)
+furn("mat", "B", 7.2, 28.2, 1.9, 0.8)
+furn("mat", "B", 9.6, 28.2, 1.9, 0.8)
 furn("rack", "B", 17.62, 31.1, 1.38, 0.55, rot=180)
 furn("tech", "B", 21.7, 30.3, 2.9, 1.3)
 
@@ -680,9 +735,9 @@ SITE.update(
     meters=(LOT["x1"] - 0.6, 22.8, LOT["x1"], 24.8),
     loungers=[(9.0, 14.2), (10.2, 14.2), (11.4, 14.2), (12.6, 14.2)],
     outdoor_shower=(6.8, 8.0),
-    bbq=(22.0, 19.9, 24.9, 20.55),
+    bbq=(22.0, 19.9, 24.4, 20.55),
 )
-CARS = [(25.40, 16.15, 30.0 - 0.3, 18.65), (25.40, 19.05, 30.0 - 0.3, 21.55)]
+CARS = [(24.70, 15.95, 29.80, 18.45), (24.70, 18.95, 29.80, 21.45)]
 
 
 # --------------------------------------------------------------------------- #

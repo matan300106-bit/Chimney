@@ -165,12 +165,13 @@ def leader(sh, px, py, tx, ty, end_x, dot=True, color=INK):
         sh.circle(px, py, 0.45, lw="xxs", color=color, fill=color)
 
 
-def callout_column(sh, items, x_text, y_min, y_max, size=2.1, gap=None, elbow=5.0, side="right", lh=None):
+def callout_column(sh, items, x_text, y_min, y_max, size=2.1, gap=None, elbow=5.0, side="right", lh=None, x_edge=None, keep_order=False):
     """items: [(px, py, [lines])] – texts stacked in a column at x_text (left edge of text when side='right')."""
     if not items:
         return
     lh = lh or size * 1.25
-    items = sorted(items, key=lambda it: it[1])
+    if not keep_order:
+        items = sorted(items, key=lambda it: it[1])
     hs = [len(it[2]) * lh + (gap if gap is not None else size * 0.9) for it in items]
     ys = []
     cur = y_min
@@ -188,7 +189,11 @@ def callout_column(sh, items, x_text, y_min, y_max, size=2.1, gap=None, elbow=5.
     for (px, py, lines), y in zip(items, ys):
         ty = y
         if side == "right":
-            leader(sh, px, py, x_text - elbow, ty, x_text - 0.8)
+            if x_edge is not None:
+                sh.polyline([(px, py), (x_edge, py), (x_text - elbow, ty), (x_text - 0.8, ty)], lw="xxs", color=INK)
+                sh.circle(px, py, 0.45, lw="xxs", color=INK, fill=INK)
+            else:
+                leader(sh, px, py, x_text - elbow, ty, x_text - 0.8)
             for i, ln in enumerate(lines):
                 sh.text(x_text, ty + size * 0.35 + i * lh, ln, size=size, anchor="left",
                         weight=600 if i == 0 and len(lines) > 1 else 400)
@@ -317,6 +322,11 @@ def fireplace_geom():
         sx0, sx1 = fx0 - 0.6, fx1 + 0.6
     return dict(lv=lv, face=face, slots=slots, fx0=fx0, fx1=fx1, sx0=sx0, sx1=sx1, axis=(fx0 + fx1) / 2,
                 breast_d=0.40, bench_d=0.35)
+
+
+def interior_rect():
+    ww, ew, sw, nw = west_wall_g(), east_wall_g(), south_wall_g(), north_wall_g()
+    return (ww.c + ww.t / 2, sw.c + sw.t / 2, ew.c - ew.t / 2, nw.c - nw.t / 2)
 
 
 def tile_origin():
@@ -623,13 +633,24 @@ def sym_table(v, L, W, D, seats, sh):
 
 
 def sym_piano(v, L, W, D):
-    pts = [(0, D), (W, D), (W, D * 0.42), (W * 0.82, D * 0.16), (W * 0.5, 0.02), (W * 0.15, 0.0), (0, D * 0.25)]
+    # grand piano: keyboard at the front (v=0), straight bass side at u=0, curved tail
+    kb = 0.22
+    tail = [(W, kb), (W, kb + (D - kb) * 0.30)]
+    for i in range(1, 13):
+        t = i / 12
+        # S-curve from (W, 0.3 of body) to (0.12W, D)
+        u = W - (W * 0.88) * (0.5 - 0.5 * math.cos(math.pi * t))
+        vv = kb + (D - kb) * (0.30 + 0.70 * (t ** 0.8))
+        tail.append((u, vv))
+    pts = [(0, kb)] + tail + [(0, D)]
     _lp(v, L, pts, fill="#efe9e1")
-    _lr(v, L, 0.04, D - 0.2, W - 0.04, D - 0.03, lw="xxs", color=FUR_L)
-    for i in range(1, 14):
-        u = 0.04 + (W - 0.08) * i / 14
-        _lp(v, L, [(u, D - 0.2), (u, D - 0.03)], closed=False, lw="xxs", color=FUR_L)
-    _lrr(v, L, W / 2 - 0.3, D + 0.12, W / 2 + 0.3, D + 0.45, 0.06, fill=C_UPH, lw="xs")
+    _lr(v, L, 0, 0, W, kb, fill="#fff", lw="xs")
+    for i in range(1, 16):
+        u = W * i / 16
+        _lp(v, L, [(u, 0.02), (u, kb - 0.02)], closed=False, lw="xxs", color=FUR_L)
+    _lp(v, L, [(0.08, kb + 0.1), (W * 0.85, kb + (D - kb) * 0.35), (W * 0.3, D - 0.12)], closed=False,
+        lw="xxs", color=FUR_L)
+    _lrr(v, L, W / 2 - 0.35, -0.48, W / 2 + 0.35, -0.12, 0.06, fill=C_UPH, lw="xs")
 
 
 def sym_bookcase(v, L, W, D, sh):
@@ -785,6 +806,16 @@ def draw_furniture(v, sh, region):
             sym_tall(v, L, W, D, "מקרר", sh)
         elif k in ("counter", "counter_l"):
             sym_counter(v, L, W, D, sh)
+            kr = rrect_of("G3")
+            if W > 2.5 and kr[0] - 0.1 <= f.x <= kr[2] and kr[1] - 0.1 <= f.y <= kr[3]:
+                # main sink + dishwasher in the long kitchen run (under the window)
+                cu = W * 0.5
+                _lrr(v, L, cu - 0.40, 0.10, cu + 0.40, D - 0.12, 0.05, lw="xs", color=FUR, fill="#fff")
+                _lrr(v, L, cu - 0.36, 0.14, cu + 0.36, D - 0.16, 0.04, lw="xxs", color=FUR_L)
+                _lell(v, L, cu, D - 0.07, 0.03, 0.03, lw="xs", fill="#999")
+                _lr(v, L, cu + 0.45, 0.0, cu + 1.05, 0.04, lw="xxs", color=FUR_L)
+                x, y = L.P(cu + 0.75, D * 0.5)
+                v.text(x, y, "מדיח", size=2.0, rot=-90 if L.r in (0, 180) else 0)
         elif k == "island":
             sym_island(v, f, sh)
         elif k == "wc":
@@ -899,7 +930,7 @@ CROP = (6.0, 21.0, 25.0, 32.0)
 
 def floor_tint(v, sh, grid=True, strong=False):
     X0, Y0 = tile_origin()
-    por = [rrect_of(n) for n in ("G1", "G2", "G3", "G4")]
+    por = [interior_rect()]
     for r in por:
         v.rect(*r, fill="#fbf8f2" if not strong else pat(sh, "ix_por"), color="none")
     lob = rrect_of("G7")
@@ -968,8 +999,8 @@ def annotate_furniture_plan(v, g, bays):
             isl = furn_g("island")
             if isl:
                 f = isl[0]
-                x = f.x + f.w / 2
-                y = (f.y + f.d + min([ff.y for ff in furn_g(within=r.rects[0]) if ff.kind in ("fridge", "counter", "closet") and ff.y > f.y + f.d] or [r.rects[0][3]])) / 2 + 0.05
+                x = (r.rects[0][0] + f.x) / 2
+                y = f.y + f.d / 2 + 0.1
                 extra = []
         if no == "G2":
             t = furn_g("table_rect", r.rects[0])
@@ -1037,10 +1068,10 @@ def kitchen_dims(v):
     east = [ff for ff in furn_g(within=kr) if ff.kind in ("counter",) and ff.x > ix1]
     yn = min([ff.y for ff in north], default=kr[3])
     xe = min([ff.x for ff in east], default=kr[2])
-    yd = (iy1 + yn) / 2
-    v.dim_chain([kr[0], ix0, ix1, xe, kr[2]], 0, axis="x", at=yd + 0.02, size=2.0)
+    yd = iy1 + 0.22
+    v.dim_chain([ix0, ix1, xe], 0, axis="x", at=yd, size=2.0)
     xd = (ix1 + xe) / 2
-    v.dim_chain([kr[1], iy0, iy1, yn, kr[3]], 0, axis="y", at=xd, size=2.0)
+    v.dim_chain([kr[1], iy0, iy1, yn], 0, axis="y", at=xd, size=2.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -1208,6 +1239,7 @@ def plan_rcp(sh, ox, oy, sc=50):
     B = 0.90             # perimeter soffit width along the glazing
     HB, HC, HK = 2.95, 3.10, 2.80
     tags = []
+    v.rect(*interior_rect(), fill=CEIL_FILL[HB], color="none")
     # ---------------- living
     x0, y0, x1, y1 = G1
     col_y = next((c.y for c in M.COLS if abs(c.x - x1 - 0.15) < 0.3 and y0 + 1 < c.y < y1 - 1), (y0 + y1) / 2)
@@ -1219,10 +1251,11 @@ def plan_rcp(sh, ox, oy, sc=50):
     R.plane(*c2, HC, cove=False)
     v.rect(c2[0] + 0.06, c2[1] + 0.06, c2[2] - 0.06, c2[3], fill="none", lw="m", color=C_LIGHT, dash="2.2 0.8")
     R.n("L3", 2 * (c2[2] - c2[0]) + 2 * (c2[3] - c2[1]))
+    wdl = spread(y0 + B, y1, 2.0)
     tags += [((c1[0] + c1[2]) / 2 + 1.3, c1[3] - 0.45, HC), ((c2[0] + c2[2]) / 2 + 1.3, c2[1] + 0.55, HC),
-             (x0 + 0.45, (y0 + y1) / 2 + 0.6, HB)]
+             (x0 + 0.45, (wdl[-1] + wdl[-2]) / 2, HB)]
     # soffit lights
-    for yy in spread(y0 + B, y1, 2.0):
+    for yy in wdl:
         R.downlight(x0 + 0.55, yy)
     for xx in spread(x0 + B, x1 - eb, 2.1):
         R.downlight(xx, y0 + 0.6)
@@ -1268,6 +1301,7 @@ def plan_rcp(sh, ox, oy, sc=50):
     cw, chh = (tl + 1.0, 2.0) if horiz else (2.0, tl + 1.0)
     d1 = (max(x0 + 0.5, tc[0] - cw / 2), max(y0 + B, tc[1] - chh / 2), min(x1 - 0.5, tc[0] + cw / 2), min(y1 - 0.45, tc[1] + chh / 2))
     R.plane(*d1, HC, cove=True)
+    v._coffers = [(d1[0], d1[2])]
     pl = tl * 0.55
     R.lin_pendant(tc[0] - pl / 2, tc[0] + pl / 2, tc[1])
     for xx in spread(x0 + 0.5, x1 - 0.5, 1.5):
@@ -1291,6 +1325,7 @@ def plan_rcp(sh, ox, oy, sc=50):
         ix0, iy0, ix1, iy1 = frect(f)
         k1 = (ix0 - 0.30, max(y0 + B, iy0 - 0.30), ix1 + 0.30, min(yn - 0.15, iy1 + 0.30))
         R.plane(*k1, HC, cove=True)
+        v._coffers.append((k1[0], k1[2]))
         Ln = max(f.w, f.d)
         horiz = f.w >= f.d
         for i in range(3):
@@ -1303,7 +1338,7 @@ def plan_rcp(sh, ox, oy, sc=50):
             R.downlight(xx, ya + 0.05)
         tags.append(((k1[0] + k1[2]) / 2, k1[1] + 0.25, HC))
     for e in east_run:
-        R.linear(e.x - 0.12, e.y + 0.2, e.x - 0.12, yn - 0.2)
+        R.linear(e.x - 0.12, max(e.y, y0 + B) + 0.1, e.x - 0.12, yn - 0.2)
     R.joinery_led(x0 + 0.1, yn + 0.05, x1 - 0.1, yn + 0.05)
     R.smoke(x0 + 0.55, y0 + 1.65, heat=True)
     R.diffuser(x0 + 2.9, y0 + 0.24, x1 - 0.5, y0 + 0.36)
@@ -1372,15 +1407,15 @@ def plan_rcp(sh, ox, oy, sc=50):
     return v, R
 
 
-def rcp_dims(v):
+def rcp_dims(v, R=None):
     G1 = rrect_of("G1")
     x0, y0, x1, y1 = G1
     col_y = next((c.y for c in M.COLS if abs(c.x - x1 - 0.15) < 0.3 and y0 + 1 < c.y < y1 - 1), (y0 + y1) / 2)
     v.dim_chain([CROP[1], y0, y0 + 0.9, col_y - 0.3, col_y + 0.3, y1, CROP[3]], 0, axis="y", at=CROP[0] - 0.38, size=2.0)
-    G2 = rrect_of("G2")
-    xs = [CROP[0], x0, x0 + 0.9, x1 - 0.6, x1, G2[0]]
-    t = furn_g("table_rect", G2)
-    v.dim_chain(xs + [CROP[2]], 0, axis="x", at=CROP[1] - 0.36, size=2.0)
+    xs = [CROP[0], x0, x0 + 0.9, x1 - 0.6, x1, CROP[2]]
+    for (a, b) in getattr(v, "_coffers", []):
+        xs += [a, b]
+    v.dim_chain(xs, 0, axis="x", at=CROP[1] - 0.36, size=2.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -1399,10 +1434,9 @@ def plan_flooring(sh, ox, oy, sc=100):
     deck = (G1[2] + 0.3, 19.6, 21.8, sw.c - sw.t / 2)
     v.rect(*deck, fill="pat:deck", lw="xxs", color="#777")
     # interior
-    for n in ("G1", "G2", "G3", "G4"):
-        r = rrect_of(n)
-        v.rect(*r, fill=pat(sh, "ix_por"), color="none")
-        _grid(v, r, X0, Y0, "#a8977c", 0.08)
+    r = interior_rect()
+    v.rect(*r, fill=pat(sh, "ix_por"), color="none")
+    _grid(v, r, X0, Y0, "#a8977c", 0.08)
     lob = rrect_of("G7")
     v.rect(*lob, fill=pat(sh, "ix_kurkar"), color="none")
     _bond(v, lob, 1.20, 0.60, "#8b7457")
@@ -1450,7 +1484,7 @@ def plan_flooring(sh, ox, oy, sc=100):
     ax0 = v.P(g["axis"], Y0 + 0.2)
     ax1 = v.P(g["axis"], g["face"] - 0.1)
     sh.line(ax0[0], ax0[1], ax1[0], ax1[1], lw="xxs", color=C_SAFE, dash="3 0.8 0.6 0.8")
-    tx, ty = v.P(g["axis"], g["face"] - 1.4)
+    tx, ty = v.P(g["axis"], g["face"] - 3.2)
     sh.text(tx + 1.2, ty, "ציר האח = מרכז אריח", size=2.0, color=C_SAFE, anchor="left", rot=-90)
     # labels
     for n, t in (("G1", "FL-01"), ("G2", "FL-01"), ("G3", "FL-01"), ("G4", "FL-01"), ("G7", "ST-02"), ("G5", "FL-03"),
@@ -1767,18 +1801,69 @@ def elevation_kitchen(sh, ox, oy, items_out, y_cut):
     _sec_frame(v, sh, xa, xb)
     v.line(xa, -0.5, xa, M.LV["U"] + 0.1, lw="xxs", dash="4 1 1 1")
     # dims
-    xs = [x0, x1] + [p for f in run for p in (f.x, f.x + f.w)] + [f.x for f in east]
+    xs = sorted(set(round(p, 3) for p in [x0, x1] + [p for f in run for p in (f.x, f.x + f.w)] + [f.x for f in east]))
+    xs = [p for i, p in enumerate(xs) if i == 0 or p - xs[i - 1] > 0.15 or i == len(xs) - 1]
     v.dim_chain(xs, 0, axis="x", at=-0.70, size=2.0)
     v.dim_chain([0, 0.10, 0.92, 1.55, 2.17, HK, HB], 0, axis="y", at=xa - 0.30, size=2.0)
-    v.level_mark(xb + 0.1, 0.0, 0.0, side="right")
-    v.level_mark(xb + 0.1, HB, HB, side="right")
-    v.level_mark(xb + 0.1, M.LV["U"], M.LV["U"], side="right")
+    v.level_mark(xa - 0.5, 0.0, 0.0, side="left")
+    v.level_mark(xa - 0.5, HB, HB, side="left")
+    v.level_mark(xa - 0.5, M.LV["U"], M.LV["U"], side="left")
     items_out += [
         (*v.P(x1 - 0.8, HK + 0.07), ["סינר גבס +2.80, צללית 10 מ\"מ, תקרה +2.95"]),
         (*v.P(x1 - 0.1, 1.7), ["חלון AL-10, אדן +1.05"]),
         (*v.P(x1 - 0.35, 0.05), ["סוקל שקוע 10 ס\"מ – פליז מוברש MT-01"]),
     ]
     return v, xa, xb
+
+
+def threshold_detail(sh, x_right, y_top):
+    """Flush threshold at the pocket slider – section 1:10 (indoor porcelain continues outside)."""
+    k = 100.0
+    xa, xb, za, zb = -0.30, 0.30, -0.30, 0.12
+    ox = x_right - xb * k
+    oy = y_top + 9 + zb * k
+    v = View(sh, ox, oy, 10)
+    sh.text(x_right, y_top + 3.5, "פרט סף ויטרינה שטוח (פנים-חוץ)", size=3.0, anchor="right", weight=700)
+    sh.text(x_right - tw("פרט סף ויטרינה שטוח (פנים-חוץ)", 3.0) - 3, y_top + 3.5, 'קנ"מ 1:10', size=2.2, anchor="right")
+    sh.begin_clip(ox + xa * k, oy - zb * k, (xb - xa) * k, (zb - za) * k)
+    # slabs
+    v.polygon([(xa, -0.40), (0.06, -0.40), (0.06, -0.45), (xb, -0.45), (xb, -0.15), (0.06, -0.15), (0.06, -0.10), (xa, -0.10)],
+              fill="pat:rc", lw="m")
+    v.rect(xa, -0.10, -0.06, -0.009, fill=pat(sh, "ix_screed"), lw="xs")
+    v.rect(xa, -0.009, -0.06, 0.0, fill="#d9ccb6", lw="s")
+    for xx in (-0.06 - 1.2 * i for i in range(1)):
+        pass
+    # membrane up-stand
+    v.polyline([(xb, -0.15), (0.06, -0.15), (0.06, -0.10), (0.065, -0.02)], lw="l", color="#111")
+    # recessed bottom track
+    v.rect(-0.06, -0.075, 0.06, 0.0, fill=pat(sh, "ix_alu"), lw="s")
+    v.rect(-0.05, -0.065, 0.05, -0.005, fill="#fff", lw="xxs")
+    for gx in (-0.03, 0.012):
+        v.rect(gx, 0.012, gx + 0.018, zb + 0.01, fill=C_GLASS, lw="xs")
+        v.circle(gx + 0.009, -0.005, 0.008, lw="xxs", fill="#555")
+    # outdoor build-up + linear drain
+    v.polygon([(0.08, -0.15), (xb, -0.15), (xb, -0.035), (0.18, -0.038), (0.18, -0.10), (0.08, -0.10)],
+              fill=pat(sh, "ix_screed"), lw="xs")
+    v.rect(0.065, -0.11, 0.17, 0.0, fill="#fff", lw="s")
+    v.rect(0.075, -0.10, 0.16, -0.01, fill="#eee", lw="xxs")
+    v.line(0.065, -0.004, 0.17, -0.004, lw="m", color="#555", dash="0.6 0.4")
+    v.rect(0.17, -0.02, xb, 0.0, fill="#e2d6c2", lw="s")
+    sh.end_group()
+    sh.rect(ox + xa * k, oy - zb * k, (xb - xa) * k, (zb - za) * k, lw="xxs", color="#999")
+    v.line(0.0, za, 0.0, zb, lw="xxs", color="#999", dash="3 0.8 0.6 0.8")
+    v.text(-0.15, za + 0.035, "פנים", size=2.2, weight=700, color="#fff")
+    v.text(0.22, za + 0.035, "חוץ", size=2.2, weight=700, color="#fff")
+    items = [
+        (*v.P(-0.02, 0.09), ["ויטרינה הזזה לכיס – זכוכית בידודית"]),
+        (*v.P(0.25, -0.01), ["פורצלן חוץ FL-02 20 מ\"מ R11, מפלס זהה"]),
+        (*v.P(-0.20, -0.004), ["פורצלן FL-01 9 מ\"מ, דבק C2TE"]),
+        (*v.P(-0.00, -0.04), ["מסילה תחתונה שקועה, נירוסטה 316"]),
+        (*v.P(0.12, -0.05), ["תעלת ניקוז לינארית + רשת פליז"]),
+        (*v.P(0.064, -0.08), ["איטום מוגבה עד תחתית המסילה"]),
+        (*v.P(-0.2, -0.25), ["תקרת בטון מזוין + מדה"]),
+    ]
+    callout_column(sh, items, ox + xa * k - 7, y_top + 7, oy - za * k, size=2.0, lh=2.5, gap=0.6, side="left", elbow=4,
+                   keep_order=True)
 
 
 # --------------------------------------------------------------------------- #
@@ -2060,15 +2145,15 @@ def sheet_interior(sh, box):
     palette_strip(sh, bx, py0, xr_plan - bx + 0.0 if False else (lx + 380 + 2 - bx), by + bh - py0)
 
     # ---------------- right column
-    rx0 = xr_plan + 12
+    rx0 = xr_plan + 16
     rx1 = bx + bw
     # elevation 1-1
     items = []
-    e1_left = rx0 + 15
+    e1_left = rx0 + 30
     ve1, xb1 = elevation_fireplace(sh, e1_left - fireplace_geom()["lv"][0] * k + (fireplace_geom()["lv"][0] - west_wall_g().c + west_wall_g().t / 2) * k,
                                    by + 6 + M.LV["U"] * k + 0.1 * k, items)
-    xt = ve1.P(xb1 + 0.75, 0)[0]
-    callout_column(sh, items, xt, by + 5, by + 6 + 3.9 * k, size=2.1, lh=2.7, gap=1.6)
+    xt = ve1.P(xb1 + 1.25, 0)[0]
+    callout_column(sh, items, xt, by + 5, by + 6 + 3.9 * k, size=2.1, lh=2.7, gap=1.6, x_edge=ve1.P(xb1 + 0.6, 0)[0])
     ybot1 = ve1.P(0, -0.95)[1]
     drawing_title(sh, rx1, ybot1 + 2, "חתך-חזית 1-1 – קיר האח", 'קנ"מ 1:50', width=80, size=5.0)
 
@@ -2076,12 +2161,12 @@ def sheet_interior(sh, box):
     items2 = []
     kr = rrect_of("G3")
     top2 = ybot1 + 16
-    ox2 = rx0 + 22 - (kr[0] - 0.4) * k
+    ox2 = rx0 + 40 - (kr[0] - 0.4) * k
     oy2 = top2 + M.LV["U"] * k + 2
     y_cut = y2
     ve2, xa2, xb2 = elevation_kitchen(sh, ox2, oy2, items2, y_cut)
-    xt2 = ve2.P(xb2 + 0.95, 0)[0]
-    callout_column(sh, items2, xt2, top2 - 2, top2 + 3.9 * k, size=2.1, lh=2.7, gap=1.4)
+    xt2 = ve2.P(xb2 + 0.85, 0)[0]
+    callout_column(sh, items2, xt2, top2 - 2, top2 + 3.9 * k, size=2.1, lh=2.7, gap=1.4, x_edge=ve2.P(xb2 + 0.25, 0)[0])
     ybot2 = ve2.P(0, -0.95)[1]
     drawing_title(sh, rx1, ybot2 + 2, "חתך-חזית 2-2 – קיר המטבח", 'קנ"מ 1:50', width=80, size=5.0)
 
@@ -2095,6 +2180,7 @@ def sheet_interior(sh, box):
     lx_leg = oxf + CROP[0] * kf - 4
     ybl = flooring_legend(sh, lx_leg, topf)
     drawing_title(sh, lx_leg, yfb - 8, "תכנית ריצוף", 'קנ"מ 1:100', width=70, size=5.0)
+    threshold_detail(sh, lx_leg - 2, ybl + 14)
     sh.text(lx_leg, yfb + 6.2, "* קנ\"מ מוקטן לשם התאמה לגיליון; מידות בס\"מ.", size=2.0, anchor="right", color="#555")
 
     # lighting legend + scenes

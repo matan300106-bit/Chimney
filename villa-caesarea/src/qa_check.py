@@ -711,11 +711,14 @@ class Opening_like:
 #  3. ROOMS
 # =========================================================================== #
 def wall_trim_fix(r, walls_u):
-    """Room polygon minus walls → proposed rects (cm-rounded)."""
+    """Room polygon minus walls → proposed rects (cm-rounded), slivers < 15 cm removed."""
     p = room_poly(r).difference(walls_u)
-    if p.geom_type == "MultiPolygon":
-        p = max(p.geoms, key=lambda g: g.area)
-    rects = [tuple(round(v, 2) for v in q) for q in decompose(p) if (q[2] - q[0]) * (q[3] - q[1]) > 0.05]
+    p = p.buffer(-0.08, join_style=2).buffer(0.08, join_style=2)
+    rects = []
+    for g in getattr(p, "geoms", [p]):
+        if g.is_empty or g.area < 0.3:
+            continue
+        rects += [tuple(round(v, 2) for v in q) for q in decompose(g) if (q[2] - q[0]) * (q[3] - q[1]) > 0.05]
     rects.sort(key=lambda q: -(q[2] - q[0]) * (q[3] - q[1]))
     return "rects=[" + ", ".join(rr(q) for q in rects) + "]"
 
@@ -725,23 +728,30 @@ def check_rooms():
     for lvl in LEVELS:
         rs = rooms_on(lvl)
         ws = plan_walls(lvl)
-        wu = unary_union([wall_fp(w) for w in ws] + [col_fp(c) for c in cols_on(lvl)] if lvl != "R" else
-                         [wall_fp(w) for w in ws])
+        shaft = []
+        if any(w.kind == "shaft" for w in ws):
+            shaft = [sbox(M.LIFT["x0"], M.LIFT["y0"], M.LIFT["x1"], M.LIFT["y1"])]
+        wu = unary_union([wall_fp(w) for w in ws] + shaft)
+        cu = unary_union([col_fp(c) for c in cols_on(lvl)]) if lvl != "R" else Point(-99, -99).buffer(0.01)
         for r in rs:
             p = room_poly(r)
             net = p.area
-            # wall overlap
             if not r.outdoor:
                 inter = p.intersection(wu)
                 bad = [g for g in getattr(inter, "geoms", [inter]) if not g.is_empty and min_dim(g) > R["tol_room_wall"]]
                 if bad:
                     tot = sum(g.area for g in bad)
-                    add("ERROR", cat, f"{room_label(r)} ({lvl}) overlaps walls/columns by {tot:.2f} m² "
-                        f"(max depth {cm(max(min_dim(g) for g in bad))})",
+                    add("ERROR", cat, f"{room_label(r)} ({lvl}) overlaps walls{'/lift shaft' if shaft else ''} by "
+                        f"{tot:.2f} m² (max depth {cm(max(min_dim(g) for g in bad))})",
                         fix=f"{room_label(r)}: {wall_trim_fix(r, wu)}", key=f"room_wall:{r.no}")
-                else:
-                    inter2 = sum(g.area for g in getattr(inter, "geoms", [inter]) if not g.is_empty)
-                    net = p.area - inter2
+                net = p.difference(wu).difference(cu).area
+                ci = p.intersection(cu)
+                for g in getattr(ci, "geoms", [ci]):
+                    if not g.is_empty and min_dim(g) > R["tol_room_wall"]:
+                        add("WARN" if min_dim(g) >= 0.10 else "INFO", cat,
+                            f"Column protrudes {cm(min_dim(g))} into {room_label(r)} ({lvl}) at {rr(g.bounds)} – show "
+                            "it in plan / box it into the wall or align the column with the wall faces",
+                            key=f"room_col:{r.no}:{g.bounds[0]:.2f}")
             # bedrooms
             if is_bedroom(r) and not r.outdoor:
                 biggest = max(r.rects, key=lambda q: (q[2] - q[0]) * (q[3] - q[1]))
@@ -768,11 +778,14 @@ def check_rooms():
             hole = None
             if lvl in ("B", "G", "U"):
                 hole = None
+            rest = rest.buffer(-0.08, join_style=2).buffer(0.08, join_style=2)
             for g in getattr(rest, "geoms", [rest]):
                 if g.is_empty or g.area < 0.25 or min_dim(g) < 0.20:
                     continue
+                adj = max(rs, key=lambda r: room_poly(r).intersection(g.buffer(0.2, join_style=2)).area, default=None)
+                pieces = [rr(tuple(round(v, 2) for v in q)) for q in decompose(g)]
                 add("WARN", cat, f"Floor area {g.area:.2f} m² at {rr(g.bounds)} on level {lvl} belongs to no room",
-                    fix="extend the adjacent room rects to cover it (or define the space)",
+                    fix=(f"add {', '.join(pieces)} to the rects of {room_label(adj)}" if adj else "define the space"),
                     key=f"room_gap:{lvl}:{g.bounds[0]:.1f}:{g.bounds[1]:.1f}")
     # ממ"ד
     for r in M.ROOMS:
@@ -922,8 +935,10 @@ def check_stairs():
                     fix="confirm the lift model, or raise the lift-shaft roof locally (LV['RX'] → 10.20 over the shaft only)")
     # --- slab holes vs stairs + headroom
     check_headroom(cat)
-    # --- void edges guarding
+    # --- void edges guarding, stair side gaps, lift shaft closure
     check_void_edges(cat)
+    check_stair_sides(cat)
+    check_lift_shaft(cat)
 
 
 def stair_soffits():
@@ -989,8 +1004,25 @@ def check_headroom(cat):
                 f"at {nxt} (bounds {rr(uncovered.bounds)}) – headroom checked above")
 
 
+def _runs(samples, key):
+    """group consecutive samples with the same class"""
+    out, cur = [], None
+    for p in samples:
+        k = key(p)
+        if cur and cur[0] == k:
+            cur[1].append(p)
+        else:
+            cur = [k, [p]]
+            out.append(cur)
+    return out
+
+
 def check_void_edges(cat):
+    """Slab-hole edges at each floor must be closed by a wall, a ≥0.85 rail, or the stair itself
+    (departing first tread / arriving last tread / central spine).  Gaps ≤10 cm to a wall are OK."""
+    cat = "5 Guards & railings"
     rails = M.RAILS
+    lift = sbox(M.LIFT["x0"], M.LIFT["y0"], M.LIFT["x1"], M.LIFT["y1"])
     for sl in M.SLABS:
         if not sl.holes or sl.kind not in ("slab", "roof"):
             continue
@@ -1002,49 +1034,121 @@ def check_void_edges(cat):
             continue
         fz = M.LV[lvl]
         ws = [w for w in M.WALLS if w.level == lvl and z_overlap(w.z0, w.z1, fz + 0.2, fz + 1.0)]
-        wfp = unary_union([wall_fp(w).buffer(0.05) for w in ws])
+        wfp = unary_union([wall_fp(w) for w in ws])
         rfp = unary_union([sbox(min(r["x0"], r["x1"]) - 0.12, min(r["y0"], r["y1"]) - 0.12,
                                 max(r["x0"], r["x1"]) + 0.12, max(r["y0"], r["y1"]) + 0.12)
                            for r in rails if abs(r["z0"] - fz) < 0.3 and r["h"] >= 0.85] or [Point(-99, -99)])
-        # stair connections at this floor: departing flight A first tread & arriving flight B last tread
         conn = []
-        spine = []
         for s in M.STAIRS:
             if s["level"] == lvl and s["treadsA"]:
                 x0, y0, x1, y1, z = s["treadsA"][0]
                 conn.append(sbox(x0, y0 - 0.15, x1, y1 + 0.15))
-                spine.append(sbox(s["flightA"][2] - 0.01, s["yA0"] - 0.05, s["flightB"][0] + 0.01, M.ST["yl"]))
+                conn.append(sbox(s["flightA"][2] - 0.01, s["yA0"] - 0.05, s["flightB"][0] + 0.01, M.ST["yl"]))
             if NEXT.get(s["level"]) == lvl and s["treadsB"]:
                 x0, y0, x1, y1, z = s["treadsB"][-1]
                 conn.append(sbox(x0, y0 - 0.15, x1, y1 + 0.15))
-                spine.append(sbox(s["flightA"][2] - 0.01, s["yB_end"] - 0.05, s["flightB"][0] + 0.01, M.ST["yl"]))
-        cfp = unary_union(conn + spine) if conn else Point(-99, -99)
+                conn.append(sbox(s["flightA"][2] - 0.01, s["yB_end"] - 0.05, s["flightB"][0] + 0.01, M.ST["yl"]))
+        cfp = unary_union(conn) if conn else Point(-99, -99)
         for h in sl.holes:
+            hb = sbox(*h)
+            if hb.intersection(lift).area > 0.5 * hb.area:
+                continue          # lift hole – checked with the shaft walls
             x0, y0, x1, y1 = h
             edges = [((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))]
             for (ax, ay), (bx, by) in edges:
                 L = math.hypot(bx - ax, by - ay)
                 n = max(int(L / 0.1), 1)
-                bad = []
+                smp = []
                 for k in range(n + 1):
                     px, py = ax + (bx - ax) * k / n, ay + (by - ay) * k / n
                     p = Point(px, py)
-                    if wfp.contains(p) or rfp.contains(p) or cfp.contains(p):
+                    d = p.distance(wfp)
+                    if d <= 0.10 or rfp.contains(p) or cfp.contains(p):
+                        cls = "ok"
+                    elif d <= 0.35:
+                        cls = "gap"
+                    else:
+                        cls = "open"
+                    smp.append((px, py, cls, d))
+                vert = abs(ax - bx) < 1e-6
+                for cls, pts in _runs(smp, key=lambda q: q[2]):
+                    if cls == "ok" or len(pts) < 3:
                         continue
-                    bad.append((px, py))
-                if len(bad) >= 3:
-                    xs = [b[0] for b in bad]
-                    ys = [b[1] for b in bad]
-                    seg = (min(xs), min(ys), max(xs), max(ys))
+                    seg = (min(q[0] for q in pts), min(q[1] for q in pts), max(q[0] for q in pts), max(q[1] for q in pts))
                     ln = max(seg[2] - seg[0], seg[3] - seg[1])
-                    vert = abs(ax - bx) < 1e-6
-                    fix = (f"add to RAILS: dict(x0={seg[0]:.2f}, y0={seg[1]:.2f}, x1={seg[2]:.2f}, y1={seg[3]:.2f}, "
-                           f"z0=LV[\"{lvl}\"], h=1.05, kind=\"glass\")  (or a 10 cm wall like the B/R screen "
-                           f"wall x=15.6)")
-                    add("ERROR", "5 Guards & railings",
-                        f"Unguarded slab-void edge at level {lvl}: {ln:.2f} m along {'x' if vert else 'y'}="
-                        f"{ax if vert else ay:.2f} ({rr(seg)}) – fall into the stair/lift void",
-                        fix=fix, key=f"void_edge:{lvl}:{seg[0]:.2f}:{seg[1]:.2f}")
+                    where = f"{'x' if vert else 'y'}={ax if vert else ay:.2f} {rr(seg)}"
+                    if cls == "gap":
+                        g = max(q[3] for q in pts)
+                        add("WARN", cat, f"Level {lvl}: {cm(g)} fall-through gap between the stair void edge and the "
+                            f"wall over {ln:.2f} m at {where} (max 10 cm)",
+                            fix="close it: widen the slab edge / add a 10 cm upstand or glass strip, e.g. continue the "
+                                "10 cm screen wall x=15.60 (as in B/R) or shift the wall to the stair",
+                            key=f"void_gap:{lvl}:{seg[0]:.2f}:{seg[1]:.2f}")
+                    else:
+                        xx0, yy0, xx1, yy1 = seg
+                        if vert:
+                            xx0 = xx1 = xx0 + (0.05 if xx0 >= x1 - 1e-6 else -0.05)
+                        else:
+                            yy0 = yy1 = yy0 + (0.05 if yy0 >= y1 - 1e-6 else -0.05)
+                        add("ERROR", cat, f"Unguarded slab-void edge at level {lvl}: {ln:.2f} m at {where} – open drop "
+                            "into the stair void",
+                            fix=(f"add to RAILS: dict(x0={xx0:.2f}, y0={yy0:.2f}, x1={xx1:.2f}, y1={yy1:.2f}, "
+                                 f"z0=LV[\"{lvl}\"], h=1.05, kind=\"glass\")  – or a 10 cm wall like the screen x=15.6 in B/R"),
+                            key=f"void_edge:{lvl}:{seg[0]:.2f}:{seg[1]:.2f}")
+
+
+def check_stair_sides(cat):
+    """gaps between the stair flights/landing and the enclosing walls (≤ 10 cm)."""
+    for s in M.STAIRS:
+        lvl = s["level"]
+        ws = [w for w in M.WALLS if w.level in (lvl,) and w.kind != "parapet" and not w.horiz]
+        found = defaultdict(list)
+        parts = [("flight A", s["flightA"], s["z0"] + 1.0), ("landing", s["landing"][:4], s["zl"]),
+                 ("flight B", s["flightB"], s["zl"] + 1.0)]
+        for name, (x0, y0, x1, y1), z in parts:
+            for side, xe in (("W", x0), ("E", x1)):
+                if name == "flight A" and side == "E" or name == "flight B" and side == "W":
+                    continue    # spine side
+                n = max(int((y1 - y0) / 0.1), 1)
+                for k in range(n + 1):
+                    y = y0 + (y1 - y0) * k / n
+                    best = 9
+                    for w in ws:
+                        if not (w.a0 - 0.01 <= y <= w.a1 + 0.01):
+                            continue
+                        face = w.c + w.t / 2 if side == "W" else w.c - w.t / 2
+                        g = (xe - face) if side == "W" else (face - xe)
+                        if -0.01 <= g < best:
+                            best = g
+                    found[(name, side)].append((y, best))
+        for (name, side), smp in found.items():
+            bad = [(y, g) for y, g in smp if 0.10 < g <= 0.60]
+            if len(bad) >= 3:
+                g = max(b[1] for b in bad)
+                add("WARN", "5 Guards & railings", f"Stair {lvl} {name}: {cm(g)} gap on the {side} side between the "
+                    f"stair and the wall over y {min(b[0] for b in bad):.2f}–{max(b[0] for b in bad):.2f} "
+                    "(child fall-through, max 10 cm)",
+                    fix="fill with a stringer/upstand or glass, or bring the wall to the stair (see void-gap fix)",
+                    key=f"stair_gap:{lvl}:{name}:{side}")
+
+
+def check_lift_shaft(cat):
+    lx0, ly0, lx1, ly1 = M.LIFT["x0"], M.LIFT["y0"], M.LIFT["x1"], M.LIFT["y1"]
+    sides = {"W": sbox(lx0, ly0, lx0 + 0.2, ly1), "E": sbox(lx1 - 0.2, ly0, lx1, ly1),
+             "S": sbox(lx0, ly0, lx1, ly0 + 0.2), "N": sbox(lx0, ly1, lx1, ly1 + 0.15)}
+    for lvl in LEVELS:
+        ws = [w for w in M.WALLS if w.level == lvl and w.kind != "parapet"]
+        if not any(w.kind == "shaft" for w in ws):
+            continue
+        for k, zone in sides.items():
+            cov = sum(wall_fp(w).intersection(zone).area for w in ws)
+            if cov < 0.55 * zone.area * (0.6 if k == "S" else 1.0):
+                fix = None
+                if k == "E":
+                    fix = (f'add wall("{lvl}", LIFT["x1"] - 0.10, LIFT["y0"], LIFT["x1"] - 0.10, 31.70, t=0.20, '
+                           f'kind="shaft", core="rc"{", z=rxz" if lvl == "R" else ""})')
+                add("ERROR", "4 Stairs & vertical", f"Lift shaft at level {lvl} is open on its {k} side "
+                    f"({cov / zone.area * 100:.0f} % closed)", fix=fix, key=f"lift_open:{lvl}:{k}")
 
 
 # =========================================================================== #
@@ -1115,29 +1219,51 @@ def check_support():
             tot = sum(r_[1] - r_[0] for r_ in runs)
             txt = ", ".join(f"{r_[0]:.2f}→{r_[1]:.2f}" for r_ in runs)
             # documented cantilever wall-beams (UF west bar over the covered terrace)
-            doc = (up == "U" and not w.horiz and w.kind == "ext" and all(r_[1] <= cantilever[1] + 0.2 for r_ in runs))
             loggia = (up == "U" and w.horiz and abs(w.c - (M.Y_S_U + M.T_EXT / 2)) < 0.01)
-            if doc or loggia:
-                add("INFO", cat, f"{wid(w)} unsupported {txt} – documented cantilever wall-beam / loggia frame "
-                    "(RC wall-beam, back-span into the GF columns; show in the structural note)")
+            if loggia:
+                add("INFO", cat, f"{wid(w)} unsupported {txt} – loggia frame hung between the cantilever wall-beams")
+                continue
+            docr = [r_ for r_ in runs if up == "U" and not w.horiz and w.kind == "ext"
+                    and r_[1] <= cantilever[1] + 0.2 and r_[0] <= cantilever[0] + 0.3]
+            for r_ in docr:
+                add("INFO", cat, f"{wid(w)}: {r_[0]:.2f}→{r_[1]:.2f} is the documented 5 m cantilever wall-beam (RC, "
+                    "back-span to the GF columns on y=21.15/25.15 – show in the structural note)")
+            runs = [r_ for r_ in runs if r_ not in docr]
+            if not runs:
                 continue
             heavy = w.kind in ("ext", "mamad", "rc", "shaft", "retain") or w.core == "rc"
             if w.kind == "mamad":
-                sev = "WARN"
-                fix = ('the ממ"ד RC walls must reach the foundations (Pikud HaOref) or sit on designed transfer '
-                       "beams: add GF/B columns under the ממ\"ד corners, e.g. COLS.append(Column(11.05, 27.11, 0.30, "
-                       "0.30, slab_top('G'), slab_bot('U'))) + the same in B (move recliner_row x=10.6 → 10.2), and a "
-                       "30/60 downstand beam along y=27.11 in the U slab; note it in the structural legend")
-            elif heavy:
-                sev = "WARN"
-                fix = "add a column / downstand beam under the unsupported run, or make it a documented wall-beam"
-            else:
-                sev = "INFO"
-                fix = None
-            if heavy or tot > 2.0:
-                add(sev, cat, f"{wid(w)}: {tot:.2f} m without wall/column below on {lo} ({txt})"
-                    + ("" if heavy else " – light partition on slab (OK, slab designed for it)"),
-                    fix=fix, key=f"support:{up}:{w.kind}:{w.c:.2f}")
+                add("WARN", cat, f"{wid(w)}: {tot:.2f} m without wall/column below on {lo} ({txt})",
+                    fix=('the ממ"ד RC walls must continue down to the foundations (Pikud HaOref) or sit on designed '
+                         "transfer beams: add GF+B columns under the free ממ\"ד corner, e.g. for z in ((slab_top('G'), "
+                         "slab_bot('U')), (slab_top('B'), slab_bot('G'))): COLS.append(Column(11.05, 27.11, 0.30, 0.30, *z)) "
+                         "and RC 30/60 downstand beams along x=11.05 and y=27.11 in the U slab (the B column lands in "
+                         "the cinema – shift recliner rows ≥ 0.4 m west); note it in the structural legend"),
+                    key=f"support:{up}:mamad:{w.c:.2f}")
+                continue
+            if not heavy:
+                if tot > 2.0:
+                    add("INFO", cat, f"{wid(w)}: {tot:.2f} m without wall below on {lo} ({txt}) – light partition on "
+                        "slab (OK, slab designed for it)")
+                continue
+            for r_ in runs:
+                span = r_[1] - r_[0]
+                cant = r_[0] <= w.a0 + 0.06 or r_[1] >= w.a1 - 0.06
+                if up == "R" and w.kind != "shaft":
+                    add("INFO", cat, f"{wid(w)}: {span:.2f} m on the roof slab without wall below ({r_[0]:.2f}→{r_[1]:.2f}) – "
+                        "roof-exit masonry: provide an upstand/downstand beam in the roof slab")
+                elif cant:
+                    add("WARN", cat, f"{wid(w)}: free (cantilevered) end {span:.2f} m without support below on {lo} "
+                        f"({r_[0]:.2f}→{r_[1]:.2f})",
+                        fix="add a column under the free end or align the wall with the wall below",
+                        key=f"support:{up}:{w.kind}:{w.c:.2f}:{r_[0]:.1f}")
+                elif span > 6.0:
+                    add("WARN", cat, f"{wid(w)}: spans {span:.2f} m between supports on {lo} ({r_[0]:.2f}→{r_[1]:.2f}) – "
+                        "needs a deep wall-beam/downstand beam or an intermediate column",
+                        key=f"support:{up}:{w.kind}:{w.c:.2f}:{r_[0]:.1f}")
+                else:
+                    add("INFO", cat, f"{wid(w)}: wall-beam/lintel spanning {span:.2f} m between supports on {lo} "
+                        f"({r_[0]:.2f}→{r_[1]:.2f}) – OK, show the beam")
 
 
 # =========================================================================== #
@@ -1341,8 +1467,9 @@ def check_site():
         L, W = max(x1 - x0, y1 - y0), min(x1 - x0, y1 - y0)
         if L < R["park_l"] - 0.005 or W < R["park_w"] - 0.005:
             add("ERROR", cat, f"Parking space {i + 1} is {W:.2f}×{L:.2f} m (< 2.50×5.00)",
-                fix=f"CARS[{i}] = ({x1 - R['park_l']:.2f}, {y0:.2f}, {x1:.2f}, {y1:.2f})  (starts at the building "
-                    "line x=25.00; posts at x 25.45 are outside the 2.5 m bays)", key=f"park:{i}")
+                fix=f"CARS[{i}] = ({M.X_E:.2f}, {y0:.2f}, {M.X_E + R['park_l']:.2f}, {y1:.2f})  (5.00 m from the building "
+                    "line x=25.00 to the street boundary x=30.00; the pergola posts at y 15.95/21.65 stay outside "
+                    "the 2.5 m bays)", key=f"park:{i}")
         # access from street
         if abs(max(x0, x1) - M.LOT["x1"]) > 0.6:
             add("WARN", cat, f"Parking space {i + 1} does not reach the street boundary (direct access)")
@@ -1375,7 +1502,7 @@ def strip_clear_depth(level, poly_fn, max_d, exclude=(), step=0.05):
     """largest depth d ≤ max_d for which poly_fn(d) is free of walls/furniture/columns and inside rooms."""
     walls = unary_union([wall_fp(w) for w in plan_walls(level, include_parapet=True)]
                         + [col_fp(c) for c in cols_on(level)])
-    rooms_u = unary_union([room_poly(r) for r in rooms_on(level)]).buffer(0.03)
+    rooms_u = unary_union([room_poly(r) for r in rooms_on(level)]).buffer(0.08)
     obs = stair_obstacles(level)
     fs = [furn_shapes(f) for f in M.FURN if f.level == level and f not in exclude and f.kind not in NOT_OBSTACLE]
     d = 0.0
@@ -1393,13 +1520,13 @@ def strip_clear_depth(level, poly_fn, max_d, exclude=(), step=0.05):
     return d
 
 
-def nearest_wall_side(level, b):
+def nearest_wall_side(level, b, only=None):
     """which side of a bbox is closest to a wall: returns ('W'|'E'|'S'|'N', distance)."""
     x0, y0, x1, y1 = b
     walls = unary_union([wall_fp(w) for w in plan_walls(level)])
     probes = {"W": sbox(x0 - 0.01, y0 + 0.05, x0, y1 - 0.05), "E": sbox(x1, y0 + 0.05, x1 + 0.01, y1 - 0.05),
               "S": sbox(x0 + 0.05, y0 - 0.01, x1 - 0.05, y0), "N": sbox(x0 + 0.05, y1, x1 - 0.05, y1 + 0.01)}
-    return min(((k, walls.distance(p)) for k, p in probes.items()), key=lambda t: t[1])
+    return min(((k, walls.distance(p)) for k, p in probes.items() if not only or k in only), key=lambda t: t[1])
 
 
 def side_strip(b, side, d):
@@ -1473,12 +1600,13 @@ def check_furniture():
                 if (need_both and bad) or (not need_both and len(bad) == 2):
                     add("WARN", cat, f"{furn_label(f)}: bed side clearance {', '.join(f'{s}={deps[s]:.2f}' for s in sides)} m "
                         f"(head {head}; need {R['bed_side']:.2f} each side)", key=f"bed_side:{f.x}:{f.y}")
-                foot = strip_clear_depth(lvl, lambda d: side_strip(b, OPP[head], d), 0.6, exclude=[f])
+                foot = strip_clear_depth(lvl, lambda d: side_strip(b, OPP[head], d), 0.6,
+                                         exclude=[f] + [g for g in fl if g.kind == "bench"])
                 if foot < 0.6 - 1e-6:
                     add("WARN", cat, f"{furn_label(f)}: only {foot:.2f} m in front of the bed foot (min 0.60)",
                         key=f"bed_foot:{f.x}:{f.y}")
             if f.kind == "closet":
-                back, dist = nearest_wall_side(lvl, b)
+                back, dist = nearest_wall_side(lvl, b, only=("S", "N") if f.w >= f.d else ("W", "E"))
                 front = OPP[back]
                 dep = strip_clear_depth(lvl, lambda d: side_strip(b, front, d), R["closet_front"], exclude=[f])
                 if dep < R["closet_front"] - 1e-6:
@@ -1506,8 +1634,14 @@ def check_furniture():
                     add("WARN", cat, f"Island {furn_label(i_)}: {s} side clearance {dep:.2f} m (< {R['island_clear']:.2f})",
                         key=f"island_clear:{s}")
     # work triangle
-    k = [f for f in M.FURN if f.level == "G" and f.kind in ("fridge", "island", "counter_l")]
-    if len(k) == 3:
+    fr = [f for f in M.FURN if f.level == "G" and f.kind == "fridge"]
+    isl = [f for f in M.FURN if f.level == "G" and f.kind == "island"]
+    kroom = [r for r in rooms_on("G") if "מטבח" == r.name.strip()]
+    cnt = [f for f in M.FURN if f.level == "G" and f.kind in ("counter", "counter_l") and kroom
+           and room_poly(kroom[0]).contains(furn_box(f).centroid)]
+    if fr and isl and cnt:
+        hob = max(cnt, key=lambda f: max(f.w, f.d))
+        k = [fr[0], isl[0], hob]
         pts = [furn_box(f).centroid for f in k]
         legs = [pts[0].distance(pts[1]), pts[1].distance(pts[2]), pts[2].distance(pts[0])]
         per = sum(legs)
@@ -1595,7 +1729,12 @@ def check_planning_quality():
                     + (" – acceptable for a cinema, needs fresh-air AHU" if sev == "INFO" else
                        " – needs daylight & natural ventilation (≥10 % of floor area)"), key=f"daylight:{r.no}")
             elif g < R["win_area_ratio"] * area:
-                add("WARN", cat, f"{room_label(r)}: glazing {g:.1f} m² = {100 * g / area:.0f} % of floor (< 10 %)")
+                if 'ממ"ד' in r.name:
+                    add("INFO", cat, f"{room_label(r)}: glazing {g:.1f} m² = {100 * g / area:.0f} % of floor – the ממ\"ד "
+                        "window is capped at 100/100; acceptable for a ממ\"ד used as a child room, note it")
+                else:
+                    add("WARN", cat, f"{room_label(r)}: glazing {g:.1f} m² = {100 * g / area:.0f} % of floor (< 10 %)",
+                        key=f"glazing:{r.no}")
         elif is_wet(r) and g == 0:
             add("INFO", cat, f"{room_label(r)} ({r.level}): wet room without window → note mechanical exhaust "
                 "(מפוח + תעלה לגג/חזית) on plans")

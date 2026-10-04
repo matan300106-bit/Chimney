@@ -1334,7 +1334,7 @@ def caesarea_map(sh, xl, xr, y0, y1):
         x_, y_ = Q(u0, v)
         sh.path(f"M{x_:.1f},{y_:.1f} q2,-1.1 4,0 t4,0 t4,0", lw=0.18, color="#8fbccb")
     sh.polyline([Q(*p) for p in coast], lw=0.45, color="#5f97ab")
-    sh.text(*Q(0.11, 0.30), "הים התיכון", size=4.2, color="#4f8397", weight=300, font=FR, rot=-80)
+    sh.text(*Q(0.11, 0.40), "הים התיכון", size=6.5, color="#4f8397", weight=300, font=FR, rot=-82)
     # beach strip
     sh.polyline([Q(u + 0.012, v) for u, v in coast], lw=1.6, color="#eadfc6", cap="round")
     # national park
@@ -1369,7 +1369,7 @@ def caesarea_map(sh, xl, xr, y0, y1):
         ([(0.22, 0.75), (0.27, 0.74), (0.275, 0.82), (0.215, 0.83)], "שדות ים", (0.29, 0.80)),
     ]:
         poly(pts, fill="#ebe5d8", lw=0.2, color="#9a9184")
-        sh.text(*Q(*at), lab, size=2.6, anchor="left", color=INK)
+        sh.text(*Q(*at), lab, size=2.9, anchor="left", color=INK)
     # golf course
     golf = [(0.42, 0.22), (0.53, 0.20), (0.585, 0.27), (0.575, 0.40), (0.53, 0.49), (0.45, 0.50), (0.405, 0.40),
             (0.40, 0.30)]
@@ -1378,7 +1378,7 @@ def caesarea_map(sh, xl, xr, y0, y1):
         px, py = Q(u, v)
         sh.add(f'<ellipse cx="{px:.2f}" cy="{py:.2f}" rx="{r * 2.2:.2f}" ry="{r:.2f}" fill="#e2ebcf" '
                f'transform="rotate(-30 {px:.2f} {py:.2f})"/>')
-    sh.text(*Q(0.49, 0.36), "מגרש הגולף", size=3.0, weight=700, color="#4f5a35")
+    sh.text(*Q(0.49, 0.36), "מגרש הגולף", size=3.4, weight=700, color="#4f5a35")
     # neighbourhoods (schematic blobs, numbered)
     hoods = {
         1: (0.38, 0.62), 2: (0.43, 0.70), 3: (0.37, 0.75), 4: (0.47, 0.80), 5: (0.55, 0.74), 6: (0.62, 0.66),
@@ -1387,52 +1387,54 @@ def caesarea_map(sh, xl, xr, y0, y1):
     }
     for n_, (u, v) in hoods.items():
         px, py = Q(u, v)
-        rw, rh = (fw * 0.055, fh * 0.07) if n_ != 13 else (fw * 0.06, fh * 0.11)
+        rw, rh = (fw * 0.065, fh * 0.07) if n_ != 13 else (fw * 0.07, fh * 0.11)
         sh.add(f'<rect x="{px - rw / 2:.2f}" y="{py - rh / 2:.2f}" width="{rw:.2f}" height="{rh:.2f}" rx="2.2" '
                f'fill="{"#ead9b8" if n_ == 13 else "#efe8da"}" stroke="{"#a5492f" if n_ == 13 else "#a99f90"}" '
                f'stroke-width="{0.45 if n_ == 13 else 0.2}"/>')
-        sh.text(px, py + 1.2, str(n_), size=3.2 if n_ == 13 else 2.8, weight=700 if n_ == 13 else 500,
+        sh.text(px, py + 1.3, str(n_), size=3.8 if n_ == 13 else 3.2, weight=700 if n_ == 13 else 500,
                 color="#a5492f" if n_ == 13 else MUTED)
     # site marker
     px, py = Q(0.645, 0.36)
     sh.circle(px - 4.2, py - 4.0, 1.6, fill="#a5492f", color="#ffffff", lw=0.3)
-    sh.line(px - 4.2, py - 4.0, px - 11, py - 12, lw=0.2, color="#a5492f")
-    sh.text(px - 11.5, py - 12.6, "האתר – רובע 13 (שכונת הגולף)", size=2.7, anchor="right", weight=700, color="#a5492f")
-    sh.text(px - 11.5, py - 9.1, "הנקודה הגבוהה בקיסריה", size=2.4, anchor="right", color="#a5492f")
+    lx_, ly_ = Q(0.765, 0.30)
+    sh.polyline([(px - 4.2, py - 4.0), (px + 8, ly_ - 1.0), (lx_ - 1, ly_ - 1.0)], lw=0.2, color="#a5492f")
+    sh.text(lx_, ly_, "האתר – רובע 13", size=3.1, anchor="left", weight=700, color="#a5492f")
+    sh.text(lx_, ly_ + 3.9, "שכונת הגולף, הנקודה", size=2.6, anchor="left", color="#a5492f")
+    sh.text(lx_, ly_ + 7.3, "הגבוהה בקיסריה", size=2.6, anchor="left", color="#a5492f")
     # roads
     r2 = [(0.74, -0.02), (0.745, 0.3), (0.75, 0.6), (0.755, 1.02)]
     sh.polyline([Q(*p) for p in r2], lw=2.2, color="#ffffff")
     sh.polyline([Q(*p) for p in r2], lw=1.4, color="#c9a34a")
-    sh.text(*Q(0.762, 0.12), "כביש 2", size=2.8, anchor="left", weight=700, color=CHAR)
+    sh.text(*Q(0.762, 0.12), "כביש 2", size=3.2, anchor="left", weight=700, color=CHAR)
     sh.polyline([Q(0.748, 0.47), Q(0.69, 0.47), Q(0.62, 0.48), Q(0.55, 0.54), Q(0.40, 0.58), Q(0.34, 0.57)], lw=0.9,
                 color="#d7c08a")
     ix, iy = Q(0.748, 0.47)
     sh.circle(ix, iy, 2.2, fill="#ffffff", lw=0.4, color=CHAR)
-    sh.text(ix + 3.4, iy + 1.0, "מחלף קיסריה", size=2.5, anchor="left", color=INK)
+    sh.text(ix - 3.0, iy - 2.4, "מחלף קיסריה", size=2.8, anchor="right", color=INK)
     # Or Akiva + industrial park + railway
     smooth([(0.80, 0.38), (0.90, 0.36), (0.93, 0.48), (0.90, 0.60), (0.82, 0.62), (0.79, 0.50)], fill="#ece6dc",
            lw=0.25, color="#9a9184")
-    sh.text(*Q(0.86, 0.49), "אור עקיבא", size=3.0, weight=700, color=INK)
+    sh.text(*Q(0.86, 0.49), "אור עקיבא", size=3.4, weight=700, color=INK)
     poly([(0.775, 0.68), (0.88, 0.67), (0.885, 0.80), (0.78, 0.81)], fill="#e4e1db", lw=0.2, color="#9a9184")
-    sh.text(*Q(0.83, 0.735), "פארק תעשיות", size=2.5, color=INK)
-    sh.text(*Q(0.83, 0.765), "קיסריה", size=2.5, color=INK)
+    sh.text(*Q(0.83, 0.735), "פארק תעשיות", size=2.8, color=INK)
+    sh.text(*Q(0.83, 0.765), "קיסריה", size=2.8, color=INK)
     rl = [(0.955, -0.02), (0.955, 1.02)]
     sh.polyline([Q(*p) for p in rl], lw=0.9, color=CHAR)
     sh.polyline([Q(*p) for p in rl], lw=0.5, color="#ffffff", dash="2 2")
     sx_, sy_ = Q(0.955, 0.24)
     sh.rect(sx_ - 2, sy_ - 3, 4, 6, fill="#ffffff", lw=0.35, color=CHAR)
-    sh.text(sx_ - 3.2, sy_ - 0.2, "רכבת ישראל –", size=2.4, anchor="right", color=INK)
-    sh.text(sx_ - 3.2, sy_ + 3.0, "תחנת קיסריה–פ\"ח", size=2.4, anchor="right", color=INK)
+    sh.text(sx_ - 3.2, sy_ - 0.4, "רכבת ישראל –", size=2.7, anchor="right", color=INK)
+    sh.text(sx_ - 3.2, sy_ + 3.3, "תחנת קיסריה–פ\"ח", size=2.7, anchor="right", color=INK)
     sh.text(*Q(0.93, 0.92), "קו החוף", size=2.3, anchor="right", color=MUTED)
     # labels on the historic coast
     for (u, v, t, anc) in [(0.165, 0.52, "נמל סבסטוס", "right"), (0.31, 0.335, "אמת המים", "left"),
                            (0.30, 0.66, "התיאטרון", "left"), (0.30, 0.575, "ההיפודרום", "left"),
                            (0.27, 0.43, "העיר הצלבנית", "left")]:
-        sh.text(*Q(u, v), t, size=2.45, anchor=anc, color="#6b5536", weight=600)
-    sh.text(*Q(0.31, 0.71), "גן לאומי קיסריה", size=2.6, anchor="left", color="#4f5a35", weight=700)
+        sh.text(*Q(u, v), t, size=2.8, anchor=anc, color="#6b5536", weight=600)
+    sh.text(*Q(0.31, 0.71), "גן לאומי קיסריה", size=3.0, anchor="left", color="#4f5a35", weight=700)
     # destinations
-    sh.text(*Q(0.745, 0.025), "חיפה", size=2.5, anchor="right", color=MUTED)
-    sh.text(*Q(0.745, 0.985), "חדרה · תל אביב", size=2.5, anchor="right", color=MUTED)
+    sh.text(*Q(0.735, 0.025), "חיפה", size=2.8, anchor="right", color=MUTED)
+    sh.text(*Q(0.735, 0.985), "חדרה · תל אביב", size=2.8, anchor="right", color=MUTED)
     sh.add("</g>")
     north_arrow(sh, fx0 + fw - 10, fy0 + 14, r=4.5)
     # scale-free note
@@ -1442,9 +1444,11 @@ def caesarea_map(sh, xl, xr, y0, y1):
 def site_diagram(sh, xl, xr, y0, y1):
     w = xr - xl
     y = heading(sh, xr, y0, w, "02", "ניתוח המגרש – רובע 13")
-    leg_w = 66
-    gx0, gx1, gy0_, gy1_ = -15.0, 42.0, -7.0, 43.0
-    k = min((w - leg_w - 4) / (gx1 - gx0), (y1 - y - 2) / (gy1_ - gy0_))
+    leg_w = 70
+    gx0, gx1 = -15.0, 42.0
+    k = min((w - leg_w - 4) / (gx1 - gx0), (y1 - y - 2) / 50.0)
+    half = (y1 - y - 2) / k / 2
+    gy0_, gy1_ = 18.0 - half, 18.0 + half
     ox = xr - (gx1 - gx0) * k - gx0 * k
     oy = y + 1 + gy1_ * k
 
@@ -1470,8 +1474,12 @@ def site_diagram(sh, xl, xr, y0, y1):
     # neighbours
     for yy0, yy1 in ((36, gy1_), (gy0_, 0)):
         R(0, yy0, 30, yy1, fill="#f1ece2", color="none")
-    R(6, 39, 24, gy1_ + 1, fill="pat:block", lw=0.2, color="#9a9184")
-    R(5, gy0_ - 1, 23, -3, fill="pat:block", lw=0.2, color="#9a9184")
+    R(7, 41, 23, 50, fill="#e6e0d4", lw=0.25, color="#9a9184")
+    R(6, -14, 22, -5, fill="#e6e0d4", lw=0.25, color="#9a9184")
+    sh.text(*P(15, 45.2), "בית שכן", size=2.6, color=MUTED)
+    sh.text(*P(15, -9.8), "בית שכן", size=2.6, color=MUTED)
+    for yy in (36.0, 0.0, 72.0, -36.0):
+        sh.line(*P(0, yy), *P(30, yy), lw=0.15, color="#9a9184", dash="2 1")
     # street
     R(30, gy0_, 32.5, gy1_, fill="#e2ddd3", color="none")
     R(32.5, gy0_, gx1, gy1_, fill="#cfcac2", color="none")
@@ -1505,13 +1513,15 @@ def site_diagram(sh, xl, xr, y0, y1):
         for p in (pa, pb):
             sh.line(p[0] - 0.7, p[1] + 0.7, p[0] + 0.7, p[1] - 0.7, lw=0.35, color=SAND_D)
         mx, my = (pa[0] + pb[0]) / 2 + off[0], (pa[1] + pb[1]) / 2 + off[1]
-        sh.text(mx, my, txt, size=2.4, weight=700, color=SAND_D, rot=rot)
+        tw_ = tw(txt, 2.8, 700)
+        sh.rect(mx - tw_ / 2 - 0.8, my - 2.6, tw_ + 1.6, 3.4, fill="#fbf9f5", color="none")
+        sh.text(mx, my, txt, size=2.8, weight=700, color=SAND_D, rot=rot)
     dim((0, 9.5), (ex0, 9.5), f"{M.SETBACK['rear']:.0f} מ'", (0, -1.2))
     dim((ex1, 9.5), (30, 9.5), f"{M.SETBACK['front']:.0f} מ'", (0, -1.2))
     dim((27.5, 0), (27.5, ey0), f"{M.SETBACK['side']:.0f} מ'", (2.2, 0.8))
     dim((27.5, ey1), (27.5, 36), f"{M.SETBACK['side']:.0f} מ'", (2.2, 0.8))
-    sh.text(*P(15, 37.6), "מגרש שכן", size=2.5, color=MUTED, weight=500)
-    sh.text(*P(15, -1.6), "מגרש שכן", size=2.5, color=MUTED, weight=500)
+    sh.text(*P(15, 38.0), "מגרש שכן", size=2.7, color=MUTED, weight=500)
+    sh.text(*P(15, -2.4), "מגרש שכן", size=2.7, color=MUTED, weight=500)
     # street label & access
     sh.text(*P(36.0, 18), "רחוב גישה – מזרח", size=3.0, weight=700, color="#ffffff", rot=-90)
     arrow(sh, *P(35.5, 29.8), *P(26.0, 29.8), lw=0.45, color=CHAR, head=2.0)
@@ -1532,18 +1542,18 @@ def site_diagram(sh, xl, xr, y0, y1):
     sh.text(*P(-7.5, 19.0), "לגולף ולשקיעה", size=2.4, color="#4f5a35")
     # winds
     for i in range(3):
-        a = P(-14.5, 41.5 - i * 4.6)
-        b = P(-4.5, 37.0 - i * 4.6)
+        a = P(-14.5, gy1_ - 4.0 - i * 4.6)
+        b = P(-4.5, gy1_ - 8.5 - i * 4.6)
         _wave_arrow(sh, *a, *b, SEA, lw=0.5)
-    sh.text(*P(-14.3, 42.4), "בריזת ים מערב–צ\"מ", size=2.4, anchor="left", weight=700, color="#4f8397")
+    sh.text(*P(-14.3, gy1_ - 2.2), "בריזת ים מערב–צ\"מ", size=2.4, anchor="left", weight=700, color="#4f8397")
     for i in range(2):
-        a = P(-14.5, -3.0 + i * 4.0)
-        b = P(-6.5, 3.0 + i * 4.0)
+        a = P(-14.5, gy0_ + 4.0 + i * 4.0)
+        b = P(-6.5, gy0_ + 10.0 + i * 4.0)
         _wave_arrow(sh, *a, *b, "#5d564d", lw=0.5, amp=1.0)
-    sh.text(*P(-14.3, -5.6), "סערות חורף מדרום-מערב", size=2.4, anchor="left", weight=700, color="#5d564d")
-    for yy in (40.0,):
+    sh.text(*P(-14.3, gy0_ + 1.6), "סערות חורף מדרום-מערב", size=2.4, anchor="left", weight=700, color="#5d564d")
+    for yy in (gy1_ - 5.5, gy1_ - 9.0):
         _wave_arrow(sh, *P(41.5, yy), *P(32.8, yy), "#c27c2c", lw=0.5, amp=0.6)
-    sh.text(*P(41.6, 42.2), "שרב ממזרח", size=2.4, anchor="right", weight=700, color="#c27c2c")
+    sh.text(*P(41.6, gy1_ - 2.4), "שרב ממזרח", size=2.4, anchor="right", weight=700, color="#c27c2c")
     # sun arc (summer & winter, plan)
     cxm, cym = (M.X_W + M.X_E) / 2, (M.Y_S_G + M.Y_N) / 2 - 2
 
@@ -1554,21 +1564,24 @@ def site_diagram(sh, xl, xr, y0, y1):
             pts.append(P(cxm + r * math.sin(az), cym + r * math.cos(az)))
         sh.polyline(pts, lw=0.35, color=color, dash=dash)
         return pts
-    sp = arc(29.0, 62, 298, "#c27c2c", "2 1.2")
-    wp = arc(23.0, 118, 242, "#8a6a3c", "0.8 1")
+    sp = arc(20.0, 62, 298, "#c27c2c", "2 1.2")
+    wp = arc(15.0, 118, 242, "#8a6a3c", "0.8 1")
     for p_, t, anc, dx in [(sp[0], "זריחת קיץ 62°", "left", 1.5), (sp[-1], "שקיעת קיץ 298°", "right", -1.5)]:
         sh.circle(*p_, 1.3, fill="#e2a34a", color="none")
     sh.text(*P(cxm, cym - 29.0 + 1.6), "", size=2)
     noon = sp[20]
     sh.circle(*noon, 1.6, fill="#e2a34a", color="none")
-    sh.text(noon[0] + 2.4, noon[1] + 1.0, "שמש קיץ 81°", size=2.3, anchor="left", color="#a35f17", weight=600)
+    t_ = "שמש קיץ 81°"
+    sh.rect(noon[0] + 2.0, noon[1] - 2.2, tw(t_, 2.6, 600) + 1.2, 3.4, fill="#fbf9f5", color="none")
+    sh.text(noon[0] + 2.6, noon[1] + 0.9, t_, size=2.6, anchor="left", color="#a35f17", weight=600)
     wn = wp[20]
     sh.circle(*wn, 1.3, fill="#b48a4c", color="none")
-    sh.text(wn[0] + 2.2, wn[1] + 1.0, "חורף 34°", size=2.3, anchor="left", color="#7a5a2c", weight=600)
+    t_ = "שמש חורף 34°"
+    sh.rect(wn[0] + 1.8, wn[1] - 2.2, tw(t_, 2.6, 600) + 1.2, 3.4, fill="#fbf9f5", color="none")
+    sh.text(wn[0] + 2.4, wn[1] + 0.9, t_, size=2.6, anchor="left", color="#7a5a2c", weight=600)
     # level
     lx, ly = P(20.5, 33.2)
     sh.text(lx, ly, "±0.00 = +18.50", size=2.3, color=CHAR, weight=600)
-    north_arrow(sh, *P(gx0 + 2.6, gy1_ - 10.5), r=4.0)
     # ------------- legend
     lx1 = ox + gx0 * k - 5
     ly = y + 4
@@ -1603,18 +1616,19 @@ def site_diagram(sh, xl, xr, y0, y1):
             sh.rect(sx, ly - 2.6, 8, 3.2, fill=STONE, lw=0.2, color=col, dash="1.5 1")
         elif kind == "lot":
             sh.line(sx, ly - 1, sx + 8, ly - 1, lw=0.5, color=col, dash="3 0.8 0.8 0.8")
-        for j, l in enumerate(wrap(t, leg_w - 16, 2.4)):
-            sh.text(lx1 - 11, ly + j * 3.3, l, size=2.4, anchor="right", color=INK)
-        ly += 3.3 * len(wrap(t, leg_w - 16, 2.4)) + 3.4
+        for j, l in enumerate(wrap(t, leg_w - 16, 2.65)):
+            sh.text(lx1 - 11, ly + j * 3.6, l, size=2.65, anchor="right", color=INK)
+        ly += 3.6 * len(wrap(t, leg_w - 16, 2.65)) + 3.8
     # key facts under the legend
     ly += 3
     sh.line(lx1 - leg_w + 6, ly, lx1, ly, lw=0.2, color=CHAR)
     ly += 5
     for lab, val in [("שטח המגרש", "1,080 מ\"ר"), ("חזית לרחוב", "30 מ' (מזרח)"), ("עומק", "36 מ'"),
                      ("גבול מערבי", "מגרש הגולף"), ("מפלס ±0.00", "+18.50 מעל פני הים")]:
-        sh.text(lx1, ly, lab, size=2.4, anchor="right", color=MUTED)
-        sh.text(lx1 - 22, ly, val, size=2.45, anchor="right", weight=600, color=CHAR)
-        ly += 4.2
+        sh.text(lx1, ly, lab, size=2.55, anchor="right", color=MUTED)
+        sh.text(lx1 - 24, ly, val, size=2.6, anchor="right", weight=600, color=CHAR)
+        ly += 4.6
+    north_arrow(sh, lx1 - leg_w / 2 + 3, ly + 16, r=6)
 
 
 # ---------------------------------------------------------------- climate
@@ -1682,7 +1696,7 @@ PLANNING = [
     ("שטח עיקרי", '35% = 378 מ"ר', "גיליון 04"),
     ("שטחי שירות", '16% = 173 מ"ר', "גיליון 04"),
     ("תכסית", '40% = 432 מ"ר', None),
-    ("קומות", "2 + מרתף", "2 + מרתף + יציאה לגג"),
+    ("קומות", "2 + מרתף", "2 + מרתף + גג"),
     ("מרתף", "בקונטור קומה מעל", "בקונטור"),
     ("קו בניין קדמי (מזרח)", "5 מ'", "5 מ'"),
     ("קווי בניין צדדיים", "4 מ'", "4 מ'"),
@@ -1758,7 +1772,7 @@ def sunpath_panel(sh, xl, xr, y0, y1):
         sh.text(ox_, oy_ + 0.9, lab, size=2.6 if az % 90 == 0 else 1.9, weight=700 if az % 90 == 0 else 400,
                 color=CHAR if az % 90 == 0 else MUTED)
     # lot footprint in the centre
-    s = R * 0.012
+    s = R * 0.008
     fx, fy = cx - 15.5 * s * 1.0, cy
     sh.rect(cx - (M.X_E - M.X_W) / 2 * s, cy - (M.Y_N - M.Y_S_G) / 2 * s - 2 * s, (M.X_E - M.X_W) * s,
             (M.Y_N - M.Y_S_G) * s, fill=SAND, lw=0.15, color=CHAR)
@@ -1778,7 +1792,7 @@ def sunpath_panel(sh, xl, xr, y0, y1):
             alt, az = sun_pos(decl, hr)
             if alt > 0:
                 sh.circle(*P(alt, az), 0.65, fill=col, color="#ffffff", lw=0.15)
-                if decl > 0 and hr in (6, 9, 12, 15, 18):
+                if decl > 0 and hr in (6, 9, 15, 18):
                     px, py = P(alt, az)
                     sh.text(px, py - 1.4, f"{hr}:00", size=1.8, color=col)
         alt, az = sun_pos(decl, 12)
@@ -1850,7 +1864,7 @@ def windrose_panel(sh, xl, xr, y0, y1):
         ly += 4.2
     sh.text(xr, ly + 0.6, "תדירות משוערת לפי עונה – סכמה להמחשה.", size=2.05, anchor="right", color=MUTED)
     # sharav arrow on the rose
-    _wave_arrow(sh, cx + R + 1, cy - R * 0.55, cx + R * 0.45, cy - R * 0.22, "#c27c2c", lw=0.45, amp=0.5, n=2, head=1.6)
+    _wave_arrow(sh, cx + R + 2, cy + 7, cx + R * 0.5, cy + 3, "#c27c2c", lw=0.45, amp=0.5, n=2, head=1.6)
 
 
 # ---------------------------------------------------------------- strategy icons
@@ -1902,16 +1916,16 @@ def _icon(sh, x, y, s, kind):
 
 STRATEGIES = [
     ("orient", "אוריינטציה", "ציר ארוך מזרח–מערב; חללי המגורים והוויטרינות פונים דרומה אל הגן, חזית הרחוב במזרח "
-                             "סגורה ושקטה."),
+                             "סגורה ושקטה.", "סלון, אוכל ומטבח בחזית הדרומית; לובי, שירות וחניה במזרח."),
     ("overhang", "הצללה דרומית", "שלוחה של 5 מ' ולוג'יה שקועה 1.6 מ' – חוסמות את שמש הקיץ (81°) ומכניסות את שמש "
-                                 "החורף (34°)."),
+                                 "החורף (34°).", "מרפסת מקורה של 35 מ\"ר מתחת לשלוחה; לוג'יית ההורים."),
     ("fins", "רפפות מערביות", "רפפות אנכיות 50/200 מ\"מ במרווח 180 בחזית המערבית חוסמות את שמש אחר-הצהריים "
-                              "הנמוכה ושומרות על המבט לגולף."),
+                              "הנמוכה ושומרות על המבט לגולף.", "חזית מערב של סוויטת ההורים וחזית מזרח של חדר שינה 2."),
     ("vent", "אוורור צולב וארובה", "פתחים מנוגדים בכיוון בריזת הים, ופליטת אוויר חם דרך חדר המדרגות והיציאה לגג; "
-                                   "פטיו שקוע מאוורר את המרתף."),
+                                   "פטיו שקוע מאוורר את המרתף.", "ויטרינות הזזה בדרום ובמערב, זיגוג רציף בחדר המדרגות."),
     ("salt", "חומרים לאוויר מלוח", "אלומיניום בגימור ימי, נירוסטה 316, אבן טבעית ספוגה, טיח סיליקט; פרטי איטום "
-                                   "וניקוז מוגברים."),
-    ("pv", "אנרגיה ומים", "מערכת PV על הגג (חובה), דוד שמש, השקיה בטפטוף וצמחייה ים-תיכונית חסכונית במים."),
+                                   "וניקוז מוגברים.", "פרזול נירוסטה 316, אלומיניום בצביעה בתנור בדרגה ימית."),
+    ("pv", "אנרגיה ומים", "מערכת PV על הגג (חובה), דוד שמש, השקיה בטפטוף וצמחייה ים-תיכונית חסכונית במים.", "פאנלים על גג האגף המערבי; מרפסת גג עם פרגולה."),
 ]
 
 
@@ -1921,14 +1935,15 @@ def strategies_panel(sh, xl, xr, y0, y1):
     g = 10
     cw = (w - g) / 2
     rh = (y1 - y) / 3
-    s = 22
-    for i, (kind, t, d) in enumerate(STRATEGIES):
+    s = 27
+    for i, (kind, t, d, impl) in enumerate(STRATEGIES):
         col, row = i % 2, i // 2
         x1 = xr - col * (cw + g)
         yy = y + row * rh
         _icon(sh, x1 - s, yy, s, kind)
-        sh.text(x1 - s - 4, yy + 3.6, f"{i + 1:02d}  {t}", size=3.0, anchor="right", weight=700, color=CHAR)
-        para(sh, x1 - s - 4, yy + 8.6, cw - s - 4, d, size=2.55, lh=1.5, color=INK)
+        sh.text(x1 - s - 4, yy + 3.8, f"{i + 1:02d}  {t}", size=3.2, anchor="right", weight=700, color=CHAR)
+        yb = para(sh, x1 - s - 4, yy + 9.0, cw - s - 4, d, size=2.7, lh=1.5, color=INK)
+        para(sh, x1 - s - 4, yb + 1.2, cw - s - 4, "ביישום: " + impl, size=2.55, lh=1.45, color=OLIVE, weight=500)
         if row < 2:
             sh.line(x1 - cw, yy + rh - 4, x1, yy + rh - 4, lw=0.08, color=RULE)
 
@@ -1937,7 +1952,7 @@ def sheet_site_analysis(sh, box):
     G = Grid(box)
     y = board_header(sh, G, "ניתוח אתר וסביבה", "קיסריה · רובע 13 (שכונת הגולף) · אקלים, תכנון ואסטרטגיות",
                      "BEIT KURKAR  ·  SITE & CLIMATE ANALYSIS")
-    yA1 = y + 268
+    yA1 = G.y1 - 168
     xl, xr, w = G.col(0, 3)
     caesarea_map(sh, xl, xr, y, yA1)
     xl, xr, w = G.col(3, 3)

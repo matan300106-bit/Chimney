@@ -472,3 +472,40 @@ def arrow_line(sh, pts, lw="s", head=1.8):
     p1 = (x2 - head * math.cos(a - 0.35), y2 - head * math.sin(a - 0.35))
     p2 = (x2 - head * math.cos(a + 0.35), y2 - head * math.sin(a + 0.35))
     sh.polyline([p1, (x2, y2), p2], closed=True, lw="xxs", fill="#000")
+
+
+def ltr(s):
+    """isolate a left-to-right run (levels, dims) inside Hebrew text"""
+    return "⁦" + str(s) + "⁩"
+
+
+def callout_col(sh, items, x_text, side="right", y_min=None, y_max=None, size=2.0, gap=1.6, lh=1.3,
+                elbow=3.0, dot=True):
+    """Place a column of leader callouts without crossings.
+
+    items: list of (tx, ty, lines) – target in paper mm, lines = list[str].
+    Text block i starts at the shoulder at y_i; blocks are pushed apart (top-down)
+    and kept inside [y_min, y_max].
+    """
+    items = sorted(items, key=lambda it: it[1])
+    hs = [size * lh * (len(it[2]) - 1) + size * 0.9 for it in items]
+    ys = []
+    cur = -1e9
+    for (tx, ty, lines), h in zip(items, hs):
+        y = max(ty, cur)
+        if y_min is not None:
+            y = max(y, y_min)
+        ys.append(y)
+        cur = y + h + gap
+    if y_max is not None and ys:
+        over = ys[-1] + hs[-1] - y_max
+        if over > 0:
+            # push up from the bottom
+            ys[-1] -= over
+            for i in range(len(ys) - 2, -1, -1):
+                ys[i] = min(ys[i], ys[i + 1] - hs[i] - gap)
+    sgn = 1 if side == "right" else -1
+    for (tx, ty, lines), y in zip(items, ys):
+        ex = x_text - sgn * elbow
+        leader(sh, tx, ty, ex, y, lines, side=side, size=size, shoulder=elbow - 0.8, dot=dot)
+    return ys

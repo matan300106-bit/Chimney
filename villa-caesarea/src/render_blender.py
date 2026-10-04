@@ -39,23 +39,23 @@ OUT_MODEL = os.path.join(ROOT, "out", "model")
 PREVIEW_DIR = "/tmp/beit_kurkar_previews"
 
 WARM = (1.0, 0.66, 0.38)       # ~2700 K
-WARM2 = (1.0, 0.74, 0.50)      # ~3000 K
-POOLC = (0.55, 0.93, 1.0)
+WARM2 = (1.0, 0.68, 0.40)      # ~2900 K
+POOLC = (0.30, 0.82, 1.0)
 
 # =========================================================================== #
 #  Cameras
 # =========================================================================== #
 # loc / tgt in model metres. level=True -> two-point perspective (vertical lines stay vertical, shift_y frames).
 CAMS = {
-    "ext_01": dict(mode="dusk", loc=(4.5, 6.0, 1.2), tgt=(13.5, 18.5, 4.0), lens=20, level=True, exposure=0.6,
+    "ext_01": dict(mode="dusk", loc=(6.5, 3.6, 1.2), tgt=(12.8, 18.5, 4.0), lens=21, level=True, exposure=0.6,
                    desc="hero - south-west, eye level, dusk: cantilever over the pool"),
-    "ext_02": dict(mode="day", loc=(12.6, 1.4, 1.55), tgt=(10.2, 17.0, 4.6), lens=24, level=True, exposure=0.0,
+    "ext_02": dict(mode="day", loc=(9.6, 1.35, 1.6), tgt=(9.6, 17.0, 4.6), lens=24, level=True, exposure=0.0,
                    desc="garden / pool axis looking north at the cantilevered master loggia"),
-    "ext_03": dict(mode="dusk", loc=(39.2, 12.5, 1.25), tgt=(25.5, 25.0, 3.4), lens=22, level=True, exposure=0.9,
+    "ext_03": dict(mode="dusk", loc=(41.0, 15.5, 1.35), tgt=(25.0, 28.0, 3.6), lens=22, level=True, exposure=0.9,
                    desc="street (east) facade: pivot door, canopy, carport"),
     "ext_04": dict(mode="day", loc=(-21.0, -17.0, 30.0), tgt=(15.0, 19.0, 1.0), lens=32, level=False, exposure=0.0,
                    desc="aerial south-west 3/4 view: roof terrace, whole lot"),
-    "ext_05": dict(mode="dusk", loc=(23.4, 14.6, 1.55), tgt=(14.5, 20.0, -0.9), lens=22, level=True, exposure=0.8,
+    "ext_05": dict(mode="dusk", loc=(21.0, 17.35, -2.0), tgt=(14.5, 20.6, -1.2), lens=19, level=True, exposure=0.8,
                    desc="sunken patio + covered terrace under the cantilever"),
     "int_01": dict(mode="int_day", loc=(12.55, 28.1, 1.32), tgt=(7.0, 21.6, 1.15), lens=18, level=True, exposure=1.2,
                    desc="living room toward the garden"),
@@ -67,10 +67,11 @@ CAMS = {
 
 # per mode: sun / sky / light-group multipliers
 MODES = {
-    "day": dict(sun_el=46.0, sun_az=218.0, sun_E=4.2, sun_col=(1.0, 0.96, 0.90), sky=0.32, dust=0.6,
+    "day": dict(sun_el=46.0, sun_az=218.0, sun_E=5.5, sun_col=(1.0, 0.95, 0.88), sky=0.22, dust=0.6,
                 lights=dict(interior=0.0, downlight=0.0, pendant=0.0, garden=0.0, pool=0.0, soffit=0.0,
                             neighbour=0.0, fire=0.0, lamp=0.0, portal=0.0)),
-    "dusk": dict(sun_el=2.5, sun_az=256.0, sun_E=1.6, sun_col=(1.0, 0.50, 0.24), sky=0.55, dust=2.5,
+    "dusk": dict(sun_el=float(os.environ.get("BK_EL", -1.0)), sun_az=256.0, sun_E=float(os.environ.get("BK_SUNE", 0.0)),
+                 sun_col=(1.0, 0.50, 0.24), sky=float(os.environ.get("BK_SKY", 0.35)), dust=2.5,
                  lights=dict(interior=1.0, downlight=1.0, pendant=1.0, garden=1.0, pool=1.0, soffit=1.0,
                              neighbour=1.0, fire=1.0, lamp=1.0, portal=0.0)),
     "int_day": dict(sun_el=38.0, sun_az=232.0, sun_E=4.0, sun_col=(1.0, 0.95, 0.88), sky=0.32, dust=0.6,
@@ -228,11 +229,11 @@ def m_stone(name="stone"):
     m, T = new_mat(name)
     uv = T.tc("UV")
     ob = T.tc("Object")
-    br = T.n("ShaderNodeTexBrick", Vector=uv, Color1=srgb("#CDB089"), Color2=srgb("#BE9E74"),
-             Mortar=srgb("#9C8466"), Scale=1.0, Mortar_Size=0.0045, Mortar_Smooth=0.2, Bias=0.0,
+    br = T.n("ShaderNodeTexBrick", Vector=uv, Color1=srgb("#D8C29F"), Color2=srgb("#CDB48D"),
+             Mortar=srgb("#A8957A"), Scale=1.0, Mortar_Size=0.0045, Mortar_Smooth=0.2, Bias=0.0,
              Brick_Width=1.20, Row_Height=0.60, props=dict(offset=0.5, offset_frequency=2))
     big = T.noise(ob, 0.6, 3, 0.5)
-    tone = T.mix(T.math("MULTIPLY", big, 0.35), T.o(br, "Color"), srgb("#D9BF97"), "OVERLAY")
+    tone = T.mix(T.math("MULTIPLY", big, 0.35), T.o(br, "Color"), srgb("#E0CCA8"), "OVERLAY")
     fine = T.noise(ob, 9.0, 8, 0.65)
     vor = T.n("ShaderNodeTexVoronoi", Vector=ob, Scale=55.0)
     pores = T.math("LESS_THAN", T.o(vor, "Distance"), 0.10)
@@ -295,11 +296,12 @@ def m_tiles(name, c1, c2, grout, size, rough, joint=0.002, offset=0.0, var=0.25,
     return m
 
 
-def m_wood(name, c_light, c_dark, rough=0.45, scale=6.0, planks=None, metal=0.0, coat=0.0):
+def m_wood(name, c_light, c_dark, rough=0.45, scale=6.0, planks=None, metal=0.0, coat=0.0, distort=7.0):
     m, T = new_mat(name)
     uv = T.tc("UV")
     ob = T.tc("Object")
-    wv = T.n("ShaderNodeTexWave", Vector=uv, Scale=scale, Distortion=7.0, Detail=3.0, Detail_Scale=1.5,
+    mp = T.n("ShaderNodeMapping", Vector=uv, Scale=(1.0, 8.0, 1.0))  # stretch grain along U
+    wv = T.n("ShaderNodeTexWave", Vector=mp.outputs[0], Scale=scale, Distortion=distort, Detail=3.0, Detail_Scale=1.5,
              props=dict(wave_type="BANDS", bands_direction="Y"))
     n = T.noise(uv, 40.0, 3)
     g = T.math("MULTIPLY", T.o(wv, "Fac"), 0.75)
@@ -516,7 +518,7 @@ def build_materials():
     mk["wood_dark"] = m_wood("wood_dark", "#5C4433", "#2F2219", rough=0.35, scale=5.0, coat=0.3)
     mk["deck"] = m_wood("deck", "#94704C", "#6B4D33", rough=0.62, scale=7.0, planks=(0.145, 2.4, 0.012))
     mk["water"] = m_water()
-    mk["pool_plaster"] = m_plaster("pool_plaster", "#E6F0F0", 0.55, 0.02)
+    mk["pool_plaster"] = m_plaster("pool_plaster", "#DCEDF0", 0.55, 0.02)
     mk["grass"] = m_grass("grass", "#5F7F33", "#86A048")
     mk["grass_n"] = m_grass("grass_n", "#5A7A33", "#7E9846")
     mk["golf"] = m_grass("golf", "#5E8A33", "#7FA544", stripes=0.35, dry=0.08)
@@ -543,8 +545,8 @@ def build_materials():
     mk["pv"] = m_pv()
     mk["bark"] = m_bark()
     mk["palm_trunk"] = m_palm_trunk()
-    mk["olive_leaf"] = m_leaves("olive_leaf", "#8E987A", "#55603F", transl=0.2, rough=0.55)
-    mk["carob_leaf"] = m_leaves("carob_leaf", "#3F5A2A", "#22331A", transl=0.15)
+    mk["olive_leaf"] = m_leaves("olive_leaf", "#97A088", "#56634A", transl=0.2, rough=0.55, scale=14)
+    mk["carob_leaf"] = m_leaves("carob_leaf", "#47622F", "#22331A", transl=0.15, scale=14)
     mk["palm_leaf"] = m_leaves("palm_leaf", "#7C8A48", "#4C5A2C", transl=0.3, scale=20)
     mk["hedge_leaf"] = m_leaves("hedge_leaf", "#4D6B31", "#2C421D", transl=0.15, scale=14)
     mk["pine_leaf"] = m_leaves("pine_leaf", "#41562C", "#26341A", transl=0.1)
@@ -558,7 +560,7 @@ def build_materials():
     mk["em_pend"] = m_emit("em_pend", WARM, 9.0, "pendant")
     mk["em_lamp"] = m_emit("em_lamp", WARM, 6.0, "lamp")
     mk["em_fire"] = m_emit("em_fire", (1.0, 0.42, 0.12), 14.0, "fire")
-    mk["em_pool"] = m_emit("em_pool", POOLC, 18.0, "pool")
+    mk["em_pool"] = m_emit("em_pool", POOLC, 8.0, "pool")
     mk["em_garden"] = m_emit("em_garden", WARM2, 25.0, "garden")
     mk["em_soffit"] = m_emit("em_soffit", WARM2, 25.0, "soffit")
     mk["n_glow"] = m_emit("n_glow", (1.0, 0.70, 0.42), 1.6, "neighbour", base_shader="#202224")
@@ -1263,7 +1265,7 @@ def car_elems():
                 B(bx0 + 0.95, by0 + 0.08, z + 0.78, bx1 - 0.85, by1 - 0.08, z + 1.32, "car_glass", 2),
                 B(bx0 + 1.05, by0 + 0.12, z + 1.30, bx1 - 0.95, by1 - 0.12, z + 1.38, paint, 2),
                 B(bx0 - 0.02, by0 + 0.25, z + 0.50, bx0, by1 - 0.25, z + 0.62, "frame", 0),
-                B(bx1, by0 + 0.2, z + 0.55, bx1 + 0.02, by0 + 0.45, z + 0.66, "em_garden", 0)]
+                B(bx1, by0 + 0.2, z + 0.55, bx1 + 0.02, by0 + 0.45, z + 0.66, "frame", 0)]
         for (wx, wy) in [(bx0 + 0.75, by0 + 0.12), (bx1 - 0.75, by0 + 0.12), (bx0 + 0.75, by1 - 0.12), (bx1 - 0.75, by1 - 0.12)]:
             out.append(dict(t="obox", c=(wx, wy, z + 0.34), size=(0.66, 0.24, 0.66), rot=(0, 0, 0), mat="tire", soft=2))
         del L
@@ -1278,7 +1280,7 @@ def _blob(bm, center, r, rng, sub=2, sq=1.0, amp=0.18):
     off = Vector((rng.random() * 100, rng.random() * 100, rng.random() * 100))
     for v in res["verts"]:
         d = v.co.normalized()
-        n = mnoise.fractal(v.co * (2.2 / max(r, 0.2)) + off, 0.6, 2.0, 3)
+        n = mnoise.fractal(d * 2.6 + off, 0.6, 2.0, 3)
         v.co = Vector((d.x * r, d.y * r, d.z * r * sq)) * (1 + amp * n) + Vector(center)
     return res["verts"]
 
@@ -1318,13 +1320,14 @@ def tree_olive(x, y, r, rng, name, z0):
         _tube(bm, pts, [0.10, 0.075, 0.05], 7)
     trunk_bm = bm
     leaves = bmesh.new()
-    zc = h0 + 1.25 + r * 0.25
-    n = int(14 + r * 7)
+    zc = h0 + 1.15 + r * 0.25
+    n = int(40 + r * 26)
     for i in range(n):
         a = rng.random() * 2 * math.pi
-        rad = r * 0.82 * math.sqrt(rng.random())
-        c = (math.cos(a) * rad + lean.x, math.sin(a) * rad + lean.y, zc + rng.uniform(-0.45, 0.55) * r * 0.5)
-        _blob(leaves, c, r * rng.uniform(0.28, 0.42), rng, 2, 0.75, 0.25)
+        rad = r * 0.85 * rng.random() ** 0.35
+        dz = (1 - min(1, rad / r) ** 2) ** .5
+        c = (math.cos(a) * rad + lean.x, math.sin(a) * rad + lean.y, zc + rng.uniform(-0.6, 0.8) * dz * r * 0.42)
+        _blob(leaves, c, r * rng.uniform(0.13, 0.21), rng, 2, 0.8, 0.35)
     o1 = bm_object(name + "_trunk", trunk_bm, "bark", "veg", (x, y, z0), True)
     o2 = bm_object(name + "_leaves", leaves, "olive_leaf", "veg", (x, y, z0), True)
     return [o1, o2]
@@ -1338,13 +1341,13 @@ def tree_carob(x, y, r, rng, name, z0):
         _tube(bm, [(0.1, -0.05, 1.4), (math.cos(a) * r * .35, math.sin(a) * r * .35, 2.2)], [0.13, 0.08], 7)
     leaves = bmesh.new()
     zc = 2.3 + r * 0.45
-    n = int(18 + r * 9)
+    n = int(50 + r * 26)
     for i in range(n):
         a = rng.random() * 2 * math.pi
-        rad = r * 0.78 * math.sqrt(rng.random())
-        dz = (1 - (rad / r) ** 2) ** .5 * r * 0.45
-        c = (math.cos(a) * rad, math.sin(a) * rad, zc + rng.uniform(-0.6, 1.0) * dz)
-        _blob(leaves, c, r * rng.uniform(0.32, 0.46), rng, 2, 0.8, 0.2)
+        rad = r * 0.85 * rng.random() ** 0.4
+        dz = (1 - min(1, rad / r) ** 2) ** .5 * r * 0.5
+        c = (math.cos(a) * rad, math.sin(a) * rad, zc + rng.uniform(-0.5, 1.0) * dz)
+        _blob(leaves, c, r * rng.uniform(0.17, 0.26), rng, 2, 0.85, 0.3)
     return [bm_object(name + "_trunk", bm, "bark", "veg", (x, y, z0)),
             bm_object(name + "_leaves", leaves, "carob_leaf", "veg", (x, y, z0))]
 
@@ -1703,7 +1706,7 @@ def build_lights():
             if w < 0.8 or d < 0.8:
                 continue
             area = w * d
-            add_light("AREA", ((x0 + x1) / 2, (y0 + y1) / 2, zc - 0.02), 6.0 * area, WARM2, "interior",
+            add_light("AREA", ((x0 + x1) / 2, (y0 + y1) / 2, zc - 0.02), 3.5 * area, WARM2, "interior",
                       size=max(0.3, w - 0.8), size_y=max(0.3, d - 0.8), name=f"fill_{r.no}")
             # downlights
             sp = 1.9
@@ -1712,7 +1715,7 @@ def build_lights():
                 for j in range(ny):
                     x = x0 + 0.3 + (i + 0.5) * (w - 0.6) / nx
                     y = y0 + 0.3 + (j + 0.5) * (d - 0.6) / ny
-                    add_light("SPOT", (x, y, zc - 0.03), 22.0, WARM2, "downlight", size=0.03, spot=(110, 0.9),
+                    add_light("SPOT", (x, y, zc - 0.03), 14.0, WARM2, "downlight", size=0.03, spot=(110, 0.9),
                               name=f"dl_{r.no}")
                     em.append(dict(t="cyl", x=x, y=y, z0=zc - 0.012, z1=zc + 0.001, r=0.045, mat="em_down", soft=3, seg=14))
                     em.append(dict(t="cyl", x=x, y=y, z0=zc - 0.006, z1=zc + 0.0005, r=0.06, mat="frame", soft=3, seg=14))
@@ -1736,14 +1739,14 @@ def build_lights():
                 em.append(dict(t="cyl", x=xx, y=y, z0=zc - 0.012, z1=zc + 0.001, r=0.045, mat="em_soffit", soft=3, seg=14))
     for p in M.PERGOLAS:
         zz = p["z"] - 0.02
-        add_light("AREA", ((p["x0"] + p["x1"]) / 2, (p["y0"] + p["y1"]) / 2, zz), 60.0, WARM2, "soffit",
+        add_light("AREA", ((p["x0"] + p["x1"]) / 2, (p["y0"] + p["y1"]) / 2, zz), 22.0, WARM2, "soffit",
                   size=(p["x1"] - p["x0"]) * 0.6, size_y=(p["y1"] - p["y0"]) * 0.6, name="pergola")
     # ---------------- pool: underwater lights + cove strip
     P = M.SITE["pool"]
     wz = P["water"]
     for x in [P["x0"] + 1.2 + i * (P["x1"] - P["x0"] - 2.4) / 4 for i in range(5)]:
         for (y, dy) in ((P["y0"] + 0.12, 1), (P["y1"] - 0.12, -1)):
-            add_light("SPOT", (x, y, wz - 0.45), 120.0, POOLC, "pool", size=0.06, spot=(130, 1.0),
+            add_light("SPOT", (x, y, wz - 0.45), 55.0, POOLC, "pool", size=0.06, spot=(130, 1.0),
                       direction=(0, dy, -0.25), name="pool")
             em.append(B(x - 0.09, y - 0.115 * dy - 0.01, wz - 0.53, x + 0.09, y - 0.115 * dy + 0.01, wz - 0.37, "em_pool", 3)
                       if False else B(x - 0.09, min(y - 0.125 * dy, y - 0.105 * dy), wz - 0.53, x + 0.09,
@@ -1881,6 +1884,7 @@ def set_mode(mode_name, cam_cfg):
     to_sun = Vector((math.sin(az) * math.cos(el), math.cos(az) * math.cos(el), math.sin(el)))
     SUN.rotation_euler = (-to_sun).to_track_quat("-Z", "Y").to_euler()
     SUN.data.energy = md["sun_E"]
+    SUN.hide_render = md["sun_E"] <= 0
     SUN.data.color = md["sun_col"]
     mult = dict(md["lights"])
     mult.update(cam_cfg.get("lights", {}))

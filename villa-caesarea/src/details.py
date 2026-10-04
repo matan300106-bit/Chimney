@@ -14,7 +14,7 @@ import draw as D
 import model as M
 from details_lib import (Frame, R, PG, LN, U, bubble, breakline, circle_poly, detail_ref, detail_title,
                          dim_chain_h, dim_chain_v, dimh, dimv, fill_ref, fmt_lv, leader, level_tag,
-                         stack_callout, text_lines, tw, arrow_line, ring)
+                         stack_callout, text_lines, tw, arrow_line, ring, ltr, callout_col)
 
 SZ = 2.2          # standard annotation text (mm)
 SZS = 2.0         # small text
@@ -78,6 +78,19 @@ X_CUT = 13.75                  # section A-A through flight A
 LAND_LIP = 31.84               # landing / slab lip at the curtain wall
 
 
+def slab_hole(level):
+    """stair hole rectangle (x0,y0,x1,y1) of the slab whose top is at `level`."""
+    for sl in M.SLABS:
+        if abs(sl.top - M.slab_top(level)) < 1e-6:
+            for h in sl.holes:
+                if h[0] <= M.ST["x0"] + 0.25 and h[2] >= M.ST["x1"] - 0.01:
+                    return h
+    return (M.ST["x0"], HOLE_Y0, M.ST["x1"], M.ST["yn"])
+
+
+ISSUES = []
+
+
 def _hole_y0():
     for s in M.SLABS:
         for h in s.holes:
@@ -108,26 +121,38 @@ def nosing_B(st, y):
 
 
 def plateA_poly(st, lip):
-    """RC folded plate of flight A + landing (y, z) incl. haunch onto the slab edge."""
+    """RC folded plate of flight A + landing (y, z).
+
+    Runs that start on the raft stand on it; runs that start at a slab edge spring
+    from the slab with a haunch (slab bottom corner → plate soffit).
+    """
     t, r, yA, _ = run_data(st)
     z0, zl, nA = st["z0"], st["zl"], st["nA"]
     zs = z0 - M.FIN                       # structural top of the floor
     c = C_NOSE
-    top = [(yA[0] + c, zs - 0.001), (yA[0] + c, z0 + r - T_OAK)]
+    hole = _hole_y0()
+    on_raft = st["level"] == "B"
+    y_start = yA[0] + c if on_raft else hole - 0.30
+    top = [(y_start, zs), (yA[0] + c, zs), (yA[0] + c, z0 + r - T_OAK)]
     for k in range(1, nA):
-        zt = z0 + k * r - T_OAK
-        top.append((yA[k] + c, zt))
+        top.append((yA[k] + c, z0 + k * r - T_OAK))
         top.append((yA[k] + c, z0 + (k + 1) * r - T_OAK if k + 1 < nA else zl - T_OAK))
     top.append((lip, zl - T_OAK))
     bot = [(lip, zl - T_OAK - T_LAND), (yA[-1] + c + T_PLATE, zl - T_OAK - T_LAND)]
+    corners = []
     for k in range(nA - 1, 0, -1):
         zb = z0 + k * r - T_OAK - T_PLATE
-        bot.append((yA[k] + c + T_PLATE, zb))
-        bot.append((yA[k - 1] + c + T_PLATE, zb))
-    bot.append((yA[0] + c + T_PLATE, zs - 0.001))
-    poly = Polygon(top + bot).buffer(0)
-    poly = poly.intersection(R(0, zs - 0.0005, 100, 100))
-    return poly
+        corners.append((yA[k] + c + T_PLATE, zb))
+        corners.append((yA[k - 1] + c + T_PLATE, zb))
+    if on_raft:
+        kept = [p for p in corners if p[1] >= z0 + 0.02]
+        bot += kept
+        bot.append((kept[-1][0], zs))
+    else:
+        kept = [p for p in corners if p[0] >= hole + 0.40]
+        bot += kept
+        bot += [(hole, M.slab_bot(st["level"])), (hole - 0.30, M.slab_bot(st["level"]))]
+    return Polygon(top + bot).buffer(0)
 
 
 def plateB_profile(st):
@@ -194,25 +219,21 @@ def sheet_stairs(sh: D.Sheet, box):
     sec_w = 300
     # ---- section A-A (left column)
     stair_section(sh, bx, by, sec_w)
-    # ---- plans 2x2 (right)
+    # ---- plans 2x2 (right), read right-to-left
     px0 = bx + sec_w + 6
     cw = (bx + bw - px0) / 2
     ch = 219
-    order = [("B", 0, 0), ("G", 1, 0), ("U", 0, 1), ("R", 1, 1)]
-    for lvl, ci, ri in order:
-        # right-to-left reading order: first column at the right
-        cx = px0 + (1 - ci) * cw
-        cy = by + ri * ch
-        stair_plan(sh, lvl, cx, cy, cw, ch)
+    for lvl, ci, ri in (("B", 0, 0), ("G", 1, 0), ("U", 0, 1), ("R", 1, 1)):
+        stair_plan(sh, lvl, px0 + (1 - ci) * cw, by + ri * ch, cw, ch)
     # ---- details row
-    dy = by + 2 * ch + 4
+    dy = by + 2 * ch + 3
     dh = by + bh - dy
     dw = (bx + bw - px0) / 3
     detail_A(sh, px0 + 2 * dw, dy, dw, dh)
     detail_B(sh, px0 + dw, dy, dw, dh)
     detail_C(sh, px0, dy, dw, dh)
     # ---- handrail detail + notes under the section
-    detail_D(sh, bx, by + 498, sec_w, by + bh - (by + 498))
+    detail_D(sh, bx, by + 514, sec_w, bh - 514)
 
 
 # --------------------------------------------------------------------------- #
@@ -220,163 +241,137 @@ def sheet_stairs(sh: D.Sheet, box):
 # --------------------------------------------------------------------------- #
 def stair_section(sh, x0, y0, w):
     k = 40.0
-    y_n = 32.62          # north crop (earth)
+    y_n = 32.45          # north crop (earth)
     y_s = 26.85          # south crop
-    z_top, z_bot = 7.72, -4.28
-    ox = x0 + 26
-    oy = y0 + 8 + z_top * k
+    z_top, z_bot = 7.60, -4.22
+    ox = x0 + 25
+    oy = y0 + 6 + z_top * k
     fr = Frame(sh, ox, oy, 25, x0=y_n, flip=True, bands=[(z_bot, z_top)], clip=(y_s, y_n))
     hole = _hole_y0()
     LV = M.LV
-    items = []
-    proj = []
+    items, proj = [], []
+    stB, stG, stU = M.STAIRS[0], M.STAIRS[1], M.STAIRS[2]
     # ---------------- earth / basement envelope (north)
     raft_t, raft_b = M.slab_top("B"), M.slab_top("B") - M.RAFT
     items.append((R(y_s, z_bot, y_n, raft_b - 0.05), S_EARTH))
-    items.append((R(32.40, raft_b - 0.05, y_n, M.GARDEN), S_EARTH))
-    items.append((R(32.08, raft_b, 32.40, M.GARDEN - 0.25), dict(fill="pat:gravel", lw="xxs")))
-    items.append((R(32.08, M.GARDEN - 0.25, 32.40, M.GARDEN), dict(fill="pat:earth", lw="xxs")))
-    # garden surface
+    items.append((R(32.33, raft_b - 0.05, y_n, M.GARDEN), S_EARTH))
+    items.append((R(32.03, raft_b, 32.33, M.GARDEN - 0.30), dict(fill="pat:gravel", lw="xxs")))
+    items.append((R(32.03, M.GARDEN - 0.30, 32.33, M.GARDEN), dict(fill="pat:earth", lw="xxs")))
     items.append((LN([(32.0, M.GARDEN), (y_n, M.GARDEN)]), dict(lw="m")))
     # blinding + membrane + raft
-    items.append((R(y_s, raft_b - 0.05, 32.45, raft_b), S_BLINDING))
-    items.append((R(y_s, raft_b - 0.006, 32.40, raft_b), S_MEMB))
-    # retaining wall + G slab strip
-    wall_n = U(R(Y_WALL_N, raft_t, 32.0, M.slab_bot("G")),
-               R(Y_WALL_N - 0.0, M.slab_bot("G"), 32.0, M.slab_top("G")))
+    items.append((R(y_s, raft_b - 0.05, 32.40, raft_b), S_BLINDING))
+    items.append((R(y_s, raft_b - 0.008, 32.35, raft_b), S_MEMB))
+    wall_n = U(R(Y_WALL_N, raft_t, 32.0, M.slab_bot("G")), R(Y_WALL_N, M.slab_bot("G"), 32.0, M.slab_top("G")))
     rc_struct = [U(R(y_s, raft_b, 32.35, raft_t), wall_n)]
-    # waterproofing on retaining wall
     items.append((R(32.0, raft_b, 32.008, M.GARDEN + 0.05), S_MEMB))
     items.append((R(32.008, raft_b, 32.03, M.GARDEN + 0.05), S_DRAIN))
-    # drainage pipe
-    pipe_c = (32.25, raft_b + 0.10)
+    pipe_c = (32.20, raft_b + 0.10)
     # ---------------- floors (south part, y < hole)
     for lv in ("G", "U", "R"):
-        st, sb = M.slab_top(lv), M.slab_bot(lv)
-        rc_struct.append(R(y_s, sb, hole, st))
-        # slab strip under the north wall / curtain wall
+        st_, sb = M.slab_top(lv), M.slab_bot(lv)
+        rc_struct.append(R(y_s, sb, hole, st_))
         if lv != "G":
-            rc_struct.append(R(Y_WALL_N, sb, LAND_LIP, st))
-    # finishes
-    fin = []
-    stB, stG, stU = M.STAIRS[0], M.STAIRS[1], M.STAIRS[2]
+            rc_struct.append(R(Y_WALL_N, sb, LAND_LIP, st_))
     yA_G = run_data(stG)[2][0]
-    fin.append(R(y_s, LV["B"] - M.FIN, Y_WALL_N, LV["B"] - 0.03))          # basement fill
-    fin_p = [R(y_s, LV["B"] - 0.03, Y_WALL_N, LV["B"])]
-    fin.append(R(y_s, LV["G"] - M.FIN, yA_G + C_NOSE, LV["G"] - 0.03))
-    fin_p.append(R(y_s, LV["G"] - 0.03, yA_G + C_NOSE, LV["G"]))
-    fin.append(R(y_s, LV["U"] - M.FIN, hole + C_NOSE, LV["U"] - 0.03))
-    fin_p.append(R(y_s, LV["U"] - 0.03, hole + C_NOSE, LV["U"]))
-    # roof exit floor + roof build-up outside the roof-exit wall
-    fin.append(R(27.30, LV["R"] - M.FIN, hole, LV["R"] - 0.03))
-    fin_p.append(R(27.30, LV["R"] - 0.03, hole, LV["R"]))
-    for g in fin:
-        items.append((g, S_FILL))
-    for g in fin_p:
-        items.append((g, S_PORC))
-    # roof build-up (outside roof exit)
+    rxw = [wl for wl in M.walls_on("R") if wl.horiz and wl.kind == "ext" and wl.out == -1]
+    rx_out = rxw[0].c - rxw[0].t / 2 if rxw else 27.0
+    rx_in = rx_out + 0.30
+    fin = [R(y_s, LV["B"] - M.FIN, Y_WALL_N, LV["B"] - 0.03),
+           R(y_s, LV["G"] - M.FIN, yA_G + C_NOSE, LV["G"] - 0.03),
+           R(y_s, LV["U"] - M.FIN, hole + C_NOSE, LV["U"] - 0.03),
+           R(max(y_s, rx_in), LV["R"] - M.FIN, hole, LV["R"] - 0.03)]
+    fin_p = [R(y_s, LV["B"] - 0.03, Y_WALL_N, LV["B"]),
+             R(y_s, LV["G"] - 0.03, yA_G + C_NOSE, LV["G"]),
+             R(y_s, LV["U"] - 0.03, hole + C_NOSE, LV["U"]),
+             R(max(y_s, rx_in), LV["R"] - 0.03, hole, LV["R"])]
+    items += [(g, S_FILL) for g in fin] + [(g, S_PORC) for g in fin_p]
+    # roof build-up outside the roof exit + roof-exit south wall (if inside the crop)
     zr = M.slab_top("R")
-    items.append((R(y_s, zr, 27.0, zr + 0.06), dict(fill="pat:concrete", lw="xs")))
-    items.append((R(y_s, zr + 0.06, 27.0, zr + 0.068), S_MEMB))
-    items.append((R(y_s, zr + 0.068, 27.0, zr + 0.118), S_XPS))
-    items.append((R(y_s, zr + 0.118, 27.0, zr + 0.17), dict(fill="pat:gravel", lw="xs")))
-    # roof exit south wall (EIFS + block)
-    zrw0 = M.slab_top("R")
-    items.append((R(27.10, zrw0, 27.30, z_top + 1), S_BLOCK))
-    items.append((R(27.02, zrw0 + 0.17, 27.10, z_top + 1), S_EPS))
-    items.append((R(27.0, zrw0 + 0.17, 27.02, z_top + 1), S_PLAST))
-    items.append((R(27.08, zr, 27.10, zrw0 + 0.25), S_MEMB))
+    if rx_out > y_s:
+        items.append((R(y_s, zr, rx_out, zr + 0.06), dict(fill="pat:concrete", lw="xs")))
+        items.append((R(y_s, zr + 0.06, rx_out, zr + 0.068), S_MEMB))
+        items.append((R(y_s, zr + 0.068, rx_out, zr + 0.118), S_XPS))
+        items.append((R(y_s, zr + 0.118, rx_out, zr + 0.17), dict(fill="pat:gravel", lw="xs")))
+    if rx_in > y_s:
+        items.append((R(rx_out + 0.10, zr, rx_in, z_top + 1), S_BLOCK))
+        items.append((R(rx_out + 0.02, zr + 0.17, rx_out + 0.10, z_top + 1), S_EPS))
+        items.append((R(rx_out, zr + 0.17, rx_out + 0.02, z_top + 1), S_PLAST))
+    cut_walls = []
+    for wl in M.WALLS:
+        if wl.horiz and wl.kind in ("int",) and wl.a0 <= X_CUT <= wl.a1 and y_s < wl.c < hole:
+            nxt = {"B": "G", "G": "U", "U": "R"}.get(wl.level)
+            if nxt:
+                cut_walls.append((wl, R(wl.c - wl.t / 2, M.slab_top(wl.level), wl.c + wl.t / 2, M.slab_bot(nxt))))
+    for wl, g in cut_walls:
+        items.append((g, S_BLOCK))
     # ---------------- ceilings (gypsum) south part
-    for zc, yend in ((M.LV["B"] + 2.90, hole - 0.08), (M.LV["G"] + 3.10, hole - 0.08)):
+    ceil_pts = []
+    for zc in (M.LV["B"] + 2.90, M.LV["G"] + 3.10):
+        yend = hole - 0.08
         items.append((R(y_s, zc, yend, zc + 0.0125), S_GYPS))
         items.append((LN([(yend, zc + 0.0125), (yend, zc + 0.10)]), dict(lw="xs")))
+        for wl, g in cut_walls:
+            pass
+        ceil_pts.append(zc)
     # ---------------- stair runs (cut flight A + landings)
-    plates = []
-    oak = []
-    land_fin = []
+    plates, oak, land_fin = [], [], []
     for st in M.STAIRS:
         lip = Y_WALL_N if st["level"] == "B" else LAND_LIP
-        p = plateA_poly(st, lip)
-        plates.append(p)
+        plates.append(plateA_poly(st, lip))
         t, r, yA, yB = run_data(st)
         for kk in range(1, st["nA"]):
             zt = st["z0"] + kk * r
             oak.append(R(yA[kk - 1], zt - T_OAK, yA[kk] + C_NOSE, zt))
         land_fin.append(R(M.ST["yl"], st["zl"] - T_OAK, lip, st["zl"]))
-        # haunch onto upper slab edge (runs starting at a slab edge)
-        if st["level"] != "B":
-            sb = M.slab_bot(st["level"])
-            stp = st["z0"] - M.FIN
-            ye = yA[1] + C_NOSE + T_PLATE if yA[0] < hole - 0.01 else yA[0] + C_NOSE + T_PLATE
-            k2 = 2 if yA[0] < hole - 0.01 else 1
-            zu = st["z0"] + k2 * r - T_OAK - T_PLATE
-            plates.append(PG([(hole - 0.25, sb), (hole, sb), (ye + 0.28, zu), (ye + 0.28, min(zu, stp)), (hole - 0.25, stp)]).convex_hull)
     rc_all = unary_union(rc_struct + plates)
-    # ---------------- curtain wall at north (stair glazing AL-08)
-    cw_y0, cw_y1 = 31.90, 31.97
-    z_cw0 = M.LV["G"]
-    # ---------------- projection: flight B, spine glass, east glass, slab edges, lift shaft
-    for i, st in enumerate(M.STAIRS):
+    # ---------------- projection: flight B, lift shaft, slab edges beyond
+    for st in M.STAIRS:
         top, oakl, bot = plateB_profile(st)
         proj.append((LN(top), PROJ))
         for o in oakl:
             proj.append((LN(o), PROJ))
-        proj.append((LN(bot), dict(lw="xs", color="#666")))
-    # lift shaft west face edge (y = LIFT y0) and shaft wall
-    proj.append((LN([(M.LIFT["y0"], M.LV["B"]), (M.LIFT["y0"], z_top + 1)]), dict(lw="xs", color="#666")))
-    # upper slab edges at x = 15.50 (beyond)
+        proj.append((LN(bot), dict(lw="xs", color="#777")))
+    proj.append((LN([(M.LIFT["y0"], M.LV["B"]), (M.LIFT["y0"], z_top + 1)]), dict(lw="xs", color="#777")))
     for lv in ("G", "U", "R"):
-        proj.append((R(hole, M.slab_bot(lv), M.LIFT["y0"], M.LV[lv]), dict(fill="none", lw="xs", color="#666")))
+        proj.append((R(hole, M.slab_bot(lv), M.LIFT["y0"], M.LV[lv]), dict(fill="none", lw="xs", color="#777")))
     # east guard glass (x=15.50) – top at upper floor + 1.05
     glass_items = []
-    for i, st in enumerate(M.STAIRS):
+    for st in M.STAIRS:
         zt = st["z1"] + 1.05
-        t, r, yA, yB = run_data(st)
-        pts = [(hole, zt), (M.ST["yl"], zt), (M.ST["yl"], nosing_B(st, M.ST["yl"]) - 0.30)]
-        pts += [(hole, st["z1"] - 0.40)]
-        g = PG(pts)
-        glass_items.append((g, _glass_proj(0.25)))
-        glass_items.append((LN([(hole, zt), (M.ST["yl"], zt)]), dict(lw="m", color="#333")))
+        g = PG([(hole, zt), (M.ST["yl"], zt), (M.ST["yl"], nosing_B(st, M.ST["yl"]) - 0.30), (hole, st["z1"] - 0.40)])
+        glass_items.append((g, dict(fill="#dceef5", lw="xxs", color="#7aa", fop=0.35)))
+        glass_items.append((LN([(hole, zt), (M.ST["yl"], zt)]), dict(lw="s", color="#555")))
     # central spine glass per run: bottom on flight A, top = flight B nosing line + 0.90
     spines = []
-    for i, st in enumerate(M.STAIRS):
+    for st in M.STAIRS:
         t, r, yA, yB = run_data(st)
         ya, yb = max(hole, yA[0]), M.ST["yl"]
-        bot_a = max(st["z0"], nosing_A(st, ya) - 0.32)
-        bot_b = nosing_A(st, yb) - 0.32
-        top_a = nosing_B(st, ya) + 0.90
-        top_b = nosing_B(st, yb) + 0.90
-        g = PG([(ya, bot_a), (yb, bot_b), (yb, top_b), (ya, top_a)])
+        g = PG([(ya, max(st["z0"], nosing_A(st, ya) - 0.32)), (yb, nosing_A(st, yb) - 0.32),
+                (yb, nosing_B(st, yb) + 0.90), (ya, nosing_B(st, ya) + 0.90)])
         spines.append((st, g))
-    # trim each spine by the next run's panel
-    spine_geoms = []
-    for i, (st, g) in enumerate(spines):
-        if i + 1 < len(spines):
-            g = g.difference(spines[i + 1][1].buffer(0.02))
-        spine_geoms.append(g)
-        glass_items.append((g, _glass_proj(0.6)))
-        t, r, yA, yB = run_data(st)
-        ya, yb = max(hole, yA[0]), M.ST["yl"]
-        hr = LN([(ya, nosing_B(st, ya) + 0.90), (yb, nosing_B(st, yb) + 0.90)])
-        if i + 1 < len(spines):
-            hr = hr.difference(spines[i + 1][1].buffer(0.03))
-        glass_items.append((hr, dict(lw="l", color="#222")))
+    spine_all = unary_union([g for _, g in spines])
+    glass_items.append((spine_all, dict(fill="#cfe6ef", lw="xs", color="#6a9fb3", fop=0.30)))
+    for st, g in spines:
+        ya, yb = max(hole, st["yA0"]), M.ST["yl"]
+        glass_items.append((LN([(ya, nosing_B(st, ya) + 0.90), (yb, nosing_B(st, yb) + 0.90)]), dict(lw="l", color="#222")))
     # ---------------- render order
     fr.render(items)
     fr.render(proj)
     fr.render(glass_items)
-    # cut solids
     fr.render([(rc_all, S_RC)])
-    fr.render([(g, S_OAK) for g in oak] + [(g, S_OAK) for g in land_fin])
-    # curtain wall
-    cw = []
-    cw.append((R(cw_y0, z_cw0, cw_y1, z_top + 1), dict(fill="dx:glass", lw="s")))
-    for zt in (z_cw0, M.LV["U"] - 0.40, M.LV["R"] - 0.40):
-        cw.append((R(31.86, zt - 0.06 if zt > 0 else zt - 0.10, 32.02, zt + 0.06), S_ALU))
+    fr.render([(g, S_OAK) for g in oak + land_fin])
+    # curtain wall (stair glazing)
+    cw_y0, cw_y1 = 31.90, 31.97
+    cw = [(R(cw_y0, M.LV["G"], cw_y1, z_top + 1), dict(fill="dx:glass", lw="s"))]
+    for zt in (M.LV["G"], M.LV["U"] - 0.40, M.LV["R"] - 0.40):
+        cw.append((R(31.86, zt - (0.10 if zt <= 0 else 0.06), 32.02, zt + 0.06), S_ALU))
     for lv in ("U", "R"):
         cw.append((R(LAND_LIP, M.slab_bot(lv), cw_y0, M.LV[lv]), dict(fill="dx:wool", lw="xs")))
     fr.render(cw)
-    # gravel strip + planting at the glazing foot
+    # R-level edge guard (cut, at y = hole): glass in side channel on the slab edge
+    zr = M.LV["R"]
+    fr.render([(R(hole + 0.035, M.slab_bot("R") + 0.06, hole + 0.06, z_top + 1), S_GLASS),
+               (R(hole, M.slab_bot("R") + 0.04, hole + 0.08, M.slab_bot("R") + 0.20), S_SS)])
     # drainage pipe
     px, pz = fr.P(*pipe_c)
     sh.circle(px, pz, 0.05 * k, lw="m", fill="#fff")
@@ -386,146 +381,111 @@ def stair_section(sh, x0, y0, w):
         t, r, yA, yB = run_data(st)
         a, b = yA[0] - 0.30, M.ST["yl"]
         za = nosing_A(st, yA[0]) + 0.90
-        pts = [fr.P(a, za), fr.P(yA[0], za), fr.P(b, nosing_A(st, b) + 0.90)]
-        sh.polyline(pts, lw="m", dash="2.2 0.8", color="#333")
-    # R-level edge guard (cut) at y = hole : glass in side channel on slab edge
-    zr = M.LV["R"]
-    g_y0, g_y1 = hole + 0.035, hole + 0.06
-    gl = R(g_y0, M.slab_bot("R") + 0.06, g_y1, zr + 1.05)
-    ch = U(R(hole, M.slab_bot("R") + 0.04, hole + 0.08, M.slab_bot("R") + 0.20))
-    fr.render([(gl, S_GLASS), (ch, S_SS)])
-    x1, y1 = fr.P(hole - 0.02, zr + 1.05)
-    x2, y2 = fr.P(hole + 0.10, zr + 1.05)
-    sh.rect(min(x1, x2), y1 - 0.9, abs(x2 - x1), 1.8, lw="s", fill="#9aa1a8")
-    # top break line
+        sh.polyline([fr.P(a, za), fr.P(yA[0], za), fr.P(b, nosing_A(st, b) + 0.90)], lw="m", dash="2.2 0.8",
+                    color="#333")
+    # break lines
     breakline(sh, fr.X(y_n) - 2, fr.Y(z_top), fr.X(y_s) + 2, fr.Y(z_top), amp=1.6)
-    # side break lines (south crop)
     for lv in ("G", "U", "R"):
-        yy1, yy2 = fr.Y(M.LV[lv] + 0.12), fr.Y(M.slab_bot(lv) - 0.12)
-        breakline(sh, fr.X(y_s), yy1, fr.X(y_s), yy2, amp=1.2)
+        breakline(sh, fr.X(y_s), fr.Y(M.LV[lv] + 0.12), fr.X(y_s), fr.Y(M.slab_bot(lv) - 0.12), amp=1.2)
     breakline(sh, fr.X(y_s), fr.Y(raft_t + 0.12), fr.X(y_s), fr.Y(raft_b - 0.12), amp=1.2)
 
     # ------------------------------------------------------------------ annotations
-    xl = fr.X(y_n) - 1.5         # level column (left)
-    lv_list = [(M.LV["B"], fmt_lv(M.LV["B"]), "ריצוף מרתף"), (stB["zl"], fmt_lv(stB["zl"], 3), "משטח ביניים"),
-               (M.LV["G"], "±0.00", "ריצוף ק. קרקע"), (stG["zl"], fmt_lv(stG["zl"], 3), "משטח ביניים"),
-               (M.LV["U"], fmt_lv(M.LV["U"]), "ריצוף קומה א'"), (stU["zl"], fmt_lv(stU["zl"], 3), "משטח ביניים"),
-               (M.LV["R"], fmt_lv(M.LV["R"]), "ריצוף יציאה לגג")]
-    for z, s, note in lv_list:
+    xl = fr.X(y_n) - 1.0
+    lv_list = [(M.LV["B"], fmt_lv(M.LV["B"]), "ריצוף מרתף", 32.0), (stB["zl"], fmt_lv(stB["zl"], 3), "משטח ביניים", Y_WALL_N),
+               (M.LV["G"], "±0.00", "ריצוף ק. קרקע", 31.86), (stG["zl"], fmt_lv(stG["zl"], 3), "משטח ביניים", 31.86),
+               (M.LV["U"], fmt_lv(M.LV["U"]), "ריצוף קומה א'", 31.86), (stU["zl"], fmt_lv(stU["zl"], 3), "משטח ביניים", 31.86),
+               (M.LV["R"], fmt_lv(M.LV["R"]), "ריצוף יציאה לגג", 31.86)]
+    for z, s_, note, yfrom in lv_list:
         yy = fr.Y(z)
-        level_tag(sh, xl - 9, yy, s, side="left", size=2.2, line=0.5, note=note)
-        sh.line(xl - 8, yy, fr.X(Y_WALL_N if "ביניים" in note else 32.0) - 0.5, yy, lw="xxs", color="#777",
-                dash="0.6 0.6")
-    # raft bottom / top
-    for z, s in ((raft_b, fmt_lv(raft_b)), ):
-        yy = fr.Y(z)
-        level_tag(sh, xl - 9, yy, s, side="left", size=2.0, line=0.5, filled=False, note="תחתית רפסודה")
-    # garden level
-    level_tag(sh, fr.X(32.45), fr.Y(M.GARDEN), fmt_lv(M.GARDEN), side="right", size=2.0, line=4, filled=False)
-
-    # ---- vertical dims (south side): risers per flight
-    xd = fr.X(y_s) + 6.5
+        level_tag(sh, xl - 8, yy, s_, side="left", size=2.2, line=0.5, note=note)
+        sh.line(xl - 7, yy, fr.X(yfrom) - 0.5, yy, lw="xxs", color="#777", dash="0.6 0.6")
+    level_tag(sh, xl - 8, fr.Y(raft_b), fmt_lv(raft_b), side="left", size=2.0, line=0.5, filled=False,
+              note="תחתית רפסודה")
+    level_tag(sh, fr.X(32.40), fr.Y(M.GARDEN), fmt_lv(M.GARDEN), side="right", size=2.0, line=3, filled=False)
+    # ---- vertical dims (south side): risers per flight + floor to floor
+    xd = fr.X(y_s) + 6.0
     for st in M.STAIRS:
         t, r, yA, yB = run_data(st)
-        ya_, yl_, yb_ = fr.Y(st["z0"]), fr.Y(st["zl"]), fr.Y(st["z1"])
-        dim_chain_v(sh, [ya_, yl_, yb_], xd, texts=[f"{st['nA']}×{r * 100:.1f}={(st['zl'] - st['z0']) * 100:.1f}",
-                                                       f"{st['nB']}×{r * 100:.1f}={(st['z1'] - st['zl']) * 100:.1f}"],
+        dim_chain_v(sh, [fr.Y(st["z0"]), fr.Y(st["zl"]), fr.Y(st["z1"])], xd,
+                    texts=[f"{st['nA']}×{r * 100:.1f}={(st['zl'] - st['z0']) * 100:.1f}",
+                           f"{st['nB']}×{r * 100:.1f}={(st['z1'] - st['zl']) * 100:.1f}"],
                     ext=fr.X(y_s) + 1, size=SZS)
-    # floor-to-floor
-    xd2 = xd + 6
     zs_ = [M.LV["B"], M.LV["G"], M.LV["U"], M.LV["R"]]
-    dim_chain_v(sh, [fr.Y(z) for z in zs_], xd2,
-                texts=[f"{(b - a) * 100:.0f}" for a, b in zip(zs_, zs_[1:])], size=SZS)
+    dim_chain_v(sh, [fr.Y(z) for z in zs_], xd + 5.5, texts=[f"{(b - a) * 100:.0f}" for a, b in zip(zs_, zs_[1:])],
+                size=SZS)
     # ---- horizontal dims at bottom
-    yb1 = fr.Y(z_bot) + 5.5
+    yb1 = fr.Y(z_bot) + 5.0
     t, r, yA, yB = run_data(stB)
-    xs = [fr.X(32.0), fr.X(Y_WALL_N), fr.X(M.ST["yl"]), fr.X(yA[0])]
-    dim_chain_h(sh, xs, yb1, texts=["30", "120", f"{stB['nA'] - 1}×28={(stB['nA'] - 1) * 28}"], size=SZS)
-    sh.text(fr.X(yA[0]) + 2, yb1 + 0.8, "מרתף / קומה א'", size=SZS, anchor="left", color=GREY)
+    dim_chain_h(sh, [fr.X(32.0), fr.X(Y_WALL_N), fr.X(M.ST["yl"]), fr.X(yA[0])], yb1,
+                texts=["30", "120", f"{stB['nA'] - 1}×28={(stB['nA'] - 1) * 28}"], size=SZS)
+    sh.text(fr.X(yA[0]) + 2, yb1 + 0.8, "מרתף, קומה א'", size=SZS, anchor="left", color=GREY)
     t, r, yA, yB = run_data(stG)
-    yb2 = yb1 + 6.5
-    xs = [fr.X(M.ST["yl"]), fr.X(yA[0])]
-    dim_chain_h(sh, xs, yb2, texts=[f"{stG['nA'] - 1}×28={(stG['nA'] - 1) * 28}"], size=SZS)
+    yb2 = yb1 + 6.0
+    dim_chain_h(sh, [fr.X(M.ST["yl"]), fr.X(yA[0])], yb2, texts=[f"{stG['nA'] - 1}×28={(stG['nA'] - 1) * 28}"],
+                size=SZS)
     sh.text(fr.X(yA[0]) + 2, yb2 + 0.8, "קומת קרקע", size=SZS, anchor="left", color=GREY)
-
-    # ---- headroom dims
-    hr = headroom_report()
+    # ---- headroom dims at the slab edges
     for st in M.STAIRS:
         up = {"B": "G", "G": "U", "U": "R"}[st["level"]]
         zn = nosing_A(st, hole)
         zsb = M.slab_bot(up)
         xh = fr.X(hole) + 2.2
         dimv(sh, fr.Y(zn), fr.Y(zsb), xh, None, size=SZS)
-        tx = xh + 2.6
-        ty = (fr.Y(zn) + fr.Y(zsb)) / 2
+        tx, ty = xh + 2.6, (fr.Y(zn) + fr.Y(zsb)) / 2
         sh.add(f'<text x="{tx:.2f}" y="{ty:.2f}" font-family="{D.FONT}" font-size="{SZS}" text-anchor="middle" '
-               f'transform="rotate(-90 {tx:.2f} {ty:.2f})">{D.esc(f"גובה חופשי {(zsb - zn) * 100:.0f} ≥ 210")}</text>')
-    # landing-to-landing clear height (cut)
+               f'transform="rotate(-90 {tx:.2f} {ty:.2f})">{D.esc("גובה חופשי " + ltr(f"{(zsb - zn) * 100:.0f} ≥ 210"))}</text>')
     for a, b in zip(M.STAIRS, M.STAIRS[1:]):
-        za = a["zl"]
-        zb = b["zl"] - T_OAK - T_LAND
-        xh = fr.X(31.20)
-        dimv(sh, fr.Y(za), fr.Y(zb), xh, f"{(zb - za) * 100:.0f}", size=SZS)
+        za, zb = a["zl"], b["zl"] - T_OAK - T_LAND
+        dimv(sh, fr.Y(za), fr.Y(zb), fr.X(31.15), f"{(zb - za) * 100:.0f}", size=SZS)
     # ---- 0.90 / 1.05 guard dims
-    st = stG
     yq = 29.10
-    zq = nosing_B(st, yq)
+    zq = nosing_B(stG, yq)
     dimv(sh, fr.Y(zq), fr.Y(zq + 0.90), fr.X(yq), "90", size=SZS, left=False)
-    dimv(sh, fr.Y(M.LV["U"]), fr.Y(M.LV["U"] + 1.05), fr.X(hole + 0.30), "105", size=SZS, left=False)
+    dimv(sh, fr.Y(M.LV["U"]), fr.Y(M.LV["U"] + 1.05), fr.X(hole + 0.32), "105", size=SZS, left=False)
     zqa = nosing_A(stU, 29.4)
     dimv(sh, fr.Y(zqa), fr.Y(zqa + 0.90), fr.X(29.4), "90", size=SZS, left=False)
-    dimv(sh, fr.Y(M.LV["R"]), fr.Y(M.LV["R"] + 0.60), fr.X(hole + 0.18), None, size=SZS)
-
-    # ---- material callouts (right side)
-    xr = fr.X(y_s) + 20
-    tR = fr.X(y_s) + 22
-
-    def C(yy, zz, ty, lines, **kw):
-        tx, tyy = fr.P(yy, zz)
-        leader(sh, tx, tyy, tR - 3, ty, lines, side="right", size=SZS, **kw)
-
-    t, r, yA, yB = run_data(stU)
-    C(yA[3] + 0.12, nosing_A(stU, yA[3]) - 0.02 - 0.15 * 0.0, fr.Y(6.95), ["מדרך עץ אלון מלא 5 ס\"מ", "חוטם 3 ס\"מ + פס לד (פרט A)"])
-    C(yA[5] + 0.25, stU["z0"] + 5 * stU["r"] - 0.15, fr.Y(6.35), ["מדרגות בטון מזוין", "מקופלות (\"מקופל\") 18 ס\"מ"])
-    C(30.9, stU["zl"] - 0.15, fr.Y(5.75), ["משטח ביניים ב\"מ 20 ס\"מ", "+ פרקט אלון על מדה 5 ס\"מ"])
-    C(27.4, M.LV["U"] - 0.24, fr.Y(4.35), ["תקרה ב\"מ 30 ס\"מ", "+ ריצוף 10 ס\"מ: מילוי 7,", "פורצלן 120/120"])
-    C(28.85, nosing_B(stG, 28.85) + 0.55, fr.Y(3.05), ["קיר זכוכית מרכזי בין מהלכים", "מחוסמת שכבתית 12+12"])
-    C(28.40, nosing_B(stG, 28.40) + 0.90, fr.Y(2.55), ["מאחז יד נירוסטה 316 Ø42", "בגובה 90 לאורך השיפוע"])
-    C(28.2, M.LV["U"] + 1.05, fr.Y(2.0) + 0.0, ["מעקה זכוכית צד מזרח 105", "פרופיל U נירוסטה (פרט B)"])
-    C(29.0, M.LV["G"] - 0.25, fr.Y(-0.75), ["זיזון/רדיפה – חיבור מהלך", "לשפת התקרה"])
-    C(27.3, M.LV["B"] + 2.905, fr.Y(-1.45), ["תקרה מונמכת גבס 1.25", "(חלל מיזוג 20 ס\"מ)"])
-    C(28.2, M.LV["B"] - 0.30, fr.Y(-2.6), ["רפסודת ב\"מ 50 ס\"מ"])
-    C(28.6, raft_b - 0.025, fr.Y(-3.0), ["בטון רזה 5 ס\"מ + יריעה", "ביטומנית 2×4 מ\"מ"])
-    # left side callouts (north)
-    xlc = fr.X(y_n) + 2
-
-    def CL(yy, zz, ty, lines, tx_=None):
-        tx, tyy = fr.P(yy, zz)
-        leader(sh, tx, tyy, tx_ or (fr.X(32.0) + 1.5), ty, lines, side="left", size=SZS)
-
-    # detail references
+    # ---- detail references
     t, r, yA, yB = run_data(stG)
-    xa, ya = fr.P(yA[4] + 0.02, stG["z0"] + 5 * stG["r"] - 0.04)
-    detail_ref(sh, xa, ya, 5.5, "A", SN, ang=200)
+    detail_ref(sh, *fr.P(yA[4] + 0.02, stG["z0"] + 5 * stG["r"] - 0.04), 5.0, "A", SN, ang=200)
     t, r, yA, yB = run_data(stB)
-    xc, yc = fr.P(yA[0] + 0.10, stB["z0"] + 0.05)
-    detail_ref(sh, xc, yc, 7, "C", SN, ang=150)
-    xd_, yd_ = fr.P(30.0, nosing_A(stB, 30.0) + 0.90)
-    detail_ref(sh, xd_, yd_, 4.0, "D", SN, ang=170)
-    xb_, yb_ = fr.P(hole + 0.05, M.LV["R"] - 0.05)
-    detail_ref(sh, xb_, yb_, 6, "B", SN, ang=-30)
-    # labels in spaces
-    sh.text(fr.X(27.35), fr.Y(M.LV["G"] + 1.6), "מבואה", size=SZ, color=GREY)
-    sh.text(fr.X(27.35), fr.Y(M.LV["U"] + 1.6), "גלריה", size=SZ, color=GREY)
-    sh.text(fr.X(27.35), fr.Y(M.LV["B"] + 1.6), "מבואה", size=SZ, color=GREY)
+    detail_ref(sh, *fr.P(yA[0] + 0.10, stB["z0"] + 0.05), 6.5, "C", SN, ang=160)
+    detail_ref(sh, *fr.P(30.05, nosing_A(stB, 30.05) + 0.90), 3.6, "D", SN, ang=200)
+    detail_ref(sh, *fr.P(hole + 0.05, M.LV["R"] - 0.12), 5.5, "B", SN, ang=-35)
+    # ---- room labels
+    for z, lab in ((M.LV["G"] + 1.6, "מבואה"), (M.LV["U"] + 1.6, "גלריה"), (M.LV["B"] + 1.6, "מבואה")):
+        sh.text(fr.X(27.35), fr.Y(z), lab, size=SZ, color=GREY)
     sh.text(fr.X(27.65), fr.Y(M.LV["R"] + 0.35), "יציאה לגג", size=SZS, color=GREY)
-    # curtain wall label
-    CL(31.93, M.LV["G"] + 1.2, fr.Y(M.LV["G"] + 1.2), ["קיר מסך – חלון", "מדרגות AL-08/34/35"], tx_=fr.X(y_n) + 1)
-    CL(32.0, -1.2, fr.Y(-0.75), ["קיר דיפון ב\"מ 30", "איטום ביטומני", "2×4 מ\"מ + לוח", "הגנה וניקוז"], tx_=fr.X(y_n) + 1)
-    CL(pipe_c[0], pipe_c[1], fr.Y(-3.05), ["צינור ניקוז", "מחורר Ø100", "בעטיפת חצץ"], tx_=fr.X(y_n) + 1)
+    # ---- material callouts – right column
+    tR = fr.X(y_s) + 18.5
+    t, r, yA, yB = run_data(stU)
+    P = fr.P
+    right = [
+        (*P(yA[1] + 0.14, stU["z0"] + 2 * stU["r"] - 0.025), ["מדרך עץ אלון מלא 5 ס\"מ", "חוטם 3 ס\"מ + פס לד (A)"]),
+        (*P(yA[2] + 0.30, stU["z0"] + 2 * stU["r"] - 0.16), ["מדרגות ב\"מ מקופלות", "עובי 18 ס\"מ"]),
+        (*P(27.55, M.LV["U"] - 0.20), ["תקרה ב\"מ 30 ס\"מ + ריצוף 10:", "מילוי 7, פורצלן 120/120"]),
+        (*P(27.55, M.LV["G"] + 3.106), ["תקרה מונמכת גבס"]),
+        (*P(28.45, nosing_B(stG, 28.45) + 0.90), ["מאחז יד נירוסטה 316 Ø42", "90 מעל קו החוטמים"]),
+        (*P(28.75, nosing_B(stG, 28.75) + 0.45), ["קיר זכוכית מרכזי בין המהלכים", "מחוסמת שכבתית 12+12"]),
+        (*P(28.30, M.LV["G"] + 1.05), ["מעקה זכוכית 105 בשפת התקרה", "פרופיל U נירוסטה (B)"]),
+        (*P(28.05, M.LV["G"] - 0.30), ["חיבור מהלך לשפת התקרה", "(זיזון לפי מהנדס)"]),
+        (*P(27.55, M.LV["B"] + 2.906), ["תקרה מונמכת גבס,", "חלל מיזוג 20 ס\"מ"]),
+        (*P(27.40, M.LV["B"] + 1.0), ["קיר בלוק 12 (מבואת מרתף)"]),
+        (*P(28.5, raft_t - 0.25), ["רפסודת ב\"מ 50 ס\"מ"]),
+        (*P(28.9, raft_b - 0.03), ["בטון רזה 5 + יריעה ביטומנית"]),
+    ]
+    callout_col(sh, right, tR, side="right", y_min=y0 + 30, y_max=fr.Y(z_bot), size=SZS)
+    # ---- left column (north)
+    xL = fr.X(32.0) + 0.5
+    left = [
+        (*P(31.935, M.LV["G"] + 0.9), ["קיר מסך – זיגוג", "AL-08/34/35"]),
+        (*P(30.9, stG["zl"] - 0.15), ["משטח ביניים ב\"מ 20", "+ פרקט אלון 5"]),
+        (*P(32.004, -1.4), ["קיר דיפון ב\"מ 30,", "איטום 2×4 מ\"מ,", "לוח הגנה וניקוז"]),
+    ]
+    callout_col(sh, left, fr.X(y_n) - 1.5, side="left", size=SZS)
+    callout_col(sh, [(*P(pipe_c[0], pipe_c[1]), ["צינור ניקוז", "מחורר Ø100"])], fr.X(y_n) - 1.5, side="left",
+                size=SZS, y_max=fr.Y(raft_b) - 7)
     # title
-    D.drawing_title(sh, x0 + w - 4, y0 + 8 + (z_top - z_bot) * k + 25, "חתך א-א – מדרגות", 'קנ"מ 1:25', width=90,
-                    size=6.5)
+    D.drawing_title(sh, x0 + w - 4, yb2 + 14, "חתך א-א – מדרגות", 'קנ"מ 1:25', width=88, size=6.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -554,9 +514,11 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
     sh.begin_clip(cx + 2, cy + 2, pw, ph)
     # floor tone
     v.rect(xa, ya, xb, yb, fill="#ffffff", color="none")
+    hz = slab_hole(lvl) if lvl != "B" else None
+    hup = slab_hole({"B": "G", "G": "U", "U": "R"}[lvl]) if lvl != "R" else None
     # slab hole of this floor (void) – light tone
-    if lvl != "B":
-        v.rect(M.ST["x0"], hole, M.ST["x1"], Y_WALL_N, fill="#f2f2f2", color="none")
+    if hz:
+        v.rect(hz[0], hz[1], hz[2], Y_WALL_N, fill="#f2f2f2", color="none")
     # ---------------- stair elements
     t = 0.28
     x0A, x1A = M.ST["x0"], M.ST["x0"] + M.ST["w"]
@@ -656,31 +618,42 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
     if up or dn:
         v.line(x0A, yl, x1B, yl, lw="s")
     # gap / glass spine between flights
-    ys0 = max(hole, (up or dn)["yA0"]) if (up or dn) else hole
+    ys0 = max(hole, (up or dn)["yA0"])
     v.rect(x1A + 0.035, ys0, x0B - 0.035, yl, fill="#cfe5ee", lw="xs")
-    # east guard glass (x = 15.50) along the slab edge / flight B
-    if lvl != "B":
-        v.rect(x1B - 0.03, hole, x1B - 0.005, yl, fill="#cfe5ee", lw="xs")
-    if lvl == "R":
-        v.rect(x0A, hole + 0.005, x1A + 0.035, hole + 0.03, fill="#cfe5ee", lw="xs")
+    # glass guards of this level from model RAILS
+    for rl in M.RAILS:
+        if rl["kind"] != "glass" or abs(rl["z0"] - M.LV[lvl]) > 1e-6:
+            continue
+        rx0, rx1 = sorted((rl["x0"], rl["x1"]))
+        ry0, ry1 = sorted((rl["y0"], rl["y1"]))
+        if rx1 < xa or rx0 > xb or ry1 < ya or ry0 > yb:
+            continue
+        if up and abs(ry0 - ry1) < 1e-6 and abs(ry0 - up["yA0"]) < 0.05 and rx0 < x1A and rx1 > x0A:
+            msg = (f"RAILS guard at y={ry0:.2f}, x {rx0:.2f}–{rx1:.2f}, z0={rl['z0']:+.2f} blocks the first riser of "
+                   f"the {lvl}-run flight A (y={up['yA0']:.2f}) – omitted on the stair sheet")
+            if msg not in ISSUES:
+                ISSUES.append(msg)
+            continue
+        if abs(ry0 - ry1) < 1e-6:
+            v.rect(rx0, ry0 - 0.012, rx1, ry0 + 0.012, fill="#cfe5ee", lw="xs")
+        else:
+            v.rect(rx0 - 0.012, ry0, rx0 + 0.012, ry1, fill="#cfe5ee", lw="xs")
     # wall handrail along flight A (west wall)
-    if up or dn:
-        st_ = up or dn
-        hx = x0A + 0.045
-        v.line(hx, st_["yA0"] - 0.30, hx, yl, lw="m", color="#333")
-        for yy in [st_["yA0"] + 0.25 + i * 0.9 for i in range(3)]:
-            v.line(x0A - 0.06, yy, hx, yy, lw="s", color="#333")
+    st_ = up or dn
+    hx = x0A + 0.045
+    v.line(hx, st_["yA0"] - 0.30, hx, yl, lw="m", color="#333")
+    for yy in [st_["yA0"] + 0.25 + i * 0.9 for i in range(3)]:
+        v.line(x0A - 0.06, yy, hx, yy, lw="s", color="#333")
     # slab hole of the floor above (overhead) dashed
-    if lvl != "R":
-        v.polyline([(M.ST["x0"], hole), (M.ST["x1"], hole), (M.ST["x1"], yn), (M.ST["x0"], yn)], closed=True,
+    if hup:
+        v.polyline([(hup[0], hup[1]), (hup[2], hup[1]), (hup[2], yn), (hup[0], yn)], closed=True,
                    lw="s", dash="3 1 0.6 1", color="#222")
     # floor edge at this level (cut) – heavy
-    if lvl != "B":
-        v.line(M.ST["x1"], hole, M.ST["x1"], M.LIFT["y0"], lw="l")
-        if lvl == "R":
-            v.line(M.ST["x0"], hole, M.ST["x1"], hole, lw="l")
-        else:
-            v.line(x1A + M.ST["gap"], hole, M.ST["x1"], hole, lw="m")
+    if hz:
+        v.line(hz[2], hz[1], hz[2], M.LIFT["y0"], lw="l")
+        v.line(x1A + M.ST["gap"] if up else hz[0], hz[1], hz[2], hz[1], lw="l" if not up else "m")
+        if hz[0] < x0A - 0.01:
+            v.line(hz[0], hz[1], x0A, hz[1], lw="m")
     # ---------------- walls
     for w in M.walls_on(lvl):
         if w.kind in ("parapet",):
@@ -712,7 +685,7 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
             if ext and w.out:
                 _ext_wall_plan(v, w, rr)
             else:
-                v.rect(*rr, fill="pat:rc" if rc else "dx:blk" if w.t > 0.11 else "pat:partition", lw="l")
+                v.rect(*rr, fill=fill_ref(v.sh, "pat:rc" if rc else "dx:blk" if w.t > 0.11 else "pat:partition"), lw="l")
         for o in ops:
             _opening_plan(v, w, o, lvl)
     # ---------------- lift
@@ -728,14 +701,16 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
     # ---------------- annotations
     P = v.P
     if lvl != "B" or True:
-        sh.text(*P(16.60, 30.95), "פיר מעלית", size=SZS, weight=500)
-        sh.text(*P(16.60, 30.65), "ביתית 110/140", size=SZS)
+        lx, ly = P(16.60, 30.80)
+        sh.rect(lx - 9, ly - 4.2, 18, 7.4, color="none", fill="#fff")
+        sh.text(lx, ly - 1.4, "פיר מעלית", size=SZS, weight=500)
+        sh.text(lx, ly + 1.8, "ביתית 140/180", size=SZS)
     # landing level
     st_l = up or dn
     if up:
-        sh.text(*P(14.35, 31.25), f"משטח ביניים {fmt_lv(up['zl'], 3)}", size=SZS, weight=700)
+        sh.text(*P(14.35, 31.25), f"משטח ביניים {ltr(fmt_lv(up['zl'], 3))}", size=SZS, weight=700)
     if dn and lvl != "B":
-        sh.text(*P(14.35, 30.90), f"({fmt_lv(dn['zl'], 3)} משטח תחתון)" if up else f"משטח ביניים {fmt_lv(dn['zl'], 3)}",
+        sh.text(*P(14.35, 30.90), f"(משטח תחתון {ltr(fmt_lv(dn['zl'], 3))})" if up else f"משטח ביניים {ltr(fmt_lv(dn['zl'], 3))}",
                 size=SZS, color="#444" if up else "#000", weight=400 if up else 700)
     # floor level (plan symbol)
     v.level_mark(16.0, 28.55, M.LV[lvl], size=SZ, plan=True)
@@ -749,8 +724,7 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
             size=SZS, color="#333")
     # labels
     if lvl != "R":
-        sh.text(*P(16.45, 27.95), "קו חור בתקרה מעל", size=SZS, color="#333")
-        sh.line(*P(15.55, 28.05), *P(15.85, 28.05), lw="xxs")
+        leader(sh, *P(hup[2], 29.30), *P(hup[2] + 0.35, 29.0), ["קו חור בתקרה מעל"], side="right", size=SZS, dot=True)
     if lvl == "B":
         sh.text(*P(14.95, 29.15), "חלל מתחת", size=SZS, color="#555")
         sh.text(*P(14.95, 28.95), "למדרגות", size=SZS, color="#555")
@@ -762,7 +736,13 @@ def stair_plan(sh, lvl, cx, cy, cw, ch):
         sh.text(px_ - 2.2, py_ + 1.0, "א", size=2.6, weight=700)
     # detail B reference at the east glass
     if lvl == "U":
-        detail_ref(sh, *P(x1B - 0.02, 28.75), 4.0, "B", SN, ang=0)
+        detail_ref(sh, *P(hz[2], 28.75), 4.0, "B", SN, ang=0)
+    if lvl == "R":
+        rx = [w for w in M.walls_on("R") if w.horiz and w.kind == "ext" and w.out == -1]
+        if rx:
+            yin = rx[0].c + rx[0].t / 2
+            sh.text(*P(16.0, 27.75), f"משטח עליון {ltr(f'{(hole - yin) * 100:.0f}')} ס\"מ עד דלת היציאה לגג (D-31)", size=SZS)
+            arrow_line(sh, [P(14.85, 27.60), P(14.85, ya + 0.02)], lw="s", head=1.5)
     # dims: x chain below
     ydm = cy + 2 + ph + 5.5
     xs = [P(xx, ya)[0] for xx in (13.20, 14.30, 14.40, 15.50, 15.70, 17.50)]
@@ -804,22 +784,36 @@ def _ext_wall_plan(v, w, rr):
     if w.kind == "retain":
         v.rect(x0, y0, x1, y1, fill="pat:rc", lw="l")
         return
-    v.rect(*core, fill=core_fill, lw="l")
+    v.rect(*core, fill=fill_ref(v.sh, core_fill), lw="l")
     skf = {"stone": "dx:woolv", "plaster": "dx:eps"}.get(w.skin, "dx:eps")
-    v.rect(*sk, fill=skf, lw="s")
+    v.rect(*sk, fill=fill_ref(v.sh, skf), lw="s")
     # cladding line
     if w.horiz:
         yy = sk[3] - 0.03 if s > 0 else sk[1] + 0.03
         if w.skin == "stone":
-            v.rect(sk[0], yy - 0.0, sk[2], sk[3] if s > 0 else sk[1], fill="dx:lime", lw="xs")
+            v.rect(sk[0], yy - 0.0, sk[2], sk[3] if s > 0 else sk[1], fill=fill_ref(v.sh, "dx:lime"), lw="xs")
 
 
 def _opening_plan(v, w, o, lvl):
     sh = v.sh
+    if not w.horiz and o.kind == "door":
+        x0, x1 = w.c - w.t / 2, w.c + w.t / 2
+        v.line(x0, o.pos, x0, o.end, lw="xs")
+        v.line(x1, o.pos, x1, o.end, lw="xs")
+        hy = o.pos if o.hinge == "a" else o.end
+        L = o.end - o.pos
+        xx = x1 if o.swing > 0 else x0
+        oy_ = o.end if o.hinge == "a" else o.pos
+        v.line(xx, hy, xx + o.swing * L, hy, lw="m")
+        a_h = 0 if o.swing > 0 else 180
+        a_o = 90 if o.hinge == "a" else 270
+        a0, a1 = sorted((a_h, a_o if not (a_h == 0 and a_o == 270) else -90))
+        v.arc(xx, hy, L, a0, a1, lw="xs")
+        return
     if w.horiz:
         y0, y1 = w.c - w.t / 2, w.c + w.t / 2
         if o.kind in ("fixed", "window", "slide"):
-            v.rect(o.pos, w.c - 0.04, o.end, w.c + 0.04, fill="dx:alu", lw="s")
+            v.rect(o.pos, w.c - 0.04, o.end, w.c + 0.04, fill=fill_ref(sh, "dx:alu"), lw="s")
             v.line(o.pos, w.c, o.end, w.c, lw="s", color="#2b6c86")
             v.line(o.pos, y0, o.end, y0, lw="xs")
             v.line(o.pos, y1, o.end, y1, lw="xs")
