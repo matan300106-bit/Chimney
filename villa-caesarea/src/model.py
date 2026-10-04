@@ -501,7 +501,6 @@ RAILS += [
     dict(x0=20.42, y0=PATIO[1], x1=PATIO[2], y1=PATIO[1], z0=GARDEN + 0.10, h=0.95, kind="glass"),
     dict(x0=PATIO[0], y0=19.6, x1=PATIO[2], y1=19.6, z0=-0.02, h=1.05, kind="glass"),
     # stair-void guards (over flight A of the run below)
-    dict(x0=13.10, y0=27.98, x1=14.35, y1=27.98, z0=LV["U"], h=1.05, kind="glass"),
     dict(x0=13.20, y0=27.98, x1=14.35, y1=27.98, z0=LV["R"], h=1.05, kind="glass"),
     # stair-void side guards next to the lift lobby
     dict(x0=15.70, y0=27.98, x1=15.70, y1=29.70, z0=LV["G"], h=1.05, kind="glass"),
@@ -709,7 +708,7 @@ furn("tech", "B", 21.7, 30.3, 2.9, 1.3)
 # --------------------------------------------------------------------------- #
 #  SITE
 # --------------------------------------------------------------------------- #
-POOL = dict(x0=8.00, y0=9.50, x1=22.00, y1=13.50, water=GARDEN - 0.07, depth=1.45,
+POOL = dict(x0=8.00, y0=9.50, x1=22.00, y1=13.50, water=GARDEN - 0.03, depth=1.45,
             shelf=(19.6, 9.5, 22.0, 13.5))
 SITE.update(
     street=dict(x0=30.0, x1=40.0, sidewalk=2.5),
