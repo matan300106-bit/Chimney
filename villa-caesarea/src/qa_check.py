@@ -1316,9 +1316,10 @@ def check_planning():
             if d > 0.001:
                 side = "rear (W)" if x0 < ex0 else "front (E)"
                 sb = M.SETBACK["rear"] if x0 < ex0 else M.SETBACK["front"]
-                add("WARN", cat, f"Louvre field at x={f['c']:.2f} projects {cm(d)} beyond the {side} building line "
-                    f"(allowed projections are usually ≤ 40 % of the setback = {0.4 * sb:.1f} m, and fins are "
-                    "normally permitted – verify takanon)", key=f"fin_proj:{f['c']:.2f}")
+                sev = "INFO" if d <= 0.4 * sb else "WARN"
+                add(sev, cat, f"Louvre field at x={f['c']:.2f} projects {cm(d)} beyond the {side} building line "
+                    f"(≤ 40 % of the setback = {0.4 * sb:.1f} m → normally permitted as a shading projection; mark "
+                    "'בליטת סנפירי הצללה' on the site plan, verify takanon)", key=f"fin_proj:{f['c']:.2f}")
     for s in M.SLABS:
         if s.kind == "canopy":
             for q in s.rects:
@@ -1368,11 +1369,16 @@ def check_planning():
                     balcony += rp.buffer(0.10, join_style=2).intersection(g).area
                 continue
             if 'ממ"ד' in r.name:
-                serv['ממ"ד'] = rp.buffer(0.30, join_style=2).intersection(g).area
+                mg = rp.buffer(0.30, join_style=2).intersection(g).area
+                net_ = rp.area
+                allow = min(mg, R["mamad_service_max"] * mg / net_) if net_ > R["mamad_service_max"] else mg
+                serv['ממ"ד (עד 12 מ"ר נטו)'] = allow
+                if mg - allow > 0.05:
+                    SECTIONS.setdefault("mamad_excess", []).append(mg - allow)
             elif r.service and l != "R":
                 serv[r.name] = serv.get(r.name, 0) + rp.buffer(0.08, join_style=2).intersection(g).area
         s_tot = sum(serv.values())
-        main = gross - s_tot - balcony
+        main = gross - s_tot - balcony   # ממ"ד excess over 12 m² net stays in main
         table.append((l, gross, serv, balcony, main))
         if l in ("G", "U"):
             tot_main += main
@@ -1472,13 +1478,40 @@ def check_site():
         # access from street
         if abs(max(x0, x1) - M.LOT["x1"]) > 0.6:
             add("WARN", cat, f"Parking space {i + 1} does not reach the street boundary (direct access)")
-        # obstacles: pergola posts, fence
+        # obstacles: building, columns, lot boundary, pergola posts
+        cr = sbox(x0, y0, x1, y1)
+        bld = unary_union([g for g in (gross_poly("G"), gross_poly("U")) if g is not None])
+        if cr.intersection(gross_poly("G")).area > 0.002:
+            nx0 = max(x0, M.X_E)
+            add("ERROR", cat, f"Parking space {i + 1} {rr((x0, y0, x1, y1))} overlaps the building / its corner column "
+                f"({cr.intersection(gross_poly('G')).area:.2f} m²)",
+                fix=f"CARS[{i}] = ({nx0:.2f}, {y0:.2f}, {min(nx0 + R['park_l'], M.LOT['x1']):.2f}, {y1:.2f})",
+                key=f"park_bld:{i}")
+        if not sbox(M.LOT["x0"], M.LOT["y0"], M.LOT["x1"], M.LOT["y1"]).buffer(0.01).contains(cr):
+            add("ERROR", cat, f"Parking space {i + 1} extends outside the lot")
         for p in M.PERGOLAS:
             for (px, py) in p["posts"]:
                 if sbox(px - 0.075, py - 0.075, px + 0.075, py + 0.075).intersects(sbox(x0, y0, x1, y1)):
                     add("ERROR", cat, f"Pergola post ({px},{py}) stands in parking space {i + 1}")
     if len(M.CARS) < 2:
         add("ERROR", cat, "Fewer than 2 parking spaces in the lot")
+    # car → front door without going out to the street
+    pav = [sbox(*q) for q in M.SITE.get("paving", [])] + [sbox(*c) for c in M.CARS] + \
+          [sbox(*q) for q in M.SITE.get("deck", [])]
+    doors = [(w, o) for (w, o) in OPS if o.kind == "pivot" or o.tag == "D-01"]
+    if pav and doors and M.CARS:
+        w, o = doors[0]
+        lot = sbox(M.LOT["x0"], M.LOT["y0"], M.LOT["x1"], M.LOT["y1"])
+        u = unary_union([p.buffer(0.05) for p in pav]).intersection(lot.buffer(-0.01))
+        pd = Point(*side_point(w, o, w.out or 1, 0.6))
+        pc = sbox(*M.CARS[0]).centroid
+        comp_d = [g for g in getattr(u, "geoms", [u]) if g.buffer(0.1).contains(pd)]
+        comp_c = [g for g in getattr(u, "geoms", [u]) if g.contains(pc)]
+        if comp_d and comp_c and comp_d[0] is not comp_c[0] and not comp_d[0].equals(comp_c[0]):
+            add("WARN", "11 Architectural planning", "No paved route inside the lot from the parking to the front door – "
+                "residents walk out to the sidewalk and back in through the gate",
+                fix="SITE['paving'] += [(25.00, 21.80, 26.20, 25.80)]  (1.2 m path along the façade from the carport to "
+                    "the service path, planting stays to the east)", key="park_path")
     gate = M.SITE.get("gate")
     if gate:
         gx, gy0, gy1 = gate

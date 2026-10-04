@@ -514,11 +514,32 @@ def sheet_sections_100(sh, box):
         kind = "secN" if s["axis"] == "x" else ("secW" if s["look"] < 0 else "secE")
         cx, gy = x + w * fx, y + h * fy - 60
         ox, oy = place(cx, gy, kind, sc)
+        if key == "C":
+            sh.begin_clip(x, y + h * 0.45, w * 0.66, h * 0.55)
         v, kind = section(sh, key, ox, oy, sc, f"section_{key}_100")
         h0, h1 = _hrange(kind)
         level_column(v, h0 + 1.0, "left", scale=sc)
+        if key == "C":
+            sh.end_group()
         drawing_title(sh, cx + 90, gy + 60 + 2, f"חתך {key}-{key}", 'קנ"מ 1:100', width=60, size=6.5)
         save_dxf(f"section_{key}_100")
+    key_plan(sh, x + w - 150, y + h - 175, 250)
+
+
+def key_plan(sh, x0, y0, scale):
+    """small key plan with the section lines (GF)."""
+    import plans as PL
+    k = 1000 / scale
+    v = View(sh, x0 - 2 * k, y0 + 36 * k, scale)
+    v.rect(M.LOT["x0"], M.LOT["y0"], M.LOT["x1"], M.LOT["y1"], fill="none", lw="xs", dash="3 1", color="#2b4fa8")
+    P = M.POOL
+    v.rect(P["x0"], P["y0"], P["x1"], P["y1"], fill="#cfe6ee", lw="xs")
+    v.rect(M.PATIO[0], M.PATIO[1], M.PATIO[2], M.Y_S_G, fill="#eee", lw="xs")
+    v.polygon(M.OUTLINES["G"], fill="#cbb89a", lw="m")
+    v.polygon(M.OUTLINES["U"], fill="#f4f1ea", fop=0.7, lw="s", dash="2 1")
+    PL.section_marks(v, "G", scale=300)
+    sh.text(x0 + 30 * k, y0 - 4, "תכנית מפתח – קווי חתך", size=3.4, weight=700)
+    sh.text(x0 + 30 * k, y0 + 40 * k, 'קנ"מ 1:250', size=2.6)
 
 
 def sheet_elevations_50(sh, box):
