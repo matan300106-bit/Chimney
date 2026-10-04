@@ -61,7 +61,7 @@ CAMS = {
                    desc="living room toward the garden"),
     "int_02": dict(mode="int_day", loc=(13.55, 24.95, 1.40), tgt=(22.0, 22.9, 1.10), lens=18, level=True, exposure=1.2,
                    desc="kitchen, island and dining"),
-    "int_03": dict(mode="int_dusk", loc=(12.35, 21.25, 4.95), tgt=(8.0, 16.6, 4.90), lens=18, level=True,
+    "int_03": dict(mode="int_dusk", loc=(6.65, 21.35, 4.95), tgt=(11.0, 17.8, 4.75), lens=18, level=True,
                    exposure=0.9, desc="master bedroom toward the loggia"),
 }
 

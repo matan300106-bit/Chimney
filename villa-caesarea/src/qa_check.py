@@ -1455,6 +1455,24 @@ def check_site():
         if furn_box(f).intersection(pool).area > 0.01:
             add("ERROR", cat, f"Furniture {furn_label(f)} stands in the pool", fix=f"delete {furn_line(f)} "
                 "(the pool loungers are already in SITE['loungers'])", key=f"furn_pool:{f.kind}")
+    # sunken patio needs a way up to the garden (escape for the basement guest room, garden access)
+    for r in rooms_on("B"):
+        if not r.outdoor:
+            continue
+        p = room_poly(r)
+        has = any(p.intersects(sbox(*s_["flightA"])) for s_ in M.STAIRS) or any(
+            f.kind in ("stair", "ladder", "steps") and p.intersects(furn_box(f)) for f in M.FURN) or \
+            M.SITE.get("patio_stair") is not None
+        if not has:
+            add("WARN", "11 Architectural planning", f"{room_label(r)} ({p.area:.0f} m², floor {M.LV['B']:+.2f}) has no stair "
+                "to the garden – the basement guest room's patio door is not an escape route and the patio is "
+                "reachable only from inside",
+                fix=("add an external stair along the patio's south retaining wall: 20 risers × 16.9 / 28 cm "
+                     "(2R+T = 61.7), width 1.00, flight x 14.10 → 19.42 at y 17.00 → 18.00 rising eastwards, top landing "
+                     "x 19.42 → 20.42 at garden level −0.15 with a 1.00 m opening in the south patio rail onto the pool "
+                     "deck, 0.90 m glass rail along the open (north) side; model it as SITE['patio_stair'] = "
+                     "(14.10, 17.00, 20.42, 18.00) and draw it in the B plan / section"),
+                key="patio_egress")
     # --- railings
     cat2 = "5 Guards & railings"
     for rl in M.RAILS:
@@ -1878,51 +1896,59 @@ def check_planning_quality():
 #  Curated architect fixes (shown only while the finding exists)
 # =========================================================================== #
 CURATED = {
-    "op_cut:M-D": ('U corridor wall overlaps the ממ"ד south wall and blocks the blast door: '
-                   'wall("U", 6.30, 26.96, 13.12, 26.96) → wall("U", 11.20, 26.96, 13.12, 26.96)  '
-                   '(keep it only as bath-3 south wall); corridor U5 rects → [(6.30, 25.36, 13.00, 26.96)] '
-                   'minus the bath-3 part, i.e. [(6.30, 25.36, 13.00, 26.90), (6.30, 26.90, 10.90, 26.96)] or simply leave '
-                   '(6.30, 25.36, 13.00, 26.90)'),
-    "wall_overlap:U:26.96:27.11": 'same fix as the ממ"ד door: wall("U", 6.30, 26.96, 13.12, 26.96) → wall("U", 11.20, 26.96, 13.12, 26.96)',
-    "wall_overlap:U:27.11:26.96": 'same fix as the ממ"ד door: wall("U", 6.30, 26.96, 13.12, 26.96) → wall("U", 11.20, 26.96, 13.12, 26.96)',
-    "mamad_wall:W": ('ממ"ד west & north walls are the 20 cm block exterior wall. Add 10 cm RC linings bonded to an RC core '
-                     '(RC 30 total) right after the ממ"ד walls: wall("U", 6.35, 27.26, 6.35, 31.70, t=0.10, kind="mamad", '
-                     'core="rc") and wall("U", 6.40, 31.65, 10.90, 31.65, t=0.10, kind="mamad", core="rc"); room U6 rects → '
-                     '[(6.40, 27.26, 10.90, 31.60)]; note "קירות חוץ ממ"ד – בטון מזוין 20+10 ס"מ" (or set the U exterior '
-                     'wall core="rc" for those two segments by splitting the outline)'),
-    "mamad_wall:N": 'see the ממ"ד west wall fix (10 cm RC lining y=31.65, x 6.40→10.90)',
-    "op_stair:D-B2:13.06": ('cinema door opens onto basement stair flight A. Move it south, opening from the lounge: '
-                            'op("B", V, 13.06, 28.20, 29.10, 0, 2.20, "door", "D-B2", hinge="b", swing=-1) → '
-                            'op("B", V, 13.06, 26.50, 27.40, 0, 2.20, "door", "D-B2", hinge="b", swing=-1)'),
-    "swing_furn:D-22:vanity2": ('master bath door: shorten the west dressing closet and swing into the dressing: '
-                                'furn("closet", "U", 9.7, 21.8, 0.6, 3.35, rot=90) → furn("closet", "U", 9.7, 23.45, 0.6, 1.70, rot=90); '
-                                'op("U", V, 9.56, 22.40, 23.30, …, hinge="b", swing=-1) → swing=1'),
-    "swing_furn:D-21:closet": ('master suite entry: op("U", H, 25.30, 11.50, 12.40, 0, 2.20, "door", "D-21", hinge="a", swing=-1) → '
-                               'op("U", H, 25.30, 10.70, 11.60, 0, 2.20, "door", "D-21", hinge="a", swing=-1) and delete '
-                               'furn("island_s", "U", 10.65, 22.6, 0.9, 1.6) (dressing is 3.08 m wide: 0.6+1.75 aisle+0.6 '
-                               'without the island; with it the aisles are 35/50 cm)'),
-    "swing_furn:D-03:wc": ('guest WC: the WC pan sits in the door opening. op("G", V, 19.06, 26.30, 27.10, …, "D-03", '
-                           'hinge="a", swing=1) → swing=-1 (opens out to the hall) and furn("wc", "G", 19.2, 26.4, 0.4, 0.6, rot=90) → '
-                           'furn("wc", "G", 20.30, 25.80, 0.6, 0.4, rot=180) (against the pantry wall)'),
-    "swing_furn:D-B3:closet": ('guest bedroom: furn("closet", "B", 19.2, 24.35, 2.2, 0.6, rot=180) → '
-                               'furn("closet", "B", 20.05, 24.35, 2.0, 0.6, rot=180)'),
-    "swing_furn:D-B4:vanity": 'guest bath: op("B", H, 25.06, 22.20, 23.00, …, "D-B4", hinge="a", swing=1) → swing=-1 (opens into the guest room)',
-    "swing_furn:D-B5:sauna": 'spa: op("B", V, 19.06, 26.00, 26.90, …, "D-B5", hinge="a", swing=1) → swing=-1 (opens into the lounge)',
-    "swing_furn:D-B5:shower": 'spa: op("B", V, 19.06, 26.00, 26.90, …, "D-B5", hinge="a", swing=1) → swing=-1 (opens into the lounge)',
-    "op_block:D-04:counter": ('kitchen re-plan (north wall carries counter + fridge + L-counter on top of each other and blocks '
-                              'the pantry door): replace the 4 kitchen furn lines with  furn("counter", "G", 19.20, 24.98, 1.90, 0.62); '
-                              'furn("fridge", "G", 22.10, 24.98, 1.98, 0.62, label="tall units");  furn("counter", "G", 24.08, 21.45, 0.62, 3.53);  '
-                              'furn("island", "G", 20.28, 22.88, 2.80, 1.10, h=0.92)  → aisles 1.00 m, pantry door D-04 at 21.20→22.00 clear'),
-    "through_wet:B8": ('tech room reachable only through the guest bathroom: op("B", H, 27.66, 22.40, 23.30, 0, 2.20, "door", "D-B7", '
-                       'hinge="a", swing=1) → op("B", V, 21.56, 28.40, 29.30, 0, 2.20, "door", "D-B7", hinge="a", swing=1) '
-                       '(from the storeroom)'),
-    "op_block:AL-05:tvunit": ('TV unit stands in front of the west sliding door: furn("tvunit", "G", 6.35, 22.4, 0.45, 2.8, rot=90) → '
-                              'furn("tvunit", "G", 12.50, 25.85, 0.45, 2.60, rot=270) (on the core wall) – and turn the sofa_l to face it'),
-    "furn_pool:lounger": 'delete furn("lounger", "G", 9.0, 11.0, 0.7, 2.0) – it is inside the pool (SITE loungers already exist at y=14.2)',
-    "daylight:B2": ('gym has no daylight: extend the sunken patio west under the covered terrace edge, e.g. an English court '
-                    '(חצר אנגלית) 1.2 m wide along the basement west wall x 4.8→6.0, y 21.6→25.0 with a window '
-                    'op("B", V, 6.15, 21.80, 24.90, 0.0, 2.60, "slide", "AL-B3") – or record "mechanical ventilation + no '
-                    'habitable use" for the gym'),
+    # design-level findings (coordinate-light, still valid while the finding exists)
+    "mamad_big": ('keep the ממ"ד as a child room but book only 12 m² net as service; the excess goes to MAIN area – the '
+                  "area table below already does this and main stays within 35 %. Alternative: shrink it to ≈12 m² net "
+                  'by moving the ממ"ד east wall wall("U", 11.05, …) → x=9.30 and give the strip to bath 3 / a closet'),
+    "basement_bedroom": ("if the takanon forbids dwelling in the basement, label B4 'חדר עבודה / סטודיו (שימוש נלווה)'; "
+                         "either way keep AL-B2 to the patio as daylight + emergency egress and give the patio a stair "
+                         "to the garden (see the patio-egress item)"),
+    "roofroom_area": ("(a) keep it and book it as stair+lift service area – verify the takanon allowance for a roof "
+                      "exit structure; (b) to get ≤ 23 m² stop the lift at U: RX_OUT x 17.80 → 15.85, drop the R lift "
+                      "walls/hole, R1 rects → [(13.20, 26.85, 15.70, 31.70)] (terrace then reached by stair only)"),
+    "roofroom_setback": ("the flush north wall continues the stair 'lantern' glazing AL-08/AL-34/AL-35 (intended); if the "
+                         "takanon requires a setback ask for an הקלה – the stacked stair cannot move. Keep its parapet "
+                         "top ≤ +10.00 and show it in the north elevation height dimension"),
+    "wetstack:U7": ("riser shaft 30×30 for bath 3 at (12.40, 31.40)–(12.70, 31.70) on U, continuing down behind the "
+                    "living-room bookcase on G (x 12.25–12.70) and in the cinema/gym corner on B to the sewer; "
+                    "bath-3 floor drains run in the 10 cm fill (FIN) – note 'ריצוף על מילוי, שיפוע 1.5%'"),
+    "wetstack:U9": ("shared riser for laundry + bath 2 at (19.72, 31.40)–(20.02, 31.70): U bath-2 NW corner → G inside "
+                    "the foyer closet (19.30–22.90 × 31.05–31.65) → B storeroom → tech room; suspended ceiling in the "
+                    "foyer under the bath-2 footprint"),
+    "wetstack:U11": "same riser as the laundry: (19.72, 31.40)–(20.02, 31.70) through the foyer closet and the B storeroom",
+}
+
+FALLBACK = {
+    "wall_overlap": "shorten / shift one of the walls so that the faces meet without overlapping",
+    "op_cut": "move the opening clear of the crossing wall or cut that wall back to the opening jamb",
+    "swing_wall": "reverse the swing (swing=-swing) or move the door so the leaf clears the wall",
+    "op_stair": "relocate the door to a wall face that is not against the stair flight / void",
+    "stair_landing": "move the blocking wall so that ≥ 1.10 m (flight width) is free in front of the first/last riser",
+    "lift_door": "widen the lift landing door to ≥ 0.90 m",
+    "room_col": "align the column with the wall faces or show the column box-out in the plan",
+    "plenum": "lower the ceiling to leave ≥ 10 cm (25 cm for ducts) or note an exposed slab",
+    "reach": "add a door / opening from an adjacent circulation space",
+    "through_wet": "add a door from the circulation space",
+    "daylight": "add a window / glazed door to the outside (≥ 10 % of the floor area) or an English court",
+    "glazing": "enlarge the window to ≥ 10 % of the floor area",
+    "closet_front": "move the opposite furniture so 0.80 m stays free in front of the closet",
+    "bed_side": "shift the bed / nightstands so 0.60 m stays free on both long sides",
+    "bed_foot": "keep 0.60 m in front of the bed foot",
+    "bed_float": "put the headboard against a wall",
+    "island_clear": "shift / shorten the island to keep 1.00 m around it",
+    "kitchen_aisle": "shift the island to keep a 1.00 m aisle",
+    "furn_wall": "move the item off the wall line",
+    "furn_furn": "move one of the items so they do not overlap",
+    "furn_out": "move the item inside its room",
+    "support": "add a column / beam under the unsupported run or align the wall with the wall below",
+    "op_jamb": "shift the opening ≥ 8 cm (doors) / 5 cm (windows) away from the wall junction",
+    "wall_free": "tie the wall end into a wall/column or detail it as a free-standing stub",
+    "wall_float": "connect the wall to the structure or delete it",
+    "mamad_wall": 'make the ממ"ד walls RC ≥ 25 cm (exterior: RC core + insulation/cladding)',
+    "patio_egress": "add an external stair from the sunken patio to the garden",
+    "win_guard": "add a 1.05 m guard (French balcony) or raise the sill to 0.90",
+    "op_block": "move the furniture clear of the opening",
+    "swing_furn": "reverse the swing or move the furniture out of the swing zone",
 }
 
 
@@ -1941,6 +1967,9 @@ def write_report(path, quiet=False):
         seen.add(k)
         if f.get("key") in CURATED:
             f["fix"] = CURATED[f["key"]]
+        if not f.get("fix") and f["sev"] != "INFO":
+            pre = (f.get("key") or "").split(":")[0]
+            f["fix"] = FALLBACK.get(pre, "see message")
         uniq.append(f)
     cnt = defaultdict(int)
     for f in uniq:
