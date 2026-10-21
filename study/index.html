@@ -338,7 +338,7 @@ body.staff .tab.tab-cc{margin-left:0}
 .feed{display:flex;flex-direction:column}
 .feed > div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
 @media (max-width:520px){.feed > div{grid-template-columns:1fr;gap:0}}
-.ccform input:not([type=checkbox]):not([type=radio]),.ccform textarea,#cc-note,#cc-me{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:var(--raised);color:var(--ink);width:100%}
+.ccform input:not([type=checkbox]):not([type=radio]),.ccform select,.ccform textarea,#cc-note,#cc-me,#cl-note,#cl-status{font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:7px;background:var(--raised);color:var(--ink);width:100%}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
 .svpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px}
 .svopt{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--raised);font-size:14px;cursor:pointer}
@@ -355,6 +355,22 @@ body.staff .tab.tab-cc{margin-left:0}
 .script > div:last-child{border-bottom:0}
 @media (max-width:560px){.script > div{grid-template-columns:1fr;gap:2px}}
 .script p{font-size:15px}
+
+/* AI coach */
+.ai{background:var(--surface);border:1px solid var(--accent);border-radius:14px;padding:16px;box-shadow:0 0 0 3px var(--accent-soft)}
+.ai-h{display:flex;gap:12px;align-items:center}
+.ai-dot{width:30px;height:30px;border-radius:9px;flex:none;background:conic-gradient(from 200deg,var(--accent),var(--gold),var(--ember),var(--accent))}
+.ai-chat{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow-y:auto}
+.ai-chat:empty{display:none}
+.bub{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:12px;max-width:92%;font-size:15px;line-height:1.5}
+.bub.u{align-self:flex-end;background:var(--accent-soft)}
+.bub.a{align-self:flex-start;background:var(--raised);border:1px solid var(--line)}
+.bub .who{font:600 10.5px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.ai-text{display:block;margin:6px 0;padding:10px 12px;border-left:4px solid var(--accent);background:var(--surface);border-radius:6px;font-weight:500}
+.ai-in{display:flex;gap:8px;align-items:flex-end}
+.ai-in textarea,#cl-paste{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--raised);color:var(--ink);resize:vertical;width:100%}
+.late{color:var(--bad);font-weight:700}
+.seg{flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -1968,13 +1984,13 @@ const CCS = {
       db.collection("ccest").onSnapshot(snap => {
         const next = {}; snap.docs.forEach(d => { next[d.id] = d.data(); });
         this.list = next; this.resolveNames();
-        if (VIEW === "cc" && !CC.editing && !ccTyping()) R.cc();
+        if (VIEW === "cc" && !CC.editing && !ccTyping() && !AI.busy) R.cc();
       }, () => { this.mode = "local"; });
     } catch (e) { this.mode = "local"; }
   },
   async resolveNames() {
     if (!this.user) return;
-    const ids = new Set(); Object.values(this.list).forEach(e => { if (e.by) ids.add(e.by); (e.log || []).forEach(x => x.by && ids.add(x.by)); });
+    const ids = new Set(); [...Object.values(this.list), ...(typeof CLS !== "undefined" ? Object.values(CLS.list) : [])].forEach(e => { if (e.by) ids.add(e.by); (e.log || []).forEach(x => x.by && ids.add(x.by)); (e.chat || []).forEach(x => x.by && ids.add(x.by)); });
     if (!ids.size) return;
     try { const ps = await this.user.profiles([...ids]); let changed = false; for (const id in ps) { const n = ps[id].isMe ? "You" : (ps[id].name || "Someone"); if (this.names[id] !== n) { this.names[id] = n; changed = true; } } if (changed && VIEW === "cc" && !CC.editing && !ccTyping()) R.cc(); } catch (e) {}
   },
@@ -2007,9 +2023,10 @@ R.cc = function () {
       <div class="seg" role="tablist">
         <button role="tab" class="${sub === "study" ? "on" : ""}" aria-selected="${sub === "study"}" data-act="cc-sub" data-v="study">Study</button>
         <button role="tab" class="${sub === "close" ? "on" : ""}" aria-selected="${sub === "close"}" data-act="cc-sub" data-v="close">Close clients</button>
+        <button role="tab" class="${sub === "clients" ? "on" : ""}" aria-selected="${sub === "clients"}" data-act="cc-sub" data-v="clients">Clients + AI</button>
       </div>
     </div>
-    <div id="cc-body">${sub === "study" ? ccStudy() : CC.editing ? ccForm() : CC.open && CCS.list[CC.open] ? ccDetail(CCS.list[CC.open]) : ccPipeline()}</div>`;
+    <div id="cc-body">${sub === "study" ? ccStudy() : sub === "clients" ? clBody() : CC.editing ? ccForm() : CC.open && CCS.list[CC.open] ? ccDetail(CCS.list[CC.open]) : ccPipeline()}</div>`;
 };
 
 /* --- study --- */
@@ -2238,6 +2255,8 @@ function ccDetail(e) {
     <span class="small muted">Send from the company phone or Workiz, then tap "I sent it" so the follow-up clock knows.</span>
   </section>` : s.key === "nophone" ? `<section class="todo stack"><span class="eyebrow">Do this now</span><h3>No mobile number</h3><p>This client isn't on the text ladder. Call them with the script below, or flag it for Matan.</p></section>` : s.key === "wait" || s.key === "between" ? `<section class="todo stack calm"><span class="eyebrow">Next</span><h3>${esc(s.label)}</h3><p class="muted">Nothing to send yet. A call is fine anytime.</p></section>` : ""}
 
+  ${aiPanel("est", e)}
+
   <section class="stack"><h3>Log a call or outcome</h3>
     <div class="row">
       <button class="btn sm" data-act="cc-log" data-k="call_talk">Called: talked</button>
@@ -2325,20 +2344,349 @@ document.addEventListener("change", ev => {
 /* staff link: #closings-clients opens straight into this area with only its own tabs */
 function ccTyping() { const a = document.activeElement; return !!(a && a.closest && a.closest("#v-cc") && a.matches("input,textarea,select")); }
 function ccRoute() {
-  if (location.hash === "#closings-clients" || location.hash === "#close-clients") {
+  if (location.hash === "#closings-clients" || location.hash === "#close-clients" || location.hash === "#clients-ai") {
     document.body.classList.add("staff");
     const br = $(".brand"); if (br) br.innerHTML = "The Chimney <em>Sweeper</em>";
     if (location.hash === "#close-clients") CCO.sub = "close";
+    if (location.hash === "#clients-ai") CCO.sub = "clients";
     go("cc");
     return true;
   }
   return false;
 }
 window.addEventListener("hashchange", ccRoute);
+/* =====================================================================
+   CLIENTS + AI — client records, follow-up dates, and an AI coach that
+   works from the record and follows The Chimney Sweeper's rules.
+   ===================================================================== */
+const SOURCES = ["Google", "Referral", "Repeat customer", "Facebook / Instagram", "Yelp / Angi", "Website form", "Other"];
+const CSTATUS = { lead: ["New lead", "fire"], contacted: ["Contacted", "warn"], estimate: ["Estimate sent", "warn"], booked: ["Booked", "good"], customer: ["Customer", "good"], no: ["Not interested", "muted"] };
+
+const CLS = {
+  list: LS.get("cc.clients.v1") || {},
+  started: false,
+  start() {
+    if (this.started || CCS.mode !== "db" || !CCS.db) return;
+    this.started = true;
+    CCS.db.collection("ccclients").onSnapshot(snap => {
+      const next = {}; snap.docs.forEach(d => { next[d.id] = d.data(); });
+      this.list = next; CCS.resolveNames();
+      if (VIEW === "cc" && CCO.sub === "clients" && !CL.editing && !ccTyping() && !AI.busy) R.cc();
+    }, () => {});
+  },
+  async save(c) {
+    c.upd = Date.now();
+    if (c.chat && c.chat.length > 30) c.chat = c.chat.slice(-30);
+    this.list[c.id] = JSON.parse(JSON.stringify(c));
+    if (CCS.mode === "db") {
+      try { await CCS.db.collection("ccclients").doc(c.id).set(this.list[c.id]); }
+      catch (err) { toast(err && err.code === "invalid_argument" ? "You can view but not edit. Ask Matan for editor access." : "Couldn't save. Check your connection and try again."); }
+    } else LS.set("cc.clients.v1", this.list);
+  },
+  async remove(id) {
+    delete this.list[id];
+    if (CCS.mode === "db") { try { await CCS.db.collection("ccclients").doc(id).delete(); } catch (e) {} }
+    else LS.set("cc.clients.v1", this.list);
+  },
+};
+const CL = { open: null, editing: null, q: "", filter: "due", delArm: false, fillBusy: false };
+function clDue(c) { return c.next && c.next <= dayKey() && c.status !== "no" && c.status !== "customer"; }
+function clLog(c, k, note) { c.log = c.log || []; c.log.push({ k, at: Date.now(), by: CCS.uid || "", note: note || "" }); }
+const CLOGTXT = { made: "Client added", contact: "Contacted", note: "Note", next: "Follow-up date set", status: "Status changed" };
+
+/* ---------- AI ---------- */
+const AI = { fn: null, checked: false, busy: false, ctl: null, err: "", streamEl: null };
+async function aiInit() {
+  try { if (window.claude && typeof window.claude.use === "function") AI.fn = await window.claude.use("sample"); } catch (e) { AI.fn = null; }
+  AI.checked = true;
+  if (VIEW === "cc" && !ccTyping()) R.cc();
+}
+const AI_ERR = {
+  not_granted: "AI is turned off for this page. You can allow it from the page's Permissions menu.",
+  sampling_disabled: "AI isn't available on this Claude account.",
+  rate_limited: "Too many AI requests right now. Wait a minute and try again.",
+  session_expired: "Your Claude sign-in expired. Reload the page and sign in again.",
+  refused: "The AI couldn't help with that. Try asking a different way.",
+  empty_completion: "The AI didn't return anything. Try asking a shorter question.",
+  invalid_json: "The AI couldn't read that note. Try pasting a shorter or clearer note.",
+  prompt_too_large: "That's too much text at once. Paste a shorter note.",
+};
+function aiErrText(e) { return AI_ERR[e && e.code] || "The AI had a connection problem. Try again."; }
+function aiRules() {
+  return `You are the sales and follow-up coach for The Chimney Sweeper, a chimney service company (sweeping, inspections, crown and flashing repair, caps, liners, tuckpointing, waterproofing, chase covers, dampers, rebuilds, dryer vents, gas fireplace service).
+You are helping the office coordinator, who is new to the chimney trade, follow up with clients and close estimates. Today is ${new Date().toDateString()}.
+
+Company rules you must follow:
+- Follow-up texts are SMS only and are always signed "The Chimney Sweeper", never a person's name.
+- Estimate follow-up ladder: a check-in text on Day 2 after the estimate is sent, and a text on Day 5 that may offer a 10% discount. Then stop. Anything past Day 5 is a one-time "revival" text that needs the owner Matan's approval first.
+- Discounts: 10% maximum, only in the Day 5 text, never earlier, and it must also be entered in the Workiz estimate's Discount field. Any other discount is Matan's decision.
+- Voice: warm, consultative, plain English, not pushy. Treat price as a likely concern without assuming it. End with an easy next step, like "reply YES and I'll send you some times".
+- Never promise that insurance will pay, never use scare tactics, never invent prices, dates, findings, or facts that aren't in the record. Use [brackets] for anything she must fill in.
+- Safety issues (creosote, cracked liner, blocked flue, carbon monoxide) should be stated honestly and calmly.
+
+How to answer:
+- Be short and practical: a few lines or bullets she can act on right now. No long essays.
+- When you suggest a text message, put it on its own lines between a line that says TEXT TO SEND: and a line that says END TEXT. Keep texts under 320 characters.
+- If something important is missing from the record (like a phone number or follow-up date), say so in one line.`;
+}
+function aiContext(kind, r) {
+  const items = (r.items || r.services || []).map(id => SVC[id] ? SVC[id].title : id);
+  if (kind === "est") {
+    const s = stage(r);
+    return `ESTIMATE RECORD
+Client: ${r.client || "unknown"} | Phone: ${r.phone || "none"} | Email: ${r.email || "none"}
+Workiz estimate #: ${r.estNo || "unknown"} | Total: ${money(r.amount)} | Day 5 discounted price would be ${money(disc(r))}
+Sent: ${r.sent || "unknown"} (day ${daysSince(r.sent)} since sent) | Current step: ${s.label}
+Work: ${items.join(", ") || "not listed"}${r.custom ? "; " + r.custom : ""}
+Urgency: ${(URGENCY[r.urgency] || {}).label || "unknown"} | Client's main hesitation: ${CONCERNS[r.concern] || "unknown"}
+Technician notes: ${r.notes || "none"} | Photos available: ${r.photos ? "yes" : "no"}
+Texts already sent: ${["d2", "d5", "rev"].filter(k => has(r, k)).map(k => ({ d2: "Day 2", d5: "Day 5", rev: "Revival" })[k]).join(", ") || "none"}
+Outcome: ${r.outcome || "still open"}
+History: ${(r.log || []).slice(-12).map(x => `${new Date(x.at).toDateString()}: ${LOGTXT[x.k] || x.k}${x.note ? " (" + x.note + ")" : ""}`).join("; ") || "none"}`;
+  }
+  const ests = Object.values(CCS.list).filter(e => (r.phone && digits(e.phone) && digits(e.phone).slice(-7) === digits(r.phone).slice(-7)) || (r.name && e.client && e.client.trim().toLowerCase() === r.name.trim().toLowerCase()));
+  return `CLIENT RECORD
+Name: ${r.name || "unknown"} | Phone: ${r.phone || "none"} | Email: ${r.email || "none"} | Address: ${r.address || "none"}
+Status: ${(CSTATUS[r.status] || ["unknown"])[0]} | Lead source: ${r.source || "unknown"}
+Interested in: ${items.join(", ") || "not listed"}
+Next follow-up date: ${r.next || "not set"} | Planned next action: ${r.nextAction || "none"}
+Last contact: ${r.last || "never"}
+Notes: ${r.notes || "none"}
+History: ${(r.log || []).slice(-12).map(x => `${new Date(x.at).toDateString()}: ${CLOGTXT[x.k] || x.k}${x.note ? " (" + x.note + ")" : ""}`).join("; ") || "none"}
+Linked estimates: ${ests.length ? ests.map(e => `${money(e.amount)} sent ${e.sent}, ${workPhrase(e)}, step: ${stage(e).label}`).join("; ") : "none"}`;
+}
+const AI_ASKS = {
+  next: { label: "What should I do next?", ask: "What's the single best next step with this client today, and why? If it's a text or a call, give me the exact words." },
+  text: { label: "Write the text to send", ask: "Write the text message I should send this client right now, following the rules. One message only." },
+  call: { label: "Prep me for a call", ask: "Prep me for a phone call with this client: a 2-line recap, two questions to ask, the objection I'll most likely hear and what to say, and how to ask for the booking." },
+  summary: { label: "Summarize this client", ask: "Summarize where this client stands in 3 short bullets, then list anything missing from the record that I should fill in." },
+  reply: { label: "Reply to their message", needs: "Paste the client's message here", ask: t => `The client just sent me this message:\n"""${t}"""\nWrite my reply text, and tell me in one line if I should update anything (status, follow-up date, mark booked or lost).` },
+  objection: { label: "Handle an objection", needs: "What did the client say?", ask: t => `The client said:\n"""${t}"""\nHow should I answer? Give me the exact words to say on the phone, and a text version if a text makes more sense.` },
+};
+function aiPanel(kind, r) {
+  const chat = r.chat || [];
+  const off = AI.checked && !AI.fn;
+  return `<section class="ai stack" data-kind="${kind}">
+    <div class="ai-h"><span class="ai-dot" aria-hidden="true"></span><div class="stack" style="gap:2px"><h3>AI coach</h3><span class="small muted">${kind === "est" ? "Knows this estimate, its follow-up step, and your rules." : "Knows this client, their estimates, and your rules."}</span></div></div>
+    ${off ? `<div class="warnbox">AI help works on the Claude link (claude.ai), not on the website copy. The scripts and templates on this page still work here.</div>` : `
+    <div class="chips">${Object.entries(AI_ASKS).map(([k, a]) => `<button class="chip" data-act="ai-ask" data-k="${k}" ${AI.busy ? "disabled" : ""}>${a.label}</button>`).join("")}</div>
+    <div class="ai-chat" id="ai-chat">${chat.map(m => aiBubble(m)).join("")}${AI.busy ? `<div class="bub a"><span class="who">AI coach</span><div class="bt" id="ai-stream">${AI.partial ? esc(AI.partial) : "Thinking…"}</div></div>` : ""}</div>
+    ${AI.err ? `<div class="warnbox">${esc(AI.err)}</div>` : ""}
+    <div class="ai-in"><textarea id="ai-q" rows="2" placeholder="Ask anything about this ${kind === "est" ? "estimate" : "client"}, or paste what they said…" ${AI.busy ? "disabled" : ""}></textarea>
+      ${AI.busy ? `<button class="btn" data-act="ai-stop">Stop</button>` : `<button class="btn primary" data-act="ai-ask" data-k="free">Ask</button>`}</div>
+    ${chat.length ? `<div class="row" style="justify-content:space-between"><span class="small muted">Everyone with access to this page sees this conversation.</span><button class="linkish" data-act="ai-clear">Clear conversation</button></div>` : ""}`}
+  </section>`;
+}
+function aiBubble(m) {
+  const txt = m.t || "";
+  const blocks = [...txt.matchAll(/TEXT TO SEND:\s*\n?([\s\S]*?)\n?\s*END TEXT/gi)].map(x => x[1].trim()).filter(Boolean);
+  const shown = txt.replace(/TEXT TO SEND:\s*\n?([\s\S]*?)\n?\s*END TEXT/gi, (_, b) => "\u0000" + b.trim() + "\u0001");
+  const html = esc(shown.replace(/\n*\u0000/g, "\u0000").replace(/\u0001\n*/g, "\u0001")).replace(/\u0000([\s\S]*?)\u0001/g, (_, b) => `<span class="ai-text">${b}</span>`).replace(/\n/g, "<br>");
+  return `<div class="bub ${m.r === "u" ? "u" : "a"}"><span class="who">${m.r === "u" ? esc(CCS.who(m.by)) : "AI coach"} · ${new Date(m.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span><div class="bt">${html}</div>
+    ${m.r === "a" ? `<div class="row">${blocks.map((b, i) => `<button class="btn sm primary" data-act="ai-copy" data-t="${encodeURIComponent(b)}">Copy text${blocks.length > 1 ? " " + (i + 1) : ""}</button>`).join("")}<button class="btn sm" data-act="ai-copy" data-t="${encodeURIComponent(txt.replace(/TEXT TO SEND:|END TEXT/gi, "").trim())}">Copy all</button></div>` : ""}</div>`;
+}
+function aiTarget() {
+  const kind = (document.querySelector(".ai") || {}).dataset ? document.querySelector(".ai").dataset.kind : null;
+  if (kind === "est" && CC.open && CCS.list[CC.open]) return { kind, rec: JSON.parse(JSON.stringify(CCS.list[CC.open])), save: r => CCS.save(r) };
+  if (kind === "client" && CL.open && CLS.list[CL.open]) return { kind, rec: JSON.parse(JSON.stringify(CLS.list[CL.open])), save: r => CLS.save(r) };
+  return null;
+}
+async function aiAsk(k) {
+  if (AI.busy || !AI.fn) return;
+  const tg = aiTarget(); if (!tg) return;
+  const box = $("#ai-q"), typed = box ? box.value.trim() : "", def = AI_ASKS[k];
+  let ask, shown;
+  if (k === "free") { if (!typed) { box && box.focus(); return; } ask = typed; shown = typed; }
+  else if (def.needs) { if (!typed) { AI.err = def.needs + " in the box below, then tap the button again."; R.cc(); const b = $("#ai-q"); if (b) { b.placeholder = def.needs; b.focus(); } return; } ask = def.ask(typed); shown = def.label + ": " + typed; }
+  else { ask = def.ask; shown = def.label; }
+  const rec = tg.rec; rec.chat = rec.chat || [];
+  const history = rec.chat.slice(-8).map(m => ({ role: m.r === "u" ? "user" : "assistant", content: m.t }));
+  const input = [{ role: "user", content: aiRules() + "\n\n" + aiContext(tg.kind, rec) }, ...history, { role: "user", content: ask }];
+  rec.chat.push({ r: "u", t: shown, at: Date.now(), by: CCS.uid || "" });
+  AI.busy = true; AI.err = ""; AI.partial = ""; AI.ctl = new AbortController();
+  tg.save(rec); R.cc(); aiScroll();
+  try {
+    const res = await AI.fn(input, { cache: false, signal: AI.ctl.signal, onText: ({ text }) => { AI.partial = text; const el = $("#ai-stream"); if (el) el.textContent = text; } });
+    rec.chat.push({ r: "a", t: res.text + (res.truncated ? "\n\n(Answer was cut short. Ask for less at a time.)" : ""), at: Date.now() });
+  } catch (e) {
+    if (e && e.code !== "cancelled") AI.err = aiErrText(e);
+    if (e && e.text) rec.chat.push({ r: "a", t: e.text + "\n\n(Stopped.)", at: Date.now() });
+  } finally {
+    AI.busy = false; AI.partial = ""; AI.ctl = null;
+    await tg.save(rec); R.cc(); aiScroll();
+  }
+}
+function aiScroll() { const c = $("#ai-chat"); if (c) c.scrollTop = c.scrollHeight; }
+async function aiFill() {
+  if (!AI.fn || CL.fillBusy) return;
+  const src = ($("#cl-paste") || {}).value || "";
+  if (!src.trim()) { toast("Paste a note first"); return; }
+  CL.fillBusy = true; clKeepForm(); R.cc();
+  const ids = SERVICES.map(s => `${s.id} = ${s.title}`).join("; ");
+  const prompt = `Read this note about a chimney service client and pull out the details. Today is ${dayKey()}.
+Reply with only a JSON object with these keys (use null when unknown, never guess):
+{"name": string|null, "phone": string|null, "email": string|null, "address": string|null,
+ "source": one of ${JSON.stringify(SOURCES)} or null,
+ "status": one of ["lead","contacted","estimate","booked","customer","no"] or null,
+ "services": array of service ids from this list: ${ids},
+ "next": "YYYY-MM-DD" follow-up date if one is stated or clearly implied (for example "call back Tuesday"), else null,
+ "nextAction": short phrase or null,
+ "notes": one or two plain sentences with anything else useful, or null}
+Note:
+"""${src.slice(0, 6000)}"""`;
+  try {
+    const d = await AI.fn.json(prompt, { modelTier: "quick", cache: false });
+    const c = CL.editing;
+    if (d && typeof d === "object") {
+      ["name", "phone", "email", "address", "source", "status", "next", "nextAction"].forEach(k => { if (d[k] && typeof d[k] === "string" && !(c[k] || "").trim()) c[k] = d[k]; });
+      if (d.status && CSTATUS[d.status]) c.status = d.status;
+      if (Array.isArray(d.services)) c.services = [...new Set([...(c.services || []), ...d.services.filter(x => SVC[x])])];
+      if (d.notes) c.notes = ((c.notes || "") + (c.notes ? "\n" : "") + d.notes).trim();
+      toast("Filled in. Check it, then save.");
+    }
+  } catch (e) { toast(aiErrText(e)); }
+  CL.fillBusy = false; R.cc();
+}
+
+/* ---------- views ---------- */
+function clBody() {
+  CLS.start();
+  if (CL.editing) return clForm();
+  if (CL.open && CLS.list[CL.open]) return clDetail(CLS.list[CL.open]);
+  return clList();
+}
+function clList() {
+  const all = Object.values(CLS.list).sort((a, b) => (a.next || "9999").localeCompare(b.next || "9999") || (b.upd || 0) - (a.upd || 0));
+  const due = all.filter(clDue), leads = all.filter(c => c.status === "lead");
+  const q = CL.q.trim().toLowerCase();
+  let rows = CL.filter === "due" ? due : CL.filter === "lead" ? leads : all;
+  if (q) rows = all.filter(c => [c.name, c.phone, c.email, c.address, c.notes].join(" ").toLowerCase().includes(q));
+  return `
+    <section class="hero" style="min-height:220px">${img("office", "")}<div class="hero-in"><span class="eyebrow">Clients + AI</span><h1 style="font-size:40px">Every client, one place</h1>
+      <p>Paste a note and AI fills in the client. Set a follow-up date and it shows up here when it's due. Ask the AI coach what to say next.</p></div></section>
+    <div class="kpis">
+      <div class="kpi"><b>${due.length}</b><span>Follow-ups due today</span></div>
+      <div class="kpi"><b>${leads.length}</b><span>New leads</span></div>
+      <div class="kpi"><b>${all.filter(c => c.status === "booked").length}</b><span>Booked</span></div>
+      <div class="kpi"><b>${all.length}</b><span>Clients</span></div>
+    </div>
+    <div class="row" style="justify-content:space-between">
+      <div class="chips">${[["due", `Due today (${due.length})`], ["lead", `New leads (${leads.length})`], ["all", `All (${all.length})`]].map(([k, t]) => `<button class="chip" data-act="cl-filter" data-f="${k}" aria-pressed="${CL.filter === k && !q}">${t}</button>`).join("")}</div>
+      <div class="row"><input type="search" id="cl-q" placeholder="Search name, phone, notes" value="${esc(CL.q)}" aria-label="Search clients" style="max-width:240px"><button class="btn fire" data-act="cl-new">+ New client</button></div>
+    </div>
+    <div id="cl-rows">${clRows(rows, all.length)}</div>
+    <p class="small muted">${CCS.mode === "db" ? "Shared: Matan and the office see the same clients, notes, and AI conversations." : "Saved in this browser only. Use the Claude link to share clients with Matan."}</p>`;
+}
+function clRows(rows, total) {
+  if (!rows.length) return `<div class="panel stack" style="align-items:flex-start"><h3>${total ? "Nothing here" : "No clients yet"}</h3><p class="muted">${total ? "No clients match. Nice and clear." : "Add the first client. Paste a call note or a client's text and the AI fills in the form for you."}</p><button class="btn fire" data-act="cl-new">+ New client</button></div>`;
+  return `<div class="tscroll"><table class="t cc-table"><thead><tr><th>Client</th><th>Status</th><th>Next follow-up</th><th>Last contact</th><th></th></tr></thead><tbody>${rows.map(c => {
+    const st = CSTATUS[c.status] || CSTATUS.lead, late = clDue(c);
+    return `<tr><td><b>${esc(c.name || "Unnamed")}</b><span class="small muted">${esc(c.phone || c.email || "no contact info")}</span></td>
+      <td><span class="pill2 ${st[1]}">${st[0]}</span></td>
+      <td>${c.next ? `<span class="${late ? "late" : ""}">${esc(parseDay(c.next).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }))}</span>` : `<span class="muted">not set</span>`}<span class="small muted">${esc(c.nextAction || "")}</span></td>
+      <td>${c.last ? esc(parseDay(c.last).toLocaleDateString(undefined, { month: "short", day: "numeric" })) : `<span class="muted">never</span>`}</td>
+      <td><button class="btn sm ${late ? "fire" : ""}" data-act="cl-open" data-id="${c.id}">${late ? "Follow up" : "Open"}</button></td></tr>`; }).join("")}</tbody></table></div>`;
+}
+function clForm() {
+  const c = CL.editing, isNew = !CLS.list[c.id], aiOn = !!AI.fn;
+  return `<form class="stack ccform" id="cl-form" autocomplete="off">
+    <div class="row" style="justify-content:space-between"><h2>${isNew ? "New client" : "Edit client"}</h2><button type="button" class="btn sm" data-act="cl-cancel">Cancel</button></div>
+    ${aiOn ? `<section class="ai stack"><div class="ai-h"><span class="ai-dot" aria-hidden="true"></span><div class="stack" style="gap:2px"><h3>Smart fill</h3><span class="small muted">Paste anything: call notes, the client's text, an email, a Workiz note. The AI fills the form below; you check it and save.</span></div></div>
+      <textarea id="cl-paste" rows="4" placeholder="e.g. Talked to Mary Jones 555-201-8844, 14 Oak St. Found us on Google. Chimney leaks when it rains, wants crown and cap looked at. Call her back Thursday after 3.">${esc(CL.paste || "")}</textarea>
+      <div class="row"><button type="button" class="btn primary" data-act="cl-fill" ${CL.fillBusy ? "disabled" : ""}>${CL.fillBusy ? "Reading the note…" : "Fill with AI"}</button></div></section>` : ""}
+    <div class="fgrid">
+      <label class="field"><span class="lbl">Name</span><input id="c-name" required value="${esc(c.name || "")}"></label>
+      <label class="field"><span class="lbl">Mobile phone</span><input id="c-phone" type="tel" value="${esc(c.phone || "")}"></label>
+      <label class="field"><span class="lbl">Email</span><input id="c-email" type="email" value="${esc(c.email || "")}"></label>
+      <label class="field"><span class="lbl">Address</span><input id="c-address" value="${esc(c.address || "")}"></label>
+      <label class="field"><span class="lbl">How they found us</span><select id="c-source"><option value="">Choose…</option>${SOURCES.map(s => `<option ${c.source === s ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+      <label class="field"><span class="lbl">Status</span><select id="c-status">${Object.entries(CSTATUS).map(([k, v]) => `<option value="${k}" ${(c.status || "lead") === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select></label>
+      <label class="field"><span class="lbl">Next follow-up</span><input id="c-next" type="date" value="${esc(c.next || "")}"></label>
+      <label class="field"><span class="lbl">Next action</span><input id="c-nextAction" value="${esc(c.nextAction || "")}" placeholder="Call back after 3pm"></label>
+    </div>
+    <div class="field"><span class="lbl">Interested in</span><div class="svpick">${SERVICES.map(s => `<label class="svopt"><input type="checkbox" name="csvc" value="${s.id}" ${(c.services || []).includes(s.id) ? "checked" : ""}><span>${esc(s.title)}</span></label>`).join("")}</div></div>
+    <label class="field"><span class="lbl">Notes</span><textarea id="c-notes" rows="4">${esc(c.notes || "")}</textarea></label>
+    <div class="row"><button class="btn fire lg" type="submit">${isNew ? "Save client" : "Save changes"}</button></div>
+  </form>`;
+}
+function clKeepForm() {
+  if (!CL.editing || !$("#cl-form")) return;
+  const c = CL.editing, v = id => ($("#" + id) || {}).value || "";
+  Object.assign(c, { name: v("c-name").trim(), phone: v("c-phone").trim(), email: v("c-email").trim(), address: v("c-address").trim(), source: v("c-source"), status: v("c-status") || "lead", next: v("c-next"), nextAction: v("c-nextAction").trim(), notes: v("c-notes").trim(), services: [...document.querySelectorAll('input[name="csvc"]:checked')].map(x => x.value) });
+  CL.paste = ($("#cl-paste") || {}).value || "";
+}
+function clDetail(c) {
+  const st = CSTATUS[c.status] || CSTATUS.lead, late = clDue(c);
+  const ests = Object.values(CCS.list).filter(e => (c.phone && digits(e.phone) && digits(e.phone).slice(-7) === digits(c.phone).slice(-7)) || (c.name && e.client && e.client.trim().toLowerCase() === c.name.trim().toLowerCase()));
+  return `
+  <div class="row" style="justify-content:space-between"><button class="btn sm" data-act="cl-back">← All clients</button>
+    <div class="row"><button class="btn sm" data-act="cl-edit">Edit</button><button class="btn sm" data-act="cl-estimate">+ Estimate for this client</button>${CL.delArm ? `<span class="small">Delete this client?</span><button class="btn sm danger" data-act="cl-del-yes">Delete</button><button class="btn sm" data-act="cl-del-no">Keep</button>` : `<button class="btn sm" data-act="cl-del">Delete</button>`}</div></div>
+  <section class="cc-card stack" style="gap:8px">
+    <span class="eyebrow">${esc(c.source || "Client")}${c.address ? " · " + esc(c.address) : ""}</span>
+    <h2>${esc(c.name || "Unnamed")}</h2>
+    <span class="muted">${esc(c.phone || "no phone")}${c.email ? " · " + esc(c.email) : ""}${(c.services || []).length ? " · interested in " + esc((c.services || []).map(id => SVC[id] ? SVC[id].short : id).join(", ")) : ""}</span>
+    <span class="row" style="gap:6px"><span class="pill2 ${st[1]}">${st[0]}</span>${c.next ? `<span class="pill2 ${late ? "fire" : "muted"}">Follow up ${late ? "now" : esc(parseDay(c.next).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }))}${c.nextAction ? ": " + esc(c.nextAction) : ""}</span>` : `<span class="pill2 warn">No follow-up date</span>`}</span>
+    ${c.notes ? `<p class="small" style="white-space:pre-wrap">${esc(c.notes)}</p>` : ""}
+    <div class="row">
+      <button class="btn sm primary" data-act="cl-contact">Contacted today</button>
+      <span class="small muted">Next follow-up:</span>
+      ${[[1, "Tomorrow"], [3, "In 3 days"], [7, "Next week"], [30, "Next month"]].map(([n, t]) => `<button class="btn sm" data-act="cl-next" data-n="${n}">${t}</button>`).join("")}
+      <select id="cl-status" aria-label="Change status">${Object.entries(CSTATUS).map(([k, v]) => `<option value="${k}" ${c.status === k ? "selected" : ""}>${v[0]}</option>`).join("")}</select>
+    </div>
+    ${ests.length ? `<div class="row small">Estimates: ${ests.map(e => `<button class="linkish" data-act="cc-open" data-id="${e.id}">${money(e.amount)} · ${esc(stage(e).label)}</button>`).join(" ")}</div>` : ""}
+  </section>
+  ${aiPanel("client", c)}
+  <section class="stack"><h3>Add a note</h3><div class="row" style="flex-wrap:nowrap"><input id="cl-note" placeholder="What they said, best time to call…" style="flex:1;min-width:0"><button class="btn sm" data-act="cl-note">Add note</button></div></section>
+  <section class="stack"><h3>History</h3><div class="feed">${(c.log || []).slice().reverse().map(x => `<div><span class="mono small muted">${new Date(x.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span><span><b>${esc(CCS.who(x.by))}</b> · ${esc(CLOGTXT[x.k] || x.k)}${x.note ? ": " + esc(x.note) : ""}</span></div>`).join("") || `<p class="muted">Nothing yet.</p>`}</div></section>`;
+}
+
+/* ---------- actions ---------- */
+function clCur() { return CL.open && CLS.list[CL.open] ? JSON.parse(JSON.stringify(CLS.list[CL.open])) : null; }
+async function clCommit(c, m) { await CLS.save(c); if (m) toast(m); R.cc(); }
+function plusDays(n) { const d = new Date(); d.setDate(d.getDate() + n); return dayKey(d); }
+Object.assign(ACT, {
+  "cl-filter": t => { CL.filter = t.dataset.f; CL.q = ""; R.cc(); },
+  "cl-new": () => { CL.editing = { id: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), status: "lead", services: [], log: [], chat: [] }; CL.paste = ""; R.cc(); window.scrollTo(0, 0); },
+  "cl-cancel": () => { CL.editing = null; R.cc(); },
+  "cl-open": t => { CL.open = t.dataset.id; CL.delArm = false; AI.err = ""; R.cc(); window.scrollTo(0, 0); },
+  "cl-back": () => { CL.open = null; AI.err = ""; R.cc(); },
+  "cl-edit": () => { CL.editing = clCur(); CL.paste = ""; R.cc(); },
+  "cl-del": () => { CL.delArm = true; R.cc(); },
+  "cl-del-no": () => { CL.delArm = false; R.cc(); },
+  "cl-del-yes": async () => { await CLS.remove(CL.open); CL.open = null; CL.delArm = false; toast("Client deleted"); R.cc(); },
+  "cl-fill": () => aiFill(),
+  "cl-contact": () => { const c = clCur(); if (!c) return; c.last = dayKey(); if (c.status === "lead") c.status = "contacted"; clLog(c, "contact"); clCommit(c, "Logged"); },
+  "cl-next": t => { const c = clCur(); if (!c) return; c.next = plusDays(+t.dataset.n); clLog(c, "next", parseDay(c.next).toDateString()); clCommit(c, "Follow-up set for " + parseDay(c.next).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })); },
+  "cl-note": () => { const c = clCur(), i = $("#cl-note"); if (!c || !i || !i.value.trim()) return; clLog(c, "note", i.value.trim().slice(0, 500)); clCommit(c, "Note added"); },
+  "cl-estimate": () => { const c = clCur(); if (!c) return; CCO.sub = "close"; saveCCO(); CC.open = null; CC.editing = { id: "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), client: c.name, phone: c.phone, email: c.email, address: c.address, sent: dayKey(), urgency: "damage", concern: "unknown", items: (c.services || []).slice(), notes: "", log: [] }; R.cc(); window.scrollTo(0, 0); },
+  "ai-ask": t => aiAsk(t.dataset.k),
+  "ai-stop": () => { if (AI.ctl) AI.ctl.abort(); },
+  "ai-copy": t => { const txt = decodeURIComponent(t.dataset.t || ""); try { navigator.clipboard.writeText(txt).then(() => toast("Copied"), () => toast("Copy blocked. Select the text and copy it.")); } catch (e) { toast("Copy blocked. Select the text and copy it."); } },
+  "ai-clear": () => { const tg = aiTarget(); if (!tg) return; tg.rec.chat = []; tg.save(tg.rec).then(() => R.cc()); },
+});
+document.addEventListener("submit", ev => {
+  if (ev.target.id !== "cl-form") return;
+  ev.preventDefault(); clKeepForm();
+  const c = CL.editing, isNew = !CLS.list[c.id];
+  if (!c.name) { toast("Add a name first"); return; }
+  if (isNew) { c.by = CCS.uid || ""; clLog(c, "made"); }
+  CL.editing = null; CL.open = c.id; CL.paste = "";
+  clCommit(c, isNew ? "Client saved" : "Saved"); window.scrollTo(0, 0);
+});
+document.addEventListener("change", ev => {
+  if (ev.target.id === "cl-status") { const c = clCur(); if (!c) return; c.status = ev.target.value; clLog(c, "status", CSTATUS[c.status][0]); clCommit(c, "Status updated"); }
+});
+document.addEventListener("input", ev => {
+  if (ev.target.id === "cl-q") { CL.q = ev.target.value; const all = Object.values(CLS.list), q = CL.q.trim().toLowerCase(); const rows = q ? all.filter(c => [c.name, c.phone, c.email, c.address, c.notes].join(" ").toLowerCase().includes(q)) : all.filter(clDue); $("#cl-rows").innerHTML = clRows(rows, all.length); }
+});
+document.addEventListener("keydown", ev => {
+  if (ev.target.id === "ai-q" && ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); aiAsk("free"); }
+});
 renderMe();
 if (!ccRoute()) go("home");
 Remote.init();
 CCS.init();
+aiInit();
 </script>
 
 </body>
