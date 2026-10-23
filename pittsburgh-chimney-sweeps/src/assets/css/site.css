@@ -456,6 +456,13 @@ a.chip:hover{border-color:var(--ink)}
 .resource-card .tag{align-self:flex-start}
 .resource-card h3{font-size:26px}
 .resource-card .link-arrow{margin-top:auto;padding-top:8px}
+a.card.resource-card{display:flex}
+.resource-card small{color:var(--muted);font-size:14px}
+.prose>:first-child{margin-top:0}
+.prose .checklist,.prose .xlist{padding-left:0}
+.toc h3,.toc h4{font-size:19px;letter-spacing:.04em;margin-bottom:12px}
+.aside-sticky .help-card{margin-top:0}
+@media (max-width:1000px){.article .toc{display:none}}
 
 /* ---------- CTA band ---------- */
 .cta-band{background:var(--soot);color:var(--on-dark);position:relative;overflow:hidden}
@@ -495,7 +502,7 @@ a.chip:hover{border-color:var(--ink)}
 .ftr-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:40px}
 @media (max-width:1000px){.ftr-grid{grid-template-columns:1fr 1fr 1fr}}
 @media (max-width:640px){.ftr-grid{grid-template-columns:1fr 1fr}.ftr-grid>:first-child{grid-column:1/-1}}
-.ftr h4{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.1em;font-size:17px;color:var(--on-dark);margin:0 0 14px}
+.ftr h2{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.1em;font-size:17px;color:var(--on-dark);margin:0 0 14px}
 .ftr ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
 .ftr a{text-decoration:none}
 .ftr a:hover{color:var(--gold)}
