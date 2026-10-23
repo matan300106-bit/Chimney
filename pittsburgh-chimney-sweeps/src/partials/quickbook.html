@@ -1,0 +1,23 @@
+<form class="qb" data-quickbook novalidate>
+  <h2>Get on the schedule</h2>
+  <p class="sub">Takes about 60 seconds. We'll confirm your time by text.</p>
+  <div class="field">
+    <label for="qb-svc">What do you need?</label>
+    <select id="qb-svc" name="service">{{> service-options}}</select>
+  </div>
+  <div class="row2">
+    <div class="field"><label for="qb-zip">ZIP code</label><input id="qb-zip" name="zip" inputmode="numeric" maxlength="5" placeholder="15213" autocomplete="postal-code"></div>
+    <div class="field"><label for="qb-phone">Mobile phone</label><input id="qb-phone" name="phone" type="tel" placeholder="(412) 000-0000" autocomplete="tel"></div>
+  </div>
+  <div class="field">
+    <span class="label">Preferred time</span>
+    <div class="slots" role="radiogroup" aria-label="Preferred time">
+      <label><input type="radio" name="when" value="ASAP" checked><span>ASAP<small>next opening</small></span></label>
+      <label><input type="radio" name="when" value="Morning"><span>Morning<small>8–12</small></span></label>
+      <label><input type="radio" name="when" value="Afternoon"><span>Afternoon<small>12–5</small></span></label>
+    </div>
+  </div>
+  <p class="err" hidden></p>
+  <button class="btn btn-dark" type="submit">Continue to booking →</button>
+  <p class="fine"><svg><use href="#i-check"/></svg>No obligation · No spam · Price confirmed before work</p>
+</form>

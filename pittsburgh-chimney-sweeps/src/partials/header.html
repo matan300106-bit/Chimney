@@ -1,0 +1,42 @@
+<header class="hdr">
+  <div class="wrap">
+    <a class="logo" href="{{root}}index.html" aria-label="{{name}} home">
+      {{> logo}}
+    </a>
+    <nav class="nav" aria-label="Main">
+      <div class="nav-dd">
+        <a href="{{root}}services/index.html" data-nav="services">Services</a>
+        <button class="dd-btn" type="button" aria-expanded="false" aria-controls="dd-services" aria-label="Show all services"><svg><use href="#i-chevron"/></svg></button>
+        <div class="dd" id="dd-services">
+          {{> services-menu}}
+          <div class="dd-foot"><span>Not sure what you need?</span><a href="{{root}}services/index.html">See all services →</a></div>
+        </div>
+      </div>
+      <a href="{{root}}service-areas/index.html" data-nav="areas">Service Areas</a>
+      <a href="{{root}}reviews.html" data-nav="reviews">Reviews</a>
+      <a href="{{root}}about.html" data-nav="about">About</a>
+      <a href="{{root}}resources/index.html" data-nav="resources">Resources</a>
+      <a href="{{root}}book.html" data-nav="contact">Contact</a>
+    </nav>
+    <div class="hdr-cta">
+      <a class="hdr-phone" href="tel:{{phoneTel}}"><small>Call or text</small><b>{{phone}}</b></a>
+      <a class="btn btn-gold" href="{{root}}book.html">Book Online</a>
+    </div>
+    <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <nav class="mnav" id="mnav" hidden aria-label="Mobile">
+    <details><summary>Services</summary>
+      <a href="{{root}}services/index.html">All services</a>
+      {{> services-mlist}}
+    </details>
+    <a href="{{root}}service-areas/index.html">Service Areas</a>
+    <a href="{{root}}reviews.html">Reviews</a>
+    <a href="{{root}}about.html">About</a>
+    <a href="{{root}}resources/index.html">Resources</a>
+    <a href="{{root}}faq.html">FAQ</a>
+    <a href="{{root}}book.html">Contact</a>
+    <a class="btn btn-gold" href="{{root}}book.html">Book Online</a>
+  </nav>
+</header>

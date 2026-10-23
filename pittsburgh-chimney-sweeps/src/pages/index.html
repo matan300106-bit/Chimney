@@ -1,0 +1,177 @@
+<!--page
+{
+  "title": "Pittsburgh Chimney Sweeps | Chimney Cleaning, Inspection & Repair",
+  "description": "Certified chimney sweeping, camera inspections, masonry repair, caps, liners and dryer vent cleaning across Greater Pittsburgh. Upfront pricing, photo reports, mess-free service.",
+  "nav": "home",
+  "faqSchema": true
+}
+-->
+<section class="hero on-dark">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Greater Pittsburgh's chimney specialists</span>
+      <h1 class="mt-16">A cleaner, safer chimney. <em>Without the mess.</em></h1>
+      <p class="lede">Certified sweeps, camera inspections and masonry repair for Pittsburgh homes, from the old rowhouses in Lawrenceville to new builds in Cranberry. You get upfront pricing and a photo report on every visit, and we leave no soot behind.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="#book"><svg><use href="#i-cal"/></svg>Book a Sweep</a>
+        <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+      <div class="hero-proof">
+        <span><span class="stars" aria-label="Rated {{rating}} out of 5"><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg><svg><use href="#i-star"/></svg></span> {{rating}} on Google · {{reviewCount}} reviews</span>
+        <span><svg><use href="#i-badge"/></svg>CSIA-certified technicians</span>
+        <span><svg><use href="#i-shield"/></svg>Licensed &amp; insured</span>
+      </div>
+    </div>
+    {{> quickbook}}
+  </div>
+  {{> skyline}}
+</section>
+
+{{> trust}}
+
+<div class="season">
+  <div class="wrap">
+    <p><b>Before your first fire:</b>Book your annual inspection now. Fall slots fill fast once the first cold snap hits.</p>
+    <a class="btn btn-white btn-sm" href="#book">Reserve my slot</a>
+  </div>
+</div>
+
+<section class="section" id="services">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What we do</span>
+      <h2>Everything from the firebox to the crown</h2>
+      <p class="lede">One crew handles the whole system: fireplace, flue, masonry and cap. You won't need three different contractors.</p>
+    </div>
+    {{> services-grid}}
+  </div>
+</section>
+
+{{> inspection-levels}}
+
+<section class="section">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">Built for Pittsburgh homes</span>
+      <h2 class="mt-16">Hills, old brick and hard winters</h2>
+      <p class="lede mt-16">Pittsburgh chimneys take a beating. A lot of the housing stock here is older brick, and our winters swing above and below freezing again and again. Water gets into mortar, freezes, expands, and slowly pushes brick apart.</p>
+      <ul class="checklist mt-24">
+        <li><span><b>Freeze-thaw damage.</b> We look for spalling brick, cracked crowns and open mortar joints before they turn into a rebuild.</span></li>
+        <li><span><b>Older clay-tile flues.</b> Many older homes have clay liners that crack with age. Our camera shows you exactly what's inside.</span></li>
+        <li><span><b>Steep roofs and hillside lots.</b> Our crews are equipped and insured for tall chimneys and tricky access.</span></li>
+        <li><span><b>Furnace and water-heater flues.</b> Gas appliances vent through chimneys too, and a blocked flue is a carbon monoxide risk.</span></li>
+      </ul>
+      <a class="link-arrow mt-24" href="{{root}}services/chimney-repair.html">See masonry repair <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="figure-card" aria-hidden="true">
+      <svg viewBox="0 0 520 420">
+        <rect width="520" height="420" fill="#1A1A1A"/>
+        <g transform="translate(170 40)">
+          <rect x="0" y="40" width="180" height="300" fill="#B8432A"/>
+          <g stroke="#8E3019" stroke-width="3">
+            <path d="M0 70h180M0 100h180M0 130h180M0 160h180M0 190h180M0 220h180M0 250h180M0 280h180M0 310h180"/>
+            <path d="M60 40v30M120 40v30M30 70v30M90 70v30M150 70v30M60 100v30M120 100v30M30 130v30M90 130v30M150 130v30M60 160v30M120 160v30M30 190v30M90 190v30M150 190v30M60 220v30M120 220v30M30 250v30M90 250v30M150 250v30M60 280v30M120 280v30M30 310v30M90 310v30M150 310v30"/>
+          </g>
+          <rect x="-16" y="16" width="212" height="28" fill="#9A948B"/>
+          <path d="M40 16l14 28M150 16l-10 28" stroke="#5E5A54" stroke-width="3"/>
+          <rect x="60" y="0" width="60" height="18" fill="#5E5A54"/>
+          <path d="M120 130 l20 -6 l-6 20 z" fill="#E8D9C9"/>
+          <rect x="92" y="190" width="30" height="30" fill="#E8D9C9" opacity=".55"/>
+          <circle cx="132" cy="128" r="34" fill="none" stroke="#FFB81C" stroke-width="3" stroke-dasharray="6 5"/>
+          <circle cx="107" cy="205" r="30" fill="none" stroke="#FFB81C" stroke-width="3" stroke-dasharray="6 5"/>
+          <circle cx="40" cy="30" r="26" fill="none" stroke="#FFB81C" stroke-width="3" stroke-dasharray="6 5"/>
+        </g>
+        <g font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="17" fill="#F4F1EB" letter-spacing="1">
+          <path d="M210 70 H60" stroke="#FFB81C" stroke-width="2"/><text x="24" y="62">CRACKED CROWN</text>
+          <path d="M334 168 H400" stroke="#FFB81C" stroke-width="2"/><text x="404" y="160">SPALLING</text><text x="404" y="180">BRICK</text>
+          <path d="M248 245 H120" stroke="#FFB81C" stroke-width="2"/><text x="24" y="238">OPEN</text><text x="24" y="258">MORTAR</text>
+        </g>
+        <text x="260" y="404" text-anchor="middle" font-family="Source Sans 3, sans-serif" font-size="15" fill="#B3ADA4">Where freeze-thaw damage usually starts</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+{{> compare}}
+
+{{> process}}
+
+{{> self-check}}
+
+<section class="section" id="reviews">
+  <div class="wrap">
+    <div class="rev-top">
+      <div class="section-head">
+        <span class="eyebrow">Reviews</span>
+        <h2>Pittsburgh homeowners, in their words</h2>
+      </div>
+      {{> rating-badge}}
+    </div>
+    {{> reviews}}
+    <a class="link-arrow mt-24" href="{{root}}reviews.html">Read more reviews <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+  </div>
+</section>
+
+<section class="section band-sand" id="area">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">Service area</span>
+      <h2 class="mt-16">All of Greater Pittsburgh. Every river, every hill.</h2>
+      <p class="lede mt-16">We cover Allegheny County and nearby communities in Butler, Washington, Westmoreland and Beaver counties.</p>
+      <div class="zip mt-24" data-zip>
+        <label for="zipIn" class="sr">Enter your ZIP code</label>
+        <input id="zipIn" inputmode="numeric" maxlength="5" placeholder="Enter your ZIP code">
+        <button class="btn btn-dark" type="button">Check</button>
+      </div>
+      <p class="zip-msg" data-zip-msg aria-live="polite"></p>
+      <div class="mt-16">{{> areas-chips}}</div>
+    </div>
+    {{> map}}
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap grid-2">
+    <a class="card-dark" href="{{root}}realtors.html" style="text-decoration:none;display:block">
+      <div class="ico"><svg><use href="#i-key"/></svg></div>
+      <span class="tag">For buyers, sellers &amp; realtors</span>
+      <h3 class="mt-16" style="font-size:32px">Closing on a house?</h3>
+      <p class="mt-8">A home inspector doesn't look inside the flue. Our Level 2 camera inspection does, with a written report both agents can read. Fast scheduling for closing dates.</p>
+      <span class="link-arrow mt-24">Real estate inspections <svg width="18" height="18"><use href="#i-arrow"/></svg></span>
+    </a>
+    <div>
+      <span class="eyebrow">Homeowner resources</span>
+      <h2 class="mt-16" style="font-size:clamp(28px,3.4vw,40px)">Know your chimney</h2>
+      <div class="stack mt-24">
+        <a class="area-card" href="{{root}}resources/how-often-chimney-sweep.html"><b>How often should a chimney be swept?</b><small>Wood, gas and oil, explained</small><span aria-hidden="true">→</span></a>
+        <a class="area-card" href="{{root}}resources/creosote-stages.html"><b>The three stages of creosote</b><small>What builds up in your flue, and why it matters</small><span aria-hidden="true">→</span></a>
+        <a class="area-card" href="{{root}}resources/chimney-leak-signs.html"><b>Signs your chimney is leaking</b><small>Stains, smells and what causes them</small><span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-paper" id="faq">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">FAQ</span>
+      <h2 class="mt-16">Straight answers</h2>
+      <p class="lede mt-16">Can't find yours? Call or text us. A real person picks up, not a call center.</p>
+      <div class="help-card">
+        <h3>Talk to a sweep</h3>
+        <p>{{hoursWeekday}} · {{hoursSaturday}}</p>
+        <a class="btn btn-gold" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+    </div>
+    <div class="faq">
+      <details open><summary>How often should my chimney be swept?</summary><div class="ans">The NFPA recommends an inspection every year, with cleaning as needed. Most wood-burning fireplaces used regularly need a sweep annually. Gas fireplaces still need an annual inspection, since nests, debris and deteriorating liners can cause carbon monoxide problems.</div></details>
+      <details><summary>How long does a sweep take?</summary><div class="ans">Usually 45–90 minutes for a standard sweep and Level 1 inspection. Camera inspections and multi-flue chimneys take a little longer. We'll give you an estimate when you book.</div></details>
+      <details><summary>Will it make a mess in my house?</summary><div class="ans">No. We lay drop cloths from the door to the fireplace, wear shoe covers, and run a HEPA vacuum system that keeps soot under negative pressure the whole time.</div></details>
+      <details><summary>I'm buying a house. Do I need a Level 2 inspection?</summary><div class="ans">NFPA 211 calls for a Level 2 inspection on property sale or transfer. Standard home inspectors don't inspect the inside of the flue, so a camera inspection is the only way to know its condition before you close.</div></details>
+      <details><summary>Do you give free estimates on repairs?</summary><div class="ans">Yes. If we find something during a sweep or inspection, you'll get a written, itemized estimate with photos at no extra charge and no pressure to decide on the spot.</div></details>
+      <a class="link-arrow mt-16" href="{{root}}faq.html">All questions <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+  </div>
+</section>
+
+{{> book-section}}

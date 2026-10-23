@@ -1,0 +1,58 @@
+{
+  "_readme": "Business details used on every page. Edit here, then run `node build.mjs`. Values marked PLACEHOLDER must be replaced before launch.",
+  "name": "Pittsburgh Chimney Sweeps",
+  "domain": "https://www.pittsburghchimneysweeps.com",
+  "phone": "(412) 555-0142",
+  "phoneTel": "+14125550142",
+  "email": "hello@pittsburghchimneysweeps.com",
+  "license": "PA HIC #PA000000",
+  "rating": "4.9",
+  "reviewCount": "300+",
+  "googleReviewsUrl": "https://www.google.com/maps",
+  "hoursWeekday": "Mon–Fri 7am–7pm",
+  "hoursSaturday": "Sat 8am–4pm",
+  "hoursSunday": "Sun: emergencies only",
+  "bookingEndpoint": "",
+  "placeholders": ["phone", "phoneTel", "email", "license", "rating", "reviewCount", "googleReviewsUrl", "reviews", "bookingEndpoint"],
+
+  "services": [
+    {"slug": "chimney-sweeping", "name": "Chimney Sweeping", "icon": "i-brush", "short": "Creosote and soot removal with a Level 1 inspection included."},
+    {"slug": "chimney-inspection", "name": "Chimney Inspections", "icon": "i-camera", "short": "Level 1, 2 and 3 inspections with HD camera and photo report."},
+    {"slug": "chimney-repair", "name": "Masonry & Tuckpointing", "icon": "i-bricks", "short": "Repointing, spalling brick repair and partial or full rebuilds."},
+    {"slug": "chimney-caps-crowns", "name": "Caps & Crowns", "icon": "i-cap", "short": "Stainless and copper caps, crown repair and rebuilds."},
+    {"slug": "chimney-liners", "name": "Chimney Liners", "icon": "i-liner", "short": "Stainless steel relining for wood, gas and oil appliances."},
+    {"slug": "chimney-leak-repair", "name": "Leaks & Waterproofing", "icon": "i-drop", "short": "Flashing repair, leak diagnosis and breathable water repellent."},
+    {"slug": "fireplace-stove-service", "name": "Fireplace & Stove Service", "icon": "i-flame", "short": "Dampers, gas fireplaces, inserts, wood and pellet stoves."},
+    {"slug": "dryer-vent-cleaning", "name": "Dryer Vent Cleaning", "icon": "i-vent", "short": "Full-length vent cleaning, airflow testing and bird guards."},
+    {"slug": "animal-removal", "name": "Animal & Nest Removal", "icon": "i-bird", "short": "Humane removal of birds and animals, then a cap to keep them out."}
+  ],
+
+  "areas": [
+    {"slug": "pittsburgh", "name": "Pittsburgh (City)", "short": "Pittsburgh", "county": "Allegheny", "zips": ["15201","15203","15206","15207","15208","15210","15211","15212","15213","15214","15217","15218","15219","15220","15221","15222","15224","15226","15227","15232","15233","15234","15235"]},
+    {"slug": "mt-lebanon", "name": "Mt. Lebanon", "short": "Mt. Lebanon", "county": "Allegheny", "zips": ["15228","15243","15216"]},
+    {"slug": "upper-st-clair", "name": "Upper St. Clair", "short": "Upper St. Clair", "county": "Allegheny", "zips": ["15241"]},
+    {"slug": "bethel-park", "name": "Bethel Park", "short": "Bethel Park", "county": "Allegheny", "zips": ["15102"]},
+    {"slug": "peters-township", "name": "Peters Township", "short": "Peters Twp", "county": "Washington", "zips": ["15317"]},
+    {"slug": "fox-chapel", "name": "Fox Chapel", "short": "Fox Chapel", "county": "Allegheny", "zips": ["15238"]},
+    {"slug": "sewickley", "name": "Sewickley", "short": "Sewickley", "county": "Allegheny", "zips": ["15143"]},
+    {"slug": "cranberry-township", "name": "Cranberry Township", "short": "Cranberry Twp", "county": "Butler", "zips": ["16066"]},
+    {"slug": "wexford", "name": "Wexford", "short": "Wexford", "county": "Allegheny", "zips": ["15090"]},
+    {"slug": "mccandless", "name": "McCandless", "short": "McCandless", "county": "Allegheny", "zips": ["15237","15090"]},
+    {"slug": "ross-township", "name": "Ross Township", "short": "Ross Twp", "county": "Allegheny", "zips": ["15237","15229"]},
+    {"slug": "monroeville", "name": "Monroeville", "short": "Monroeville", "county": "Allegheny", "zips": ["15146"]},
+    {"slug": "murrysville", "name": "Murrysville", "short": "Murrysville", "county": "Westmoreland", "zips": ["15668"]},
+    {"slug": "moon-township", "name": "Moon Township", "short": "Moon Twp", "county": "Allegheny", "zips": ["15108"]},
+    {"slug": "robinson-township", "name": "Robinson Township", "short": "Robinson", "county": "Allegheny", "zips": ["15205","15275"]}
+  ],
+  "zipPrefixesServed": ["150", "151", "152"],
+  "zipPrefixesMaybe": ["153", "156", "160"],
+
+  "reviews": [
+    {"sample": true, "name": "Sample review", "initial": "J", "place": "Mt. Lebanon", "service": "Chimney sweep", "text": "They showed up inside the window, laid drop cloths through the whole living room, and texted me photos of the flue before they'd even packed up. No soot anywhere."},
+    {"sample": true, "name": "Sample review", "initial": "M", "place": "Squirrel Hill", "service": "Level 2 inspection", "text": "Our home inspector flagged the chimney two weeks before closing. They got us a Level 2 camera inspection in two days and the report was clear enough for both realtors."},
+    {"sample": true, "name": "Sample review", "initial": "D", "place": "Bethel Park", "service": "Masonry repair", "text": "Another company wanted to rebuild the whole chimney. These guys tuckpointed the bad section, replaced the crown, and saved us thousands. Honest people."},
+    {"sample": true, "name": "Sample review", "initial": "K", "place": "Cranberry Twp", "service": "Dryer vent cleaning", "text": "Our dryer was taking two cycles per load. They cleaned the whole vent run to the roof, showed us the lint they pulled out, and now it dries in one."},
+    {"sample": true, "name": "Sample review", "initial": "R", "place": "Fox Chapel", "service": "Chimney liner", "text": "Clear explanation of why our clay tiles failed, a written price, and the liner went in the same week. The crew was careful with our landscaping too."},
+    {"sample": true, "name": "Sample review", "initial": "A", "place": "Sewickley", "service": "Leak repair", "text": "We had a water stain by the chimney for two winters. They found failed flashing, fixed it, and the ceiling has stayed dry through every storm since."}
+  ]
+}

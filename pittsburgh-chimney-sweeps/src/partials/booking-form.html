@@ -1,0 +1,28 @@
+<div class="form-card">
+  <form data-booking novalidate>
+    <div class="row2">
+      <div class="field"><label for="b-name">Full name *</label><input id="b-name" name="name" required autocomplete="name"></div>
+      <div class="field"><label for="b-phone">Mobile phone *</label><input id="b-phone" name="phone" type="tel" required autocomplete="tel"></div>
+    </div>
+    <div class="field"><label for="b-email">Email</label><input id="b-email" name="email" type="email" autocomplete="email"></div>
+    <div class="row2">
+      <div class="field"><label for="b-addr">Street address *</label><input id="b-addr" name="address" required autocomplete="street-address"></div>
+      <div class="field"><label for="b-zip">ZIP *</label><input id="b-zip" name="zip" inputmode="numeric" maxlength="5" required autocomplete="postal-code"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="b-svc">Service *</label>
+        <select id="b-svc" name="service" required>{{> service-options}}</select>
+      </div>
+      <div class="field"><label for="b-date">Preferred date</label><input id="b-date" name="date" type="date"></div>
+    </div>
+    <div class="field"><label for="b-notes">Anything we should know?</label><textarea id="b-notes" name="notes" placeholder="Number of fireplaces, gas or wood, any issues you've noticed…"></textarea></div>
+    <p class="err" hidden></p>
+    <button class="btn btn-gold" type="submit"><svg><use href="#i-cal"/></svg>Request my appointment</button>
+    <p class="fine"><svg><use href="#i-shield"/></svg>Your info is only used to schedule your visit.</p>
+  </form>
+  <div class="success" data-booking-ok hidden tabindex="-1">
+    <div class="ok-ico"><svg><use href="#i-check"/></svg></div>
+    <h3>You're on the list</h3>
+    <p>Thanks! We'll text you within one business hour to lock in your arrival window. Need us sooner? Call <a href="tel:{{phoneTel}}"><b>{{phone}}</b></a>.</p>
+  </div>
+</div>
