@@ -230,7 +230,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .slots label{position:relative;cursor:pointer}
 .slots input{position:absolute;opacity:0;inset:0}
 .slots span{display:grid;place-items:center;min-height:50px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--cream);font-weight:700;font-size:15px;line-height:1.1;text-align:center;padding:4px}
-.slots span small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.slots span small{display:block;font-weight:500;font-size:13px;color:var(--muted)}
 .slots input:checked+span{border-color:var(--ink);background:var(--ink);color:var(--cream)}
 .slots input:checked+span small{color:var(--on-dark-muted)}
 .slots input:focus-visible+span{outline:3px solid var(--gold);outline-offset:2px}
