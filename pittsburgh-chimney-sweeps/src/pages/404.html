@@ -1,0 +1,61 @@
+<!--page
+{
+  "title": "Page Not Found | Pittsburgh Chimney Sweeps",
+  "description": "The page you were looking for isn't here. Head back to the home page, browse our chimney services, book a visit online or call Pittsburgh Chimney Sweeps.",
+  "noindex": true
+}
+-->
+<style>
+  .nf{position:relative;overflow:hidden;isolation:isolate}
+  .nf .wrap{padding-bottom:120px}
+  .nf-art{width:min(280px,70%);height:auto;margin:0 auto}
+  .nf h1 em{font-style:normal;color:var(--gold)}
+  .nf .lede{margin-left:auto;margin-right:auto}
+  .nf .hero-ctas{justify-content:center}
+  .nf .skyline{opacity:.7;height:150px}
+</style>
+<section class="section notice-page band-dark on-dark nf">
+  <div class="wrap">
+    <svg class="nf-art" viewBox="0 0 320 210" aria-hidden="true">
+      <g fill="#B3ADA4" opacity=".5">
+        <circle cx="168" cy="62" r="14"/><circle cx="188" cy="44" r="18"/><circle cx="214" cy="28" r="22"/><circle cx="246" cy="18" r="16"/>
+      </g>
+      <g fill="#B3ADA4" opacity=".28"><circle cx="272" cy="10" r="9"/><circle cx="292" cy="5" r="5"/></g>
+      <path d="M10 210 L160 136 L310 210 Z" fill="#2A2A2A"/>
+      <rect x="128" y="90" width="72" height="104" fill="#B8432A"/>
+      <g stroke="#8E3019" stroke-width="3">
+        <path d="M128 116h72M128 142h72M128 168h72"/>
+        <path d="M164 90v26M146 116v26M182 116v26M164 142v26M146 168v26M182 168v26"/>
+      </g>
+      <rect x="120" y="78" width="88" height="16" fill="#9A948B"/>
+      <rect x="146" y="66" width="36" height="14" fill="#5E5A54"/>
+    </svg>
+    <p class="big mt-16" aria-hidden="true">404</p>
+    <h1 class="mt-16">This page went <em>up the chimney</em></h1>
+    <p class="lede mt-16">The link may be old or mistyped, or the page has moved. Let's get you back on track.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-gold" href="{{root}}index.html"><svg><use href="#i-home"/></svg>Back to Home</a>
+      <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+    </div>
+  </div>
+  {{> skyline}}
+</section>
+
+<section class="section tight">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Popular pages</span>
+      <h2>Try one of these</h2>
+    </div>
+    <div class="area-grid">
+      <a class="area-card" href="{{root}}index.html"><b>Home page</b><small>Start from the top</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}services/index.html"><b>All services</b><small>Sweeping, inspections, masonry and more</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}book.html"><b>Book online</b><small>Request a 2-hour arrival window</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}services/chimney-sweeping.html"><b>Chimney sweeping</b><small>Annual cleaning with a Level 1 inspection</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}service-areas/index.html"><b>Service areas</b><small>Pittsburgh and surrounding towns</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}faq.html"><b>FAQ</b><small>Straight answers to common questions</small><span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+</section>
+
+{{> cta-band}}

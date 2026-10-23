@@ -1,0 +1,101 @@
+<!--page
+{
+  "title": "Customer Reviews | Pittsburgh Chimney Sweeps",
+  "description": "Read reviews from Greater Pittsburgh homeowners about our chimney sweeping, inspections and repairs, see our Google rating, and leave a review after your visit.",
+  "nav": "reviews",
+  "crumbs": [["Reviews"]]
+}
+-->
+<section class="phero on-dark">
+  <div class="wrap">
+    <div>
+      {{crumbs}}
+      <span class="eyebrow">Reviews</span>
+      <h1>What Pittsburgh homeowners <em>say after we leave</em></h1>
+      <p class="lede">Reviews are the closest thing to seeing our work before you book. Read them, then ask us anything they don't answer.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="{{root}}book.html"><svg><use href="#i-cal"/></svg>Book a Visit</a>
+        <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+    </div>
+    <aside class="phero-aside">
+      <h2>Our Google rating</h2>
+      <div class="mt-16">{{> rating-badge}}</div>
+      <p class="muted mt-16">Our rating and review count as shown on Google.</p>
+      <a class="link-arrow mt-16" href="{{googleReviewsUrl}}" target="_blank" rel="noopener">See us on Google <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </aside>
+  </div>
+  {{> skyline}}
+</section>
+
+<section class="section" id="all-reviews">
+  <div class="wrap">
+    <div class="rev-top">
+      <div class="section-head">
+        <span class="eyebrow">Customer reviews</span>
+        <h2>In their words</h2>
+      </div>
+      <a class="btn btn-outline btn-sm" href="{{googleReviewsUrl}}" target="_blank" rel="noopener"><svg><use href="#i-star"/></svg>All reviews on Google</a>
+    </div>
+    {{> reviews-all}}
+  </div>
+</section>
+
+<section class="section band-paper" id="what-we-stand-for">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What we hold ourselves to</span>
+      <h2>What we want every review to say</h2>
+      <p class="lede">We don't write our own reviews. What we can do is decide what we'd want you to be able to say about us, and hold every crew to it.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card reveal"><div class="ico"><svg><use href="#i-clock"/></svg></div><h3>On time, with a heads-up</h3><p>A 2-hour arrival window confirmed by text, and an on-the-way text with your technician's name and photo.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-home"/></svg></div><h3>No soot left behind</h3><p>Drop cloths, shoe covers and a HEPA vacuum on every job. Your living room should look the way we found it.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-camera"/></svg></div><h3>Photos, not just "looks fine"</h3><p>A photo report texted the same day, so you can see the inside of your chimney for yourself.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-dollar"/></svg></div><h3>A price before the work</h3><p>Every job is priced in writing before it starts. Repair estimates are free, itemized and come with photos.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-bricks"/></svg></div><h3>Honest repair advice</h3><p>We recommend the smallest repair that will actually hold, and we say so when something can wait.</p></div>
+      <div class="card reveal"><div class="ico"><svg><use href="#i-users"/></svg></div><h3>A real person on the phone</h3><p>Call or text and you reach our office, not a call center. Booking requests get a reply within one business hour.</p></div>
+    </div>
+    <a class="link-arrow mt-32" href="{{root}}about.html">How we work <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+  </div>
+</section>
+
+<section class="section" id="leave-a-review">
+  <div class="wrap grid-2">
+    <div class="card-dark">
+      <div class="ico"><svg><use href="#i-star"/></svg></div>
+      <span class="tag">Had a visit from us?</span>
+      <h3 class="mt-16" style="font-size:clamp(28px,3vw,36px)">Leave us a Google review</h3>
+      <p class="mt-8">Your review helps your neighbors pick a chimney company with confidence, and it tells our crews what they got right. A sentence or two about what we did and how it went is plenty.</p>
+      <div class="row mt-24">
+        <a class="btn btn-gold" href="{{googleReviewsUrl}}" target="_blank" rel="noopener"><svg><use href="#i-star"/></svg>Write a review</a>
+      </div>
+      <p class="muted mt-16" style="font-size:15px">Opens Google in a new tab. You'll need to be signed in to a Google account.</p>
+    </div>
+    <div>
+      <span class="eyebrow">Something not right?</span>
+      <h2 class="mt-16" style="font-size:clamp(28px,3.4vw,40px)">Tell us first</h2>
+      <p class="lede mt-16">If any part of your visit fell short, we want to hear it directly so we can look into it. Call, text or email the office and tell us what happened.</p>
+      <div class="stack mt-24">
+        <a class="area-card" href="tel:{{phoneTel}}"><b>Call or text {{phone}}</b><small>{{hoursWeekday}} · {{hoursSaturday}}</small><span aria-hidden="true">→</span></a>
+        <a class="area-card" href="mailto:{{email}}"><b>Email {{email}}</b><small>Include your address and visit date if you have them</small><span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-sand tight">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Before you book</span>
+      <h2>Questions reviews don't answer</h2>
+    </div>
+    <div class="grid-3">
+      <a class="card" href="{{root}}faq.html"><div class="ico"><svg><use href="#i-info"/></svg></div><h3>Chimney FAQ</h3><p>Booking, sweeping, inspections, repairs, safety and how pricing works.</p></a>
+      <a class="card" href="{{root}}services/index.html"><div class="ico"><svg><use href="#i-wrench"/></svg></div><h3>Our services</h3><p>Sweeping, inspections, masonry, caps, liners, leaks and dryer vents.</p></a>
+      <a class="card" href="{{root}}service-areas/index.html"><div class="ico"><svg><use href="#i-pin"/></svg></div><h3>Service areas</h3><p>Pittsburgh and the surrounding towns we cover.</p></a>
+    </div>
+  </div>
+</section>
+
+{{> cta-band}}

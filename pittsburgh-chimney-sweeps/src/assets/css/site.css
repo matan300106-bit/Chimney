@@ -281,6 +281,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .card h3{margin-bottom:10px}
 .card p{color:var(--muted)}
 .card-dark{background:var(--soot-2);border:1px solid var(--soot-line);border-radius:var(--r-lg);padding:26px;color:var(--on-dark)}
+.card-dark h3{margin-bottom:10px}
 .card-dark p{color:var(--on-dark-muted)}
 .card .ico,.card-dark .ico{width:48px;height:48px;border-radius:12px;background:var(--soot);color:var(--gold);display:grid;place-items:center;margin-bottom:16px}
 .card .ico svg,.card-dark .ico svg{width:26px;height:26px}

@@ -123,7 +123,8 @@ for (const file of pageFiles) {
   try { page = parsePage(file); } catch (e) { problems.push(e.message); continue; }
   const { fm, body } = page;
   const depth = rel.split("/").length - 1;
-  const root = depth ? "../".repeat(depth) : "";
+  // 404.html is served at whatever URL was missing, so its links must be absolute
+  const root = rel === "404.html" ? "/" : depth ? "../".repeat(depth) : "";
   const landing = fm.layout === "landing";
   const urlPath = rel === "index.html" ? "/" : "/" + rel.replace(/(^|\/)index\.html$/, "$1");
   const ctx = { ...cfg, root, year: new Date().getFullYear(), page: fm, crumbs: crumbsHtml(fm.crumbs, root), bookHref: landing ? "#book" : root + "book.html" };

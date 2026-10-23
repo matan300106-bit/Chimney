@@ -1,0 +1,172 @@
+<!--page
+{
+  "title": "Chimney FAQ | Pittsburgh Chimney Sweeps",
+  "description": "Straight answers on booking, sweeping, inspections, masonry repair, gas appliances, safety and how our pricing works, from Greater Pittsburgh chimney sweeps.",
+  "crumbs": [["FAQ"]],
+  "faqSchema": true
+}
+-->
+<section class="phero on-dark no-aside short">
+  <div class="wrap">
+    <div>
+      {{crumbs}}
+      <span class="eyebrow">Frequently asked questions</span>
+      <h1>Chimney questions, <em>straight answers</em></h1>
+      <p class="lede">Everything homeowners ask us most, grouped by topic. If yours isn't here, call or text and a real person will answer it.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="{{root}}book.html"><svg><use href="#i-cal"/></svg>Book Online</a>
+        <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+      <nav class="chips mt-32" aria-label="FAQ topics">
+        <a class="chip" href="#booking">Booking &amp; visits</a>
+        <a class="chip" href="#sweeping">Sweeping &amp; cleaning</a>
+        <a class="chip" href="#inspections">Inspections</a>
+        <a class="chip" href="#repairs">Repairs &amp; masonry</a>
+        <a class="chip" href="#appliances">Gas, furnace &amp; appliances</a>
+        <a class="chip" href="#safety">Safety</a>
+        <a class="chip" href="#pricing">Pricing &amp; payment</a>
+      </nav>
+    </div>
+  </div>
+  {{> skyline}}
+</section>
+
+<section class="section" id="booking">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">Booking &amp; visits</span>
+      <h2 class="mt-16">Getting on the schedule</h2>
+      <p class="lede mt-16">How to book, when we work and what to expect on the day.</p>
+      <div class="help-card">
+        <h3>Talk to a sweep</h3>
+        <p>{{hoursWeekday}} · {{hoursSaturday}}</p>
+        <a class="btn btn-gold" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+    </div>
+    <div class="faq">
+      <details open><summary>How do I book an appointment?</summary><div class="ans">Use the <a href="{{root}}book.html">online booking form</a> or call or text us. Pick a preferred date and tell us a little about your chimney. We reply within one business hour to confirm a 2-hour arrival window by text.</div></details>
+      <details><summary>What are your hours? Do you work Saturdays?</summary><div class="ans">Yes. We work weekdays and Saturdays, and our current hours are in the "Talk to a sweep" box on this page and at the bottom of every page. Saturday slots go quickly in the fall, so book early if you need one.</div></details>
+      <details><summary>Do I need to be home for the visit?</summary><div class="ans">For sweeps, inspections and anything inside the house, yes, an adult needs to be home to let us in and go over the findings. Some exterior-only work, like crown or cap repairs, may not need you there. We'll confirm when we schedule.</div></details>
+      <details><summary>How should I get ready for a sweep?</summary><div class="ans">Don't use the fireplace or stove for at least 24 hours before so the firebox and ashes are cold. Clear the hearth and mantel, leave a path from the door, and keep pets in another room. We handle the drop cloths and everything else.</div></details>
+      <details><summary>Which areas do you serve?</summary><div class="ans">The city of Pittsburgh and communities across Allegheny County, plus nearby towns in Butler, Washington, Westmoreland and Beaver counties. See the full list on our <a href="{{root}}service-areas/index.html">service areas page</a>, or enter your ZIP on the booking form.</div></details>
+    </div>
+  </div>
+</section>
+
+<section class="section band-paper" id="sweeping">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">Sweeping &amp; cleaning</span>
+      <h2 class="mt-16">Soot, creosote and what we remove</h2>
+      <p class="lede mt-16">How often to sweep, how long it takes and why it matters.</p>
+      <a class="link-arrow mt-24" href="{{root}}services/chimney-sweeping.html">Chimney sweeping <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="faq">
+      <details><summary>How often should my chimney be swept?</summary><div class="ans">NFPA 211 calls for an inspection every year and cleaning as needed. Most wood-burning fireplaces and stoves used regularly need a sweep once a year. Heavy use, or burning wet or soft wood, can mean more often. Our guide on <a href="{{root}}resources/how-often-chimney-sweep.html">how often to sweep</a> covers wood, gas and oil.</div></details>
+      <details><summary>How long does a sweep take?</summary><div class="ans">Usually 45 to 90 minutes for a standard sweep and Level 1 inspection. Chimneys with more than one flue, camera inspections and heavy buildup take longer. We'll give you an estimate when you book.</div></details>
+      <details><summary>Will sweeping make a mess in my house?</summary><div class="ans">No. We lay drop cloths from the door to the fireplace, wear shoe covers and run a HEPA vacuum that keeps soot under negative pressure while we work. When we leave, the room should look the way we found it.</div></details>
+      <details><summary>What is creosote, and can you always remove it?</summary><div class="ans">Creosote is the residue wood smoke leaves inside the flue. It's flammable, and it builds up in stages, from loose soot to a hard, shiny glaze. Early stages brush out during a normal sweep. Glazed creosote takes more work and sometimes a separate treatment, and we'll tell you what we see before doing anything extra. Read more about <a href="{{root}}resources/creosote-stages.html">the three stages of creosote</a>.</div></details>
+      <details><summary>Do you clean dryer vents too?</summary><div class="ans">Yes. Lint builds up along the whole vent run, not just at the lint trap, and it's a fire risk. We clean the full length, check airflow and can add a guard at the outside opening. See <a href="{{root}}services/dryer-vent-cleaning.html">dryer vent cleaning</a>.</div></details>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="inspections">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">Inspections</span>
+      <h2 class="mt-16">Levels, reports and home sales</h2>
+      <p class="lede mt-16">Which inspection you need and what you get afterwards.</p>
+      <a class="link-arrow mt-24" href="{{root}}services/chimney-inspection.html">Chimney inspections <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="faq">
+      <details><summary>What's the difference between a Level 1, 2 and 3 inspection?</summary><div class="ans">Level 1 is a visual check of the readily accessible parts of the chimney and appliance, and it comes with every sweep. Level 2 adds a camera scan of the full flue plus accessible attic, crawlspace and roof areas. It's called for at property sale, after a chimney fire or when your system changes. Level 3 is only for when a serious hidden problem is suspected and may involve removing parts of the structure. More on our <a href="{{root}}services/chimney-inspection.html">inspections page</a>.</div></details>
+      <details><summary>I'm buying a house. Do I need a Level 2 inspection?</summary><div class="ans">NFPA 211 calls for a Level 2 inspection on sale or transfer of a property. A general home inspection usually looks at what's visible and doesn't scan the inside of the flue, which is where cracked tiles and gaps hide. See our <a href="{{root}}resources/level-2-inspection-home-buyers.html">home buyer's guide</a> or the page for <a href="{{root}}realtors.html">realtors and property managers</a>.</div></details>
+      <details><summary>Do I get a written report?</summary><div class="ans">Yes. Every finding is photographed, labelled and ranked by urgency, and the report is texted to you the same day. If anything needs repair, a written estimate comes with it.</div></details>
+    </div>
+  </div>
+</section>
+
+<section class="section band-paper" id="repairs">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">Repairs &amp; masonry</span>
+      <h2 class="mt-16">Brick, crowns, caps, liners and leaks</h2>
+      <p class="lede mt-16">How we decide what to fix, and how to tell what's urgent.</p>
+      <a class="link-arrow mt-24" href="{{root}}services/chimney-repair.html">Masonry &amp; tuckpointing <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="faq">
+      <details><summary>Do you give free repair estimates?</summary><div class="ans">Yes. If we find something during a sweep or inspection, you get a written, itemized estimate with photos at no extra charge, and no pressure to decide on the spot.</div></details>
+      <details><summary>Does my chimney need to be rebuilt?</summary><div class="ans">Often not. Many chimneys with crumbling joints or a few damaged bricks can be repaired by repointing the bad section or rebuilding just the top. A full rebuild makes sense when the structure itself is failing, and we'll show you photos that make the case either way. See <a href="{{root}}services/chimney-repair.html">masonry repair</a>.</div></details>
+      <details><summary>My chimney is leaking. What's usually the cause?</summary><div class="ans">The usual suspects are failed flashing where the chimney meets the roof, a cracked crown, a missing cap, or brick that has become porous. Leaks often show up as stains on a ceiling or wall near the chimney. Read our guide to <a href="{{root}}resources/chimney-leak-signs.html">signs your chimney is leaking</a>, or see <a href="{{root}}services/chimney-leak-repair.html">leak repair and waterproofing</a>.</div></details>
+      <details><summary>Can masonry be repaired in winter?</summary><div class="ans">Mortar needs to cure without freezing, so some exterior masonry has to wait for suitable weather. We'll tell you what can be done right away and whether a temporary measure makes sense in the meantime. Our article on <a href="{{root}}resources/freeze-thaw-chimney-damage.html">freeze-thaw damage</a> explains why Pittsburgh winters are hard on brick.</div></details>
+      <details><summary>Do I need a chimney cap?</summary><div class="ans">In most cases, yes. A cap keeps rain, snow, leaves and animals out of the flue, and a spark screen helps stop embers from landing on the roof. Read about <a href="{{root}}resources/chimney-cap-benefits.html">what a chimney cap does</a> or see <a href="{{root}}services/chimney-caps-crowns.html">caps and crowns</a>.</div></details>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="appliances">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">Gas, furnace &amp; appliances</span>
+      <h2 class="mt-16">Not just wood fires</h2>
+      <p class="lede mt-16">Gas fireplaces, furnaces, water heaters and stoves all depend on a working flue.</p>
+      <a class="link-arrow mt-24" href="{{root}}services/fireplace-stove-service.html">Fireplace &amp; stove service <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="faq">
+      <details><summary>My fireplace is gas. Does it still need service?</summary><div class="ans">Yes. Gas doesn't leave creosote, but flues still get blocked by nests and debris, and liners and connections can deteriorate. Because a blocked gas vent can push carbon monoxide into the house, NFPA 211 still calls for an annual inspection. See <a href="{{root}}resources/gas-fireplace-maintenance.html">gas fireplace maintenance</a>.</div></details>
+      <details><summary>My furnace and water heater vent into the chimney. Do you check those flues?</summary><div class="ans">Yes. We inspect and clean the chimney flue your furnace or water heater vents into. The appliances themselves should be serviced by your HVAC contractor. One thing to know: if you replace an older furnace with a high-efficiency model that vents out the side of the house, a water heater left alone in the old chimney flue may not draft properly and often needs a correctly sized liner.</div></details>
+      <details><summary>Do you service wood stoves, inserts and pellet stoves?</summary><div class="ans">Yes. We clean and inspect wood stoves, fireplace inserts, pellet stoves and their venting, and we service dampers and gas fireplaces. See <a href="{{root}}services/fireplace-stove-service.html">fireplace and stove service</a>.</div></details>
+    </div>
+  </div>
+</section>
+
+<section class="section band-paper" id="safety">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">Safety</span>
+      <h2 class="mt-16">Fire, smoke and carbon monoxide</h2>
+      <p class="lede mt-16">What to watch for, and what to do when something feels wrong.</p>
+      <div class="callout callout-warn mt-24"><svg><use href="#i-alert"/></svg><div><b>In an emergency, call 911</b>If you suspect a chimney fire or your carbon monoxide alarm goes off, get everyone outside first and call from there.</div></div>
+    </div>
+    <div class="faq">
+      <details><summary>What are the warning signs of a chimney fire?</summary><div class="ans">A loud rumbling or roaring sound, a strong hot smell, dense smoke, or flames or sparks shooting from the top of the chimney. Some chimney fires are quiet and only show up later as damage. If you think one is happening, get out and call 911. Read more about <a href="{{root}}resources/chimney-fire-warning-signs.html">chimney fire warning signs</a>.</div></details>
+      <details><summary>Can I use my fireplace after a chimney fire?</summary><div class="ans">Not until it has been inspected. A chimney fire can crack flue tiles and damage the structure even when everything looks normal from the room. NFPA 211 calls for a Level 2 inspection after a chimney fire. Book an <a href="{{root}}services/chimney-inspection.html">inspection</a> before you burn again.</div></details>
+      <details><summary>Do I need a carbon monoxide alarm?</summary><div class="ans">If you have any fuel-burning appliance, including a fireplace, stove, furnace or water heater, you should have working carbon monoxide alarms on every level of the home and near sleeping areas. Test them regularly. If one sounds, leave the house and call 911 or your gas utility from outside.</div></details>
+      <details><summary>There's an animal in my chimney. What should I do?</summary><div class="ans">Keep the damper and any fireplace doors closed, and don't light a fire to smoke it out. That can trap or kill the animal and may start a fire. Call us. Some birds, including chimney swifts, are protected by federal law, so we'll explain what can and can't be done. See <a href="{{root}}services/animal-removal.html">animal and nest removal</a>.</div></details>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="pricing">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">Pricing &amp; payment</span>
+      <h2 class="mt-16">How pricing works</h2>
+      <p class="lede mt-16">Every chimney is different, so we don't publish one-size prices. What we do promise: the price is in writing before any work starts.</p>
+    </div>
+    <div class="faq">
+      <details><summary>How much does a chimney sweep cost?</summary><div class="ans">It depends on your chimney. The main factors are the number of flues, the type of appliance (open fireplace, insert, stove or gas), how much buildup there is, and how easy the chimney is to reach. Call or book online and we'll give you the price for your home, confirmed in writing before we start.</div></details>
+      <details><summary>What affects the price of a repair?</summary><div class="ans">The size of the area that needs work, the materials (for example a stainless or copper cap, or a stainless liner sized to your appliance), the height of the chimney and pitch of the roof, and whether we need extra equipment for access. Your free written estimate is itemized so you can see each part.</div></details>
+      <details><summary>Will the price change once you start?</summary><div class="ans">Not without your say-so. The price we confirm in writing is the price for that work. If we uncover something new once we're into the job, we stop, show you photos and explain the options. Nothing beyond what you approved happens without your agreement.</div></details>
+      <details><summary>How do I pay?</summary><div class="ans">We'll go over payment options when we confirm your appointment, and repair estimates spell out the total so you know it before you decide. If you have a question about paying for a larger repair, just ask when you call.</div></details>
+      <!-- OWNER: list accepted payment methods (card, check, cash, financing?) and any deposit policy for larger jobs in the "How do I pay?" answer above. -->
+    </div>
+  </div>
+</section>
+
+<section class="section band-sand tight">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Still wondering?</span>
+      <h2>Keep reading, or just ask</h2>
+    </div>
+    <div class="grid-3">
+      <a class="card" href="{{root}}resources/index.html"><div class="ico"><svg><use href="#i-book"/></svg></div><h3>Homeowner resources</h3><p>Plain-English guides on creosote, leaks, caps, freeze-thaw and more.</p></a>
+      <a class="card" href="{{root}}services/index.html"><div class="ico"><svg><use href="#i-wrench"/></svg></div><h3>All services</h3><p>What each service includes and when you need it.</p></a>
+      <a class="card" href="tel:{{phoneTel}}"><div class="ico"><svg><use href="#i-phone"/></svg></div><h3>Call {{phone}}</h3><p>A real person picks up during business hours, not a call center.</p></a>
+    </div>
+  </div>
+</section>
+
+{{> cta-band}}
