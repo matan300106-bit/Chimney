@@ -1,0 +1,173 @@
+<!--page
+{
+  "title": "Chimney Services in Pittsburgh | Pittsburgh Chimney Sweeps",
+  "description": "Chimney sweeping, camera inspections, masonry, caps, liners, leak repair, fireplace and stove service, dryer vents and animal removal across Greater Pittsburgh.",
+  "nav": "services",
+  "crumbs": [["Services"]],
+  "schema": {"@type": "ItemList", "name": "Chimney services", "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Chimney Sweeping", "url": "https://www.pittsburghchimneysweeps.com/services/chimney-sweeping.html"},
+    {"@type": "ListItem", "position": 2, "name": "Chimney Inspections", "url": "https://www.pittsburghchimneysweeps.com/services/chimney-inspection.html"},
+    {"@type": "ListItem", "position": 3, "name": "Masonry & Tuckpointing", "url": "https://www.pittsburghchimneysweeps.com/services/chimney-repair.html"},
+    {"@type": "ListItem", "position": 4, "name": "Caps & Crowns", "url": "https://www.pittsburghchimneysweeps.com/services/chimney-caps-crowns.html"},
+    {"@type": "ListItem", "position": 5, "name": "Chimney Liners", "url": "https://www.pittsburghchimneysweeps.com/services/chimney-liners.html"},
+    {"@type": "ListItem", "position": 6, "name": "Leaks & Waterproofing", "url": "https://www.pittsburghchimneysweeps.com/services/chimney-leak-repair.html"},
+    {"@type": "ListItem", "position": 7, "name": "Fireplace & Stove Service", "url": "https://www.pittsburghchimneysweeps.com/services/fireplace-stove-service.html"},
+    {"@type": "ListItem", "position": 8, "name": "Dryer Vent Cleaning", "url": "https://www.pittsburghchimneysweeps.com/services/dryer-vent-cleaning.html"},
+    {"@type": "ListItem", "position": 9, "name": "Animal & Nest Removal", "url": "https://www.pittsburghchimneysweeps.com/services/animal-removal.html"}
+  ]}
+}
+-->
+<style>
+  /* Services hub: symptom table. Drop the middle column on phones so the first and last stay readable. */
+  .svc-sym .link-arrow svg{flex-shrink:0}
+  @media (max-width:640px){.svc-sym .cause{display:none}}
+</style>
+<section class="phero on-dark">
+  <div class="wrap">
+    <div>
+      {{crumbs}}
+      <span class="eyebrow">Our services</span>
+      <h1>Chimney services for <em>Pittsburgh</em> homes</h1>
+      <p class="lede">Sweeping, inspections, masonry, caps, liners, leaks, fireplaces, stoves, dryer vents and the occasional raccoon. One certified crew for the whole system, from the firebox to the cap.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="{{root}}book.html"><svg><use href="#i-cal"/></svg>Book Online</a>
+        <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+    </div>
+    <aside class="phero-aside">
+      <h2>Every visit includes</h2>
+      <dl class="kv">
+        <dt>Technicians</dt><dd>CSIA-certified, licensed and insured</dd>
+        <dt>Arrival</dt><dd>A 2-hour window, with an on-the-way text</dd>
+        <dt>Your home</dt><dd>Drop cloths, shoe covers and HEPA vacuums</dd>
+        <dt>Pricing</dt><dd>Upfront and in writing; repair estimates are free</dd>
+        <dt>Report</dt><dd>Photos of what we found, sent the same day</dd>
+      </dl>
+    </aside>
+  </div>
+  {{> skyline}}
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What we do</span>
+      <h2>Nine services, one crew</h2>
+      <p class="lede">Pick the service you need for the details: what's included, the warning signs, how the visit works and common questions.</p>
+    </div>
+    {{> services-grid}}
+  </div>
+</section>
+
+{{> process}}
+
+<section class="section band-paper">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">The whole system</span>
+      <h2 class="mt-16">Every part of your chimney, and who looks after it</h2>
+      <div class="prose mt-24">
+        <p>A chimney is more than a brick column. It's a venting system: the fireplace or appliance at the bottom, a liner that carries exhaust up, masonry that holds it all together, and a crown, cap and flashing that keep the weather out.</p>
+        <p>When one part fails, it usually affects another. A missing cap lets rain rust the damper. A cracked crown lets water into the brick. A new furnace can leave a water heater in a flue that's too big for it. That's why we look at the whole thing on every visit, and why it helps to have one company that can fix any part of it.</p>
+        <p>Not sure where to start? Book a <a href="{{root}}services/chimney-sweeping.html">sweep</a> or an <a href="{{root}}services/chimney-inspection.html">inspection</a>. You'll get a photo report of the whole system and a written price for anything that needs work.</p>
+      </div>
+    </div>
+    <div class="figure-card" aria-hidden="true">
+      <svg viewBox="0 0 560 480">
+        <rect width="560" height="480" fill="#1A1A1A"/>
+        <!-- roof -->
+        <path d="M0 206 L560 126" stroke="#2A2A2A" stroke-width="14"/>
+        <!-- stack -->
+        <rect x="240" y="52" width="90" height="252" fill="#B8432A"/>
+        <g stroke="#8E3019" stroke-width="2.5">
+          <path d="M240 80h90M240 110h90M240 140h90M240 170h90M240 200h90M240 230h90M240 260h90M240 290h90"/>
+        </g>
+        <!-- liner -->
+        <rect x="268" y="44" width="34" height="262" fill="#0C0C0C"/>
+        <rect x="268" y="44" width="34" height="262" fill="none" stroke="#B3ADA4" stroke-width="3"/>
+        <!-- creosote -->
+        <g fill="#5A3F2E"><rect x="271" y="190" width="6" height="28"/><rect x="293" y="214" width="6" height="22"/></g>
+        <!-- crown + cap -->
+        <rect x="230" y="44" width="110" height="12" fill="#9A948B"/>
+        <rect x="262" y="20" width="46" height="7" fill="#B3ADA4"/><path d="M268 27v17M302 27v17" stroke="#B3ADA4" stroke-width="3"/>
+        <!-- bird -->
+        <path d="M322 14 q8 -8 16 0 q-8 -3 -16 0z M330 12 q4 -10 12 -6" fill="#F4F1EB" stroke="#F4F1EB" stroke-width="2"/>
+        <!-- flashing -->
+        <path d="M232 172 L240 172 L240 162 L285 162 L285 156 L330 156 L330 150 L338 150 L338 156 L232 178 Z" fill="#B3ADA4"/>
+        <!-- smoke chamber, damper, firebox -->
+        <path d="M240 304 L330 304 L364 336 L206 336 Z" fill="#8E3019"/>
+        <rect x="206" y="336" width="158" height="94" fill="#B8432A"/>
+        <rect x="236" y="352" width="98" height="78" fill="#0C0C0C"/>
+        <path d="M252 338 L318 330" stroke="#FFB81C" stroke-width="5" stroke-linecap="round"/>
+        <!-- dryer + vent -->
+        <rect x="430" y="362" width="76" height="68" rx="5" fill="#5E5A54"/>
+        <circle cx="468" cy="400" r="18" fill="#2A2A2A" stroke="#9A948B" stroke-width="3"/>
+        <path d="M506 380 H530 V320 H556" stroke="#9A948B" stroke-width="10" fill="none"/>
+        <!-- floor -->
+        <rect x="0" y="430" width="560" height="6" fill="#2A2A2A"/>
+        <!-- labels -->
+        <g font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="18" fill="#F4F1EB" letter-spacing=".5">
+          <path d="M230 50 H150" stroke="#FFB81C" stroke-width="2"/><text x="18" y="44">CAP + CROWN</text>
+          <path d="M232 174 H150" stroke="#FFB81C" stroke-width="2"/><text x="18" y="168">FLASHING,</text><text x="18" y="188">LEAKS</text>
+          <path d="M240 250 H150" stroke="#FFB81C" stroke-width="2"/><text x="18" y="244">MASONRY</text>
+          <path d="M206 380 H150" stroke="#FFB81C" stroke-width="2"/><text x="18" y="364">FIREPLACE,</text><text x="18" y="384">DAMPER,</text><text x="18" y="404">STOVES</text>
+          <path d="M344 12 H380" stroke="#FFB81C" stroke-width="2"/><text x="386" y="18">ANIMALS</text>
+          <path d="M302 100 H380" stroke="#FFB81C" stroke-width="2"/><text x="386" y="106">LINER</text>
+          <path d="M299 224 H380" stroke="#FFB81C" stroke-width="2"/><text x="386" y="218">CREOSOTE,</text><text x="386" y="238">SWEEPING</text>
+          <text x="420" y="306">DRYER VENT</text>
+        </g>
+        <text x="280" y="466" text-anchor="middle" font-family="Source Sans 3, sans-serif" font-size="15" fill="#B3ADA4">One system, nine services</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Not sure what you need?</span>
+      <h2>Start with what you're noticing</h2>
+      <p class="lede">Find the closest match and we'll take it from there. If it's more than one thing, or nothing on the list, book a sweep or inspection and we'll look at everything.</p>
+    </div>
+    <div class="table-wrap">
+      <table class="table svc-sym">
+        <thead><tr><th>What you're noticing</th><th class="cause">Likely cause</th><th>Start with</th></tr></thead>
+        <tbody>
+          <tr><td>It's been a year or more since the last sweep, or you don't know</td><td class="cause">Normal soot and creosote buildup</td><td><a class="link-arrow" href="{{root}}services/chimney-sweeping.html">Chimney Sweeping <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>You're buying or selling a home</td><td class="cause">NFPA 211 calls for a Level 2 inspection at sale</td><td><a class="link-arrow" href="{{root}}services/chimney-inspection.html">Chimney Inspections <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>Smoke comes into the room, or a strong campfire smell</td><td class="cause">Buildup, a blockage, a damper problem or a sizing issue</td><td><a class="link-arrow" href="{{root}}services/chimney-sweeping.html">Sweep and inspection <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>Water stains near the chimney, or dripping in the firebox</td><td class="cause">Flashing, crown, cap or porous brick</td><td><a class="link-arrow" href="{{root}}services/chimney-leak-repair.html">Leaks &amp; Waterproofing <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>Crumbling mortar, flaking brick or white staining outside</td><td class="cause">Freeze-thaw damage</td><td><a class="link-arrow" href="{{root}}services/chimney-repair.html">Masonry &amp; Tuckpointing <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>No cap, a rusted cap, or a cracked crown</td><td class="cause">Weather and age at the top of the chimney</td><td><a class="link-arrow" href="{{root}}services/chimney-caps-crowns.html">Caps &amp; Crowns <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>Tile pieces in the firebox, a new furnace or water heater, or plans for an insert</td><td class="cause">A damaged or wrongly sized flue</td><td><a class="link-arrow" href="{{root}}services/chimney-liners.html">Chimney Liners <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>Stuck damper, sooty gas logs, or a stove that smokes when you reload</td><td class="cause">Appliance wear or setup</td><td><a class="link-arrow" href="{{root}}services/fireplace-stove-service.html">Fireplace &amp; Stove Service <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>Chirping, scratching or nest debris in the fireplace</td><td class="cause">Birds or animals in an uncapped flue</td><td><a class="link-arrow" href="{{root}}services/animal-removal.html">Animal &amp; Nest Removal <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+          <tr><td>Clothes take two cycles to dry, or the dryer runs hot</td><td class="cause">Lint buildup in the dryer vent</td><td><a class="link-arrow" href="{{root}}services/dryer-vent-cleaning.html">Dryer Vent Cleaning <svg width="18" height="18"><use href="#i-arrow"/></svg></a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout callout-warn mt-32"><svg><use href="#i-alert"/></svg><div><b>Signs of a chimney fire or carbon monoxide?</b>A loud roaring from the chimney, flames or sparks from the top, or a CO alarm going off: get everyone outside and call 911. Don't use the fireplace or connected appliances until they have been inspected.</div></div>
+  </div>
+</section>
+
+{{> inspection-levels}}
+
+<section class="section" id="reviews">
+  <div class="wrap">
+    <div class="rev-top">
+      <div class="section-head">
+        <span class="eyebrow">Reviews</span>
+        <h2>What Pittsburgh homeowners say</h2>
+      </div>
+      {{> rating-badge}}
+    </div>
+    {{> reviews}}
+    <div class="row mt-32" style="gap:16px 32px">
+      <a class="link-arrow" href="{{root}}reviews.html">Read more reviews <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+      <a class="link-arrow" href="{{root}}service-areas/index.html">See where we work <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+      <a class="link-arrow" href="{{root}}resources/index.html">Homeowner guides <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+  </div>
+</section>
+
+{{> cta-band}}
