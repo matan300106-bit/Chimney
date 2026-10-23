@@ -92,7 +92,7 @@ Preselect the service on the page's booking form with front matter `"bookService
 
 Bands: `section.section` (96px padding), modifiers `.tight`, `.flush-top`; backgrounds `.band-paper`, `.band-sand`,
 `.band-dark` (add `on-dark` too). Alternate light bands; don't stack two dark bands.
-Inner: `.wrap` (1200px + gutters), `.wrap.wrap-narrow` (820px).
+Inner: `.wrap` (1200px + gutters), `.wrap.wrap-narrow` (content capped at 820px, left-aligned with other sections).
 Heads: `.section-head` (+`.center`) containing `.eyebrow`, `h2`, `.lede`.
 Hero: `.phero.on-dark` (+`.no-aside`, `.short`) with `{{crumbs}}`, eyebrow, `h1` (gold word in `<em>`), `.lede`, `.hero-ctas`, optional `aside.phero-aside`.
 Grids: `.grid-2`, `.grid-3`, `.grid-4`, `.split` (+`.reverse`), `.stack`, `.row`.

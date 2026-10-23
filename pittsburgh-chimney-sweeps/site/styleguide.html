@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Style Guide | Pittsburgh Chimney Sweeps</title>
-<meta name="description" content="Internal reference of page components.">
+<meta name="description" content="Internal reference of page components, buttons, cards, bands and typography for the Pittsburgh Chimney Sweeps site. Not for public use; excluded from search.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#141414">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Pittsburgh Chimney Sweeps">
 <meta property="og:title" content="Style Guide | Pittsburgh Chimney Sweeps">
-<meta property="og:description" content="Internal reference of page components.">
+<meta property="og:description" content="Internal reference of page components, buttons, cards, bands and typography for the Pittsburgh Chimney Sweeps site. Not for public use; excluded from search.">
 <meta property="og:url" content="https://www.pittsburghchimneysweeps.com/styleguide.html">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,10 +58,11 @@
   </defs>
 </svg>
 
+
 <a href="#main" class="skip">Skip to content</a>
 <div class="util">
   <div class="wrap">
-    <span><span class="pulse" aria-hidden="true"></span>Now booking fall sweeps. Limited slots this week.</span>
+    <span><span class="pulse" aria-hidden="true"></span>Now booking fall sweeps. Book before burning season.</span>
     <span class="hide-sm">Mon–Fri 7am–7pm · Sat 8am–4pm · <a href="tel:+14125550142">(412) 555-0142</a></span>
   </div>
 </div>
@@ -106,7 +107,7 @@
       <a class="btn btn-gold" href="book.html">Book Online</a>
     </div>
     <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Open menu">
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path class="mb-open" d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path class="mb-close" d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
     </button>
   </div>
   <nav class="mnav" id="mnav" hidden aria-label="Mobile">
@@ -128,7 +129,10 @@
     <a href="resources/index.html">Resources</a>
     <a href="faq.html">FAQ</a>
     <a href="book.html">Contact</a>
-    <a class="btn btn-gold" href="book.html">Book Online</a>
+    <div class="mnav-ctas">
+      <a class="btn btn-gold" href="book.html"><svg><use href="#i-cal"/></svg>Book Online</a>
+      <a class="btn btn-ghost" href="tel:+14125550142"><svg><use href="#i-phone"/></svg>(412) 555-0142</a>
+    </div>
   </nav>
 </header>
 
@@ -323,8 +327,8 @@
       <p>Book online in about a minute, or call and talk to a real person. We confirm your 2-hour arrival window by text.</p>
     </div>
     <div class="cta-actions">
-      <a class="btn btn-gold" href="book.html"><svg><use href="#i-cal"/></svg>Book Online</a>
-      <a class="btn btn-ghost" href="tel:+14125550142"><svg><use href="#i-phone"/></svg>(412) 555-0142</a>
+      <a class="btn btn-dark" href="book.html"><svg><use href="#i-cal"/></svg>Book Online</a>
+      <a class="btn btn-outline" href="tel:+14125550142"><svg><use href="#i-phone"/></svg>(412) 555-0142</a>
     </div>
   </div>
 </section>
@@ -350,15 +354,15 @@
         <p class="mt-16">Mon–Fri 7am–7pm<br>Sat 8am–4pm<br>Sun: emergencies only</p>
       </div>
       <div>
-        <h4>Services</h4>
+        <h2>Services</h2>
         <ul><li><a href="services/chimney-sweeping.html">Chimney Sweeping</a></li><li><a href="services/chimney-inspection.html">Chimney Inspections</a></li><li><a href="services/chimney-repair.html">Masonry &amp; Tuckpointing</a></li><li><a href="services/chimney-caps-crowns.html">Caps &amp; Crowns</a></li><li><a href="services/chimney-liners.html">Chimney Liners</a></li><li><a href="services/chimney-leak-repair.html">Leaks &amp; Waterproofing</a></li><li><a href="services/fireplace-stove-service.html">Fireplace &amp; Stove Service</a></li><li><a href="services/dryer-vent-cleaning.html">Dryer Vent Cleaning</a></li><li><a href="services/animal-removal.html">Animal &amp; Nest Removal</a></li></ul>
       </div>
       <div>
-        <h4>Service Areas</h4>
+        <h2>Service Areas</h2>
         <ul><li><a href="service-areas/pittsburgh.html">Pittsburgh (City)</a></li><li><a href="service-areas/mt-lebanon.html">Mt. Lebanon</a></li><li><a href="service-areas/upper-st-clair.html">Upper St. Clair</a></li><li><a href="service-areas/bethel-park.html">Bethel Park</a></li><li><a href="service-areas/peters-township.html">Peters Township</a></li><li><a href="service-areas/fox-chapel.html">Fox Chapel</a></li><li><a href="service-areas/sewickley.html">Sewickley</a></li><li><a href="service-areas/cranberry-township.html">Cranberry Township</a></li><li><a href="service-areas/index.html">All service areas →</a></li></ul>
       </div>
       <div>
-        <h4>Company</h4>
+        <h2>Company</h2>
         <ul>
           <li><a href="about.html">About Us</a></li>
           <li><a href="reviews.html">Reviews</a></li>
@@ -368,7 +372,7 @@
         </ul>
       </div>
       <div>
-        <h4>Learn</h4>
+        <h2>Learn</h2>
         <ul>
           <li><a href="resources/index.html">Homeowner Resources</a></li>
           <li><a href="faq.html">FAQ</a></li>

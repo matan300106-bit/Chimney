@@ -4,6 +4,7 @@
 //   node build.mjs           build src/ → site/, report broken links as warnings
 //   node build.mjs --strict  same, but exit 1 on broken links or unfilled {{tokens}}
 //   node build.mjs --launch  strict, and also exit 1 while placeholder business details remain
+//   node build.mjs --preview --out=DIR   design preview with a placeholder banner, written to DIR
 //
 // Page files live in src/pages/**.html and start with a front-matter comment:
 //   <!--page {"title": "...", "description": "...", "nav": "services", ...} -->
@@ -15,7 +16,10 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(ROOT, "src");
-const OUT = path.join(ROOT, "site");
+const outArg = process.argv.find(a => a.startsWith("--out="));
+const OUT = outArg ? path.resolve(outArg.slice(6)) : path.join(ROOT, "site");
+// --preview: adds a banner to every page saying which business details are placeholders (for sharing design previews)
+const PREVIEW = process.argv.includes("--preview");
 const LAUNCH = process.argv.includes("--launch");
 const STRICT = LAUNCH || process.argv.includes("--strict");
 const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, "site.config.json"), "utf8"));
@@ -166,6 +170,7 @@ ${schemas.map(s => `<script type="application/ld+json">${JSON.stringify(s)}</scr
 `;
   const shell = [
     "{{> sprite}}",
+    PREVIEW ? `<div style="background:#2A2A2A;color:#F4F1EB;font:14px/1.4 var(--f-body);text-align:center;padding:8px 16px"><b style="color:#FFB81C">Design preview.</b> Phone, license, Google rating and reviews are placeholders, and booking forms don't send anything yet.</div>` : "",
     '<a href="#main" class="skip">Skip to content</a>',
     landing ? "{{> header-landing}}" : "{{> util}}\n{{> header}}",
     `<main id="main">\n${body}\n</main>`,

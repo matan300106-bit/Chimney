@@ -23,7 +23,7 @@
       <a class="btn btn-gold" href="{{root}}book.html">Book Online</a>
     </div>
     <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Open menu">
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path class="mb-open" d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path class="mb-close" d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
     </button>
   </div>
   <nav class="mnav" id="mnav" hidden aria-label="Mobile">
@@ -37,6 +37,9 @@
     <a href="{{root}}resources/index.html">Resources</a>
     <a href="{{root}}faq.html">FAQ</a>
     <a href="{{root}}book.html">Contact</a>
-    <a class="btn btn-gold" href="{{root}}book.html">Book Online</a>
+    <div class="mnav-ctas">
+      <a class="btn btn-gold" href="{{root}}book.html"><svg><use href="#i-cal"/></svg>Book Online</a>
+      <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+    </div>
   </nav>
 </header>

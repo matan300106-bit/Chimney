@@ -14,6 +14,7 @@
   "hoursSaturday": "Sat 8am–4pm",
   "hoursSunday": "Sun: emergencies only",
   "bookingEndpoint": "",
+  "announcement": "Now booking fall sweeps. Book before burning season.",
   "placeholders": ["phone", "phoneTel", "email", "license", "rating", "reviewCount", "googleReviewsUrl", "reviews", "bookingEndpoint"],
 
   "services": [

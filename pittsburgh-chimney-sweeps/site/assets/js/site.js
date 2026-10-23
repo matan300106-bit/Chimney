@@ -16,12 +16,16 @@
   // Mobile menu
   const menuBtn = $("#menuBtn"), mnav = $("#mnav");
   if (menuBtn && mnav) {
-    menuBtn.addEventListener("click", () => {
-      const open = mnav.hidden;
+    const setMenu = open => {
       mnav.hidden = !open;
       menuBtn.setAttribute("aria-expanded", String(open));
-    });
-    $$("a", mnav).forEach(a => a.addEventListener("click", () => { mnav.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); }));
+      menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+      document.documentElement.classList.toggle("menu-open", open);
+    };
+    menuBtn.addEventListener("click", () => setMenu(mnav.hidden));
+    $$("a", mnav).forEach(a => a.addEventListener("click", () => setMenu(false)));
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && !mnav.hidden) { setMenu(false); menuBtn.focus(); } });
+    matchMedia("(min-width:1101px)").addEventListener?.("change", e => { if (e.matches) setMenu(false); });
   }
 
   // Services dropdown: hover/focus is CSS; the chevron button toggles for touch and keyboard
@@ -107,6 +111,10 @@
 
   // Quick-book card: [data-quickbook] form. Carries details to the full booking form (same page if present, else book.html)
   $$("[data-quickbook]").forEach(f => {
+    if (f.dataset.service && f.elements.service) {
+      const opt = [...f.elements.service.options].find(o => o.value === f.dataset.service);
+      if (opt) f.elements.service.value = opt.value;
+    }
     f.addEventListener("submit", e => {
       e.preventDefault();
       const zip = (f.elements.zip?.value || "").trim(), err = $(".err", f);
