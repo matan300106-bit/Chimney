@@ -51,7 +51,6 @@ button,input,select,textarea{font:inherit;color:inherit}
 .center{text-align:center}
 .stack{display:grid;gap:16px}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.mt-0{margin-top:0}.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}.mt-32{margin-top:32px}.mt-48{margin-top:48px}
 
 /* ---------- Type ---------- */
 h1,h2,h3,h4,.display{font-family:var(--f-display);font-weight:800;line-height:1.02;letter-spacing:.005em;text-transform:uppercase;margin:0;text-wrap:balance}
@@ -191,7 +190,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 /* Interior page hero */
 .phero>.wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:56px;align-items:center;padding-top:56px;padding-bottom:140px}
 .phero.no-aside>.wrap{grid-template-columns:1fr}
-.phero.short>.wrap{padding-bottom:72px}
+.phero.short>.wrap{padding-bottom:112px}
+.phero.short .skyline{height:104px}
 .phero h1{font-size:clamp(40px,5.6vw,72px);margin-top:14px}
 .phero .lede{margin-top:20px}
 @media (max-width:980px){.phero>.wrap{grid-template-columns:1fr;gap:36px;padding-bottom:120px}}
@@ -514,3 +514,6 @@ a.chip:hover{border-color:var(--ink)}
 /* ---------- 404 / thank-you ---------- */
 .notice-page{min-height:60vh;display:grid;place-items:center;text-align:center}
 .notice-page .big{font-family:var(--f-display);font-weight:800;font-size:clamp(96px,16vw,200px);line-height:.9;color:var(--gold)}
+
+/* ---------- Spacing helpers (last, so they win over component margins) ---------- */
+.mt-0{margin-top:0}.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}.mt-32{margin-top:32px}.mt-48{margin-top:48px}

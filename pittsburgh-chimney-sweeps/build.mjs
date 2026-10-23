@@ -126,14 +126,14 @@ for (const file of pageFiles) {
   const root = depth ? "../".repeat(depth) : "";
   const landing = fm.layout === "landing";
   const urlPath = rel === "index.html" ? "/" : "/" + rel.replace(/(^|\/)index\.html$/, "$1");
-  const ctx = { ...cfg, root, year: new Date().getFullYear(), page: fm, crumbs: crumbsHtml(fm.crumbs, root) };
+  const ctx = { ...cfg, root, year: new Date().getFullYear(), page: fm, crumbs: crumbsHtml(fm.crumbs, root), bookHref: landing ? "#book" : root + "book.html" };
 
   const schemas = [businessSchema()];
   if (fm.crumbs && fm.crumbs.length) schemas.push({
     "@context": "https://schema.org", "@type": "BreadcrumbList",
     itemListElement: [["Home", "index.html"], ...fm.crumbs].map(([name, href], i) => ({ "@type": "ListItem", position: i + 1, name, ...(href ? { item: cfg.domain + "/" + href.replace(/index\.html$/, "") } : {}) })),
   });
-  if (fm.faqSchema) { const s = faqSchema(body); if (s) schemas.push(s); }
+  if (fm.faqSchema) { const s = faqSchema(render(body, ctx)); if (s) schemas.push(s); }
   for (const s of [].concat(fm.schema || [])) schemas.push({ "@context": "https://schema.org", ...s });
 
   const extraCss = (fm.css || []).map(n => `<link rel="stylesheet" href="${root}assets/css/${n}.css">`).join("\n");
@@ -173,6 +173,7 @@ ${schemas.map(s => `<script type="application/ld+json">${JSON.stringify(s)}</scr
   ].join("\n");
   let html = head + render(shell, ctx) + "\n</body>\n</html>\n";
   if (fm.bookService) html = html.replace(/<form data-booking /g, `<form data-booking data-service="${esc(fm.bookService)}" `);
+  if (fm.bookService) html = html.replace(/<form class="qb" data-quickbook /g, `<form class="qb" data-quickbook data-service="${esc(fm.bookService)}" `);
   if (fm.nav) html = html.replace(new RegExp(`data-nav="${fm.nav}"`, "g"), `data-nav="${fm.nav}" aria-current="page"`);
 
   const leftover = [...new Set(html.match(/\{\{[^}]*\}\}/g) || [])];

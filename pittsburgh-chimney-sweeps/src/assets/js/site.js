@@ -107,6 +107,10 @@
 
   // Quick-book card: [data-quickbook] form. Carries details to the full booking form (same page if present, else book.html)
   $$("[data-quickbook]").forEach(f => {
+    if (f.dataset.service && f.elements.service) {
+      const opt = [...f.elements.service.options].find(o => o.value === f.dataset.service);
+      if (opt) f.elements.service.value = opt.value;
+    }
     f.addEventListener("submit", e => {
       e.preventDefault();
       const zip = (f.elements.zip?.value || "").trim(), err = $(".err", f);

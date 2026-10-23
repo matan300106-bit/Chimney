@@ -1,0 +1,123 @@
+<!--page
+{
+  "title": "Book a Chimney Sweep or Inspection | Pittsburgh Chimney Sweeps",
+  "description": "Book a chimney sweep, inspection, repair estimate or dryer vent cleaning in Greater Pittsburgh. Call, text or book online. We reply within one business hour.",
+  "nav": "contact",
+  "crumbs": [["Contact & Booking"]],
+  "faqSchema": true
+}
+-->
+<section class="phero on-dark">
+  <div class="wrap">
+    <div>
+      {{crumbs}}
+      <span class="eyebrow">Contact &amp; booking</span>
+      <h1>Book your visit. <em>We'll confirm by text.</em></h1>
+      <p class="lede">Send the form below and we'll text you within one business hour to lock in a 2-hour arrival window. Rather talk to a person? Call or text and a sweep picks up.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="#book"><svg aria-hidden="true"><use href="#i-cal"/></svg>Book online</a>
+        <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg aria-hidden="true"><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+    </div>
+    <aside class="phero-aside">
+      <h2>What to expect</h2>
+      <dl class="kv">
+        <dt>Reply</dt><dd>Within one business hour</dd>
+        <dt>Arrival</dt><dd>2-hour window, with an on-the-way text</dd>
+        <dt>Pricing</dt><dd>Confirmed in writing before work starts</dd>
+        <dt>Hours</dt><dd>{{hoursWeekday}} · {{hoursSaturday}}</dd>
+      </dl>
+    </aside>
+  </div>
+  {{> skyline}}
+</section>
+
+<section class="section tight" aria-labelledby="contact-h">
+  <div class="wrap">
+    <h2 class="sr" id="contact-h">Ways to reach us</h2>
+    <div class="grid-3">
+      <a class="card" href="tel:{{phoneTel}}">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-phone"/></svg></div>
+        <h3>Call or text</h3>
+        <p>{{phone}}</p>
+        <p class="mt-8">Fastest for urgent problems and closing-date inspections.</p>
+      </a>
+      <a class="card" href="mailto:{{email}}">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-mail"/></svg></div>
+        <h3>Email</h3>
+        <p style="overflow-wrap:anywhere">{{email}}</p>
+        <p class="mt-8">Good for photos of a problem, or questions that aren't urgent.</p>
+      </a>
+      <div class="card">
+        <div class="ico"><svg aria-hidden="true"><use href="#i-clock"/></svg></div>
+        <h3>Hours</h3>
+        <p>{{hoursWeekday}}<br>{{hoursSaturday}}<br>{{hoursSunday}}</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{> book-section}}
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">After you book</span>
+      <h2>What happens next</h2>
+    </div>
+    <ol class="steps">
+      <li class="step reveal"><span class="bar"></span><h3>We text you back</h3><p>Within one business hour, to confirm your service and a 2-hour arrival window that works for you.</p></li>
+      <li class="step reveal"><span class="bar"></span><h3>Price in writing</h3><p>You know the price before any work starts. No surprise add-ons on the day.</p></li>
+      <li class="step reveal"><span class="bar"></span><h3>On-the-way text</h3><p>On the day, you get a text with your technician's name and photo when they're headed to you.</p></li>
+      <li class="step reveal"><span class="bar"></span><h3>Photo report</h3><p>After the visit, photos of what we found. Any repair comes with a free written estimate.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section band-sand">
+  <div class="wrap grid-2">
+    <div>
+      <span class="eyebrow">Service area</span>
+      <h2 class="mt-16">Are you in our area?</h2>
+      <p class="lede mt-16">We cover Allegheny County and nearby communities in Butler, Washington, Westmoreland and Beaver counties. Check your ZIP code.</p>
+      <div class="mt-24">
+        <div class="zip" data-zip>
+          <label for="zipBook" class="sr">Enter your ZIP code</label>
+          <input id="zipBook" inputmode="numeric" maxlength="5" placeholder="Enter your ZIP code">
+          <button class="btn btn-dark" type="button">Check</button>
+        </div>
+        <p class="zip-msg" data-zip-msg aria-live="polite"></p>
+      </div>
+      <a class="link-arrow mt-16" href="{{root}}service-areas/index.html">See all service areas <svg width="18" height="18" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="stack">
+      <div class="callout callout-warn"><svg aria-hidden="true"><use href="#i-alert"/></svg><div><b>Chimney fire right now?</b>Get everyone out of the house and call 911. Don't wait to see if it goes out on its own. Once the fire department has cleared the house, call us at <a href="tel:{{phoneTel}}"><strong>{{phone}}</strong></a> and don't use the fireplace again until it's been inspected.</div></div>
+      <div class="callout callout-good"><svg aria-hidden="true"><use href="#i-key"/></svg><div><b>Buying or selling a home?</b>Put your closing date in the notes so we can schedule around it. <a href="{{root}}realtors.html">Real estate inspections</a></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section band-paper" id="faq">
+  <div class="wrap faq-wrap">
+    <div>
+      <span class="eyebrow">FAQ</span>
+      <h2 class="mt-16">Booking questions</h2>
+      <p class="lede mt-16">More answers on the <a href="{{root}}faq.html">full FAQ page</a>.</p>
+      <div class="help-card">
+        <h3>Still deciding?</h3>
+        <p>Call or text, or go back to the form.</p>
+        <div class="row">
+          <a class="btn btn-gold" href="tel:{{phoneTel}}"><svg aria-hidden="true"><use href="#i-phone"/></svg>{{phone}}</a>
+          <a class="btn btn-ghost" href="#book"><svg aria-hidden="true"><use href="#i-cal"/></svg>Book online</a>
+        </div>
+      </div>
+    </div>
+    <div class="faq">
+      <details open><summary>Is my appointment booked once I send the form?</summary><div class="ans">Not quite. The form is a request. We text you within one business hour to confirm the service, the price and your 2-hour arrival window. If you sent it outside business hours, we'll reply when we open.</div></details>
+      <details><summary>Do I need to be home?</summary><div class="ans">For anything inside the house, such as a sweep, inspection or dryer vent, someone needs to let us in. For some exterior repairs we only need access to the roof and yard. We'll confirm when we text you.</div></details>
+      <details><summary>Can I book a Saturday?</summary><div class="ans">Yes. Saturday appointments are available, and our current hours are listed at the top of this page.</div></details>
+      <details><summary>Not sure which service you need?</summary><div class="ans">Pick "Not sure" on the form and tell us what you're seeing. We'll recommend the right visit. You can also check the <a href="{{root}}services/index.html">services page</a>.</div></details>
+      <details><summary>How do I prepare for the visit?</summary><div class="ans">Don't use the fireplace or stove for 24 hours before a sweep or inspection, clear a path to the fireplace, and move anything off the mantel and hearth. Keep pets in another room while we work.</div></details>
+    </div>
+  </div>
+</section>

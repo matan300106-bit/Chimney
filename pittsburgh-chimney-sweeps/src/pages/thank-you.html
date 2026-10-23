@@ -1,0 +1,75 @@
+<!--page
+{
+  "title": "Request Received | Pittsburgh Chimney Sweeps",
+  "description": "Thanks for booking with Pittsburgh Chimney Sweeps. Here's what happens next and how to get your home ready for the visit.",
+  "noindex": true,
+  "crumbs": [["Contact & Booking", "book.html"], ["Request received"]]
+}
+-->
+<section class="phero no-aside on-dark">
+  <div class="wrap">
+    <div>
+      {{crumbs}}
+      <span class="eyebrow">Request received</span>
+      <h1>Thanks. <em>You're on the list.</em></h1>
+      <p class="lede">We'll text you within one business hour to confirm your service, price and 2-hour arrival window. If you sent this outside business hours, we'll reply as soon as we open.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="tel:{{phoneTel}}"><svg aria-hidden="true"><use href="#i-phone"/></svg>Need us sooner? {{phone}}</a>
+      </div>
+    </div>
+  </div>
+  {{> skyline}}
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What happens next</span>
+      <h2>From here to a finished visit</h2>
+    </div>
+    <ol class="steps cols-3">
+      <li class="step"><span class="bar"></span><h3>We confirm by text</h3><p>Your service, your price in writing and a 2-hour arrival window. Reply to the text if anything needs to change.</p></li>
+      <li class="step"><span class="bar"></span><h3>On-the-way text</h3><p>On the day, you'll get a text with your technician's name and photo when they're headed to you.</p></li>
+      <li class="step"><span class="bar"></span><h3>Photo report</h3><p>After the visit, photos of what we found. If anything needs repair, you get a free written estimate.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section band-sand">
+  <div class="wrap grid-2">
+    <div>
+      <span class="eyebrow">Before we arrive</span>
+      <h2 class="mt-16">Getting your home ready</h2>
+      <div class="mt-24"><ul class="checklist">
+        <li><span><b>No fire for 24 hours.</b> Let the fireplace or stove go cold for a full day before a sweep or inspection.</span></li>
+        <li><span><b>Clear a path.</b> Make room from the door to the fireplace, and around the dryer for a vent cleaning.</span></li>
+        <li><span><b>Clear the mantel and hearth.</b> Move photos, decor and fireplace tools out of the way.</span></li>
+        <li><span><b>Pets in another room.</b> Doors stay open while we bring equipment in and out.</span></li>
+        <li><span><b>Note what you've noticed.</b> Smells, stains, drafts or smoke. Tell the technician when they arrive.</span></li>
+      </ul></div>
+    </div>
+    <div class="stack">
+      <div class="callout callout-warn"><svg aria-hidden="true"><use href="#i-alert"/></svg><div><b>Chimney fire right now?</b>Get everyone out of the house and call 911. Then call us once the fire department has cleared the house.</div></div>
+      <div class="card-dark">
+        <h3>Need to change something?</h3>
+        <p class="mt-8">Call or text and we'll update your request. {{hoursWeekday}} · {{hoursSaturday}}</p>
+        <a class="btn btn-gold mt-24" href="tel:{{phoneTel}}"><svg aria-hidden="true"><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">While you wait</span>
+      <h2>Know your chimney</h2>
+    </div>
+    <div class="grid-3">
+      <a class="area-card" href="{{root}}resources/how-often-chimney-sweep.html"><b>How often should a chimney be swept?</b><small>Wood, gas and oil, explained</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}resources/creosote-stages.html"><b>The three stages of creosote</b><small>What builds up in your flue</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}resources/chimney-fire-warning-signs.html"><b>Chimney fire warning signs</b><small>What to watch and listen for</small><span aria-hidden="true">→</span></a>
+    </div>
+    <a class="link-arrow mt-24" href="{{root}}resources/index.html">All homeowner resources <svg width="18" height="18" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+  </div>
+</section>
