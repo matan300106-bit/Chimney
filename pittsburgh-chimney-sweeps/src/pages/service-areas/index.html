@@ -1,0 +1,137 @@
+<!--page
+{
+  "title": "Service Areas | Chimney Sweep Near Pittsburgh, PA",
+  "description": "Chimney sweeping, inspections and repair in Pittsburgh and nearby South Hills, North Hills, East and West suburbs. Check your ZIP code or find your town.",
+  "nav": "areas",
+  "crumbs": [["Service Areas"]],
+  "schema": {"@type": "Service", "serviceType": "Chimney sweeping and repair", "provider": {"@id": "https://www.pittsburghchimneysweeps.com/#business"}, "areaServed": {"@type": "Place", "name": "Greater Pittsburgh, PA"}}
+}
+-->
+<section class="phero on-dark">
+  <div class="wrap">
+    <div>
+      {{crumbs}}
+      <span class="eyebrow">Service areas</span>
+      <h1>Chimney service across <em>Greater Pittsburgh</em></h1>
+      <p class="lede">From city rowhouses to new builds in the suburbs, our crews cover Pittsburgh and the towns around it in Allegheny, Butler, Washington and Westmoreland counties. Type your ZIP code to check.</p>
+      <div class="zip mt-24" data-zip>
+        <label for="zipAreas" class="sr">Enter your ZIP code</label>
+        <input id="zipAreas" inputmode="numeric" maxlength="5" placeholder="Enter your ZIP code">
+        <button class="btn btn-gold" type="button">Check</button>
+      </div>
+      <p class="zip-msg" data-zip-msg aria-live="polite"></p>
+      <div class="hero-ctas">
+        <a class="btn btn-gold" href="{{root}}book.html"><svg><use href="#i-cal"/></svg>Book Online</a>
+        <a class="btn btn-ghost" href="tel:{{phoneTel}}"><svg><use href="#i-phone"/></svg>{{phone}}</a>
+      </div>
+    </div>
+    {{> map}}
+  </div>
+  {{> skyline}}
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Find your town</span>
+      <h2>Pick your area</h2>
+      <p class="lede">Each page covers the chimneys we tend to see there, the services people book most, and answers to local questions.</p>
+    </div>
+    {{> areas-grid}}
+  </div>
+</section>
+
+<section class="section band-sand">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">By part of town</span>
+      <h2>Different neighborhoods, different chimneys</h2>
+      <p class="lede">A 1920s brick house in the South Hills and a 2005 townhouse in Cranberry need different things. Here's how the region breaks down.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="ico"><svg><use href="#i-home"/></svg></div>
+        <h3>City of Pittsburgh</h3>
+        <p>Rowhouses, attached homes and hillside houses, many over a century old. Shared chimney stacks, old coal-era fireplaces and tricky access on steep streets.</p>
+        <div class="mt-16"><ul class="checklist">
+          <li><span><a href="{{root}}service-areas/pittsburgh.html">Pittsburgh city neighborhoods</a></span></li>
+        </ul></div>
+      </div>
+      <div class="card">
+        <div class="ico"><svg><use href="#i-bricks"/></svg></div>
+        <h3>South Hills</h3>
+        <p>Early-1900s brick and stone in Mt. Lebanon, post-war ranches and split-levels farther out, and newer subdivisions in Peters Township.</p>
+        <div class="mt-16"><ul class="checklist">
+          <li><span><a href="{{root}}service-areas/mt-lebanon.html">Mt. Lebanon</a></span></li>
+          <li><span><a href="{{root}}service-areas/upper-st-clair.html">Upper St. Clair</a></span></li>
+          <li><span><a href="{{root}}service-areas/bethel-park.html">Bethel Park</a></span></li>
+          <li><span><a href="{{root}}service-areas/peters-township.html">Peters Township</a></span></li>
+        </ul></div>
+      </div>
+      <div class="card">
+        <div class="ico"><svg><use href="#i-flame"/></svg></div>
+        <h3>North Hills</h3>
+        <p>Mid-century homes close to the city, and plenty of newer construction along the Route 19 and I-79 corridor, where factory-built fireplaces are common.</p>
+        <div class="mt-16"><ul class="checklist">
+          <li><span><a href="{{root}}service-areas/ross-township.html">Ross Township</a></span></li>
+          <li><span><a href="{{root}}service-areas/mccandless.html">McCandless</a></span></li>
+          <li><span><a href="{{root}}service-areas/wexford.html">Wexford</a></span></li>
+          <li><span><a href="{{root}}service-areas/cranberry-township.html">Cranberry Township</a></span></li>
+        </ul></div>
+      </div>
+      <div class="card">
+        <div class="ico"><svg><use href="#i-pin"/></svg></div>
+        <h3>East &amp; Allegheny Valley</h3>
+        <p>Large wooded lots and multi-flue chimneys in Fox Chapel, gas-heated suburban homes in Monroeville, and wood stoves on bigger properties in Murrysville.</p>
+        <div class="mt-16"><ul class="checklist">
+          <li><span><a href="{{root}}service-areas/fox-chapel.html">Fox Chapel</a></span></li>
+          <li><span><a href="{{root}}service-areas/monroeville.html">Monroeville</a></span></li>
+          <li><span><a href="{{root}}service-areas/murrysville.html">Murrysville</a></span></li>
+        </ul></div>
+      </div>
+      <div class="card">
+        <div class="ico"><svg><use href="#i-drop"/></svg></div>
+        <h3>West, Airport &amp; Ohio River</h3>
+        <p>Historic river-town homes in Sewickley, and suburban neighborhoods and townhomes around Moon and Robinson near the airport corridor.</p>
+        <div class="mt-16"><ul class="checklist">
+          <li><span><a href="{{root}}service-areas/sewickley.html">Sewickley</a></span></li>
+          <li><span><a href="{{root}}service-areas/moon-township.html">Moon Township</a></span></li>
+          <li><span><a href="{{root}}service-areas/robinson-township.html">Robinson Township</a></span></li>
+        </ul></div>
+      </div>
+      <div class="card-dark">
+        <div class="ico"><svg><use href="#i-phone"/></svg></div>
+        <h3>Don't see your town?</h3>
+        <p class="mt-8">The list above isn't everything. We often cover nearby boroughs and townships that don't have their own page, including parts of Beaver County. Call or text and we'll tell you straight away.</p>
+        <a class="link-arrow mt-24" href="tel:{{phoneTel}}">Call {{phone}} <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap split">
+    <div>
+      <span class="eyebrow">Same standards everywhere</span>
+      <h2 class="mt-16">Wherever you live, the visit works the same way</h2>
+      <p class="lede mt-16">Your ZIP code changes the chimney we're likely to find. It doesn't change how we work.</p>
+      <div class="mt-24"><ul class="checklist">
+        <li><span><b>2-hour arrival window.</b> Confirmed by text, with an on-the-way message before we arrive.</span></li>
+        <li><span><b>Clean work.</b> Drop cloths, shoe covers and a HEPA vacuum on every job.</span></li>
+        <li><span><b>Photo report.</b> You see what we saw, texted to you the same day.</span></li>
+        <li><span><b>Written pricing.</b> Price confirmed before work starts, and free estimates on repairs.</span></li>
+        <li><span><b>Saturday hours.</b> {{hoursSaturday}}, for when weekdays don't work.</span></li>
+      </ul></div>
+    </div>
+    <div class="stack">
+      <span class="eyebrow">Popular services</span>
+      <a class="area-card" href="{{root}}services/chimney-sweeping.html"><b>Chimney sweeping</b><small>Annual cleaning with a Level 1 inspection</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}services/chimney-inspection.html"><b>Chimney inspections</b><small>Level 2 camera inspections for home sales</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}services/chimney-repair.html"><b>Masonry &amp; tuckpointing</b><small>Freeze-thaw damage, crowns and rebuilds</small><span aria-hidden="true">→</span></a>
+      <a class="area-card" href="{{root}}services/dryer-vent-cleaning.html"><b>Dryer vent cleaning</b><small>Full-length cleaning and airflow testing</small><span aria-hidden="true">→</span></a>
+      <a class="link-arrow mt-8" href="{{root}}services/index.html">All services <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+  </div>
+</section>
+
+{{> cta-band}}
