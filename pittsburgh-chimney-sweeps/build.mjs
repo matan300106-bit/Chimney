@@ -3,6 +3,7 @@
 //
 //   node build.mjs           build src/ → site/, report broken links as warnings
 //   node build.mjs --strict  same, but exit 1 on broken links or unfilled {{tokens}}
+//   node build.mjs --launch  strict, and also exit 1 while placeholder business details remain
 //
 // Page files live in src/pages/**.html and start with a front-matter comment:
 //   <!--page {"title": "...", "description": "...", "nav": "services", ...} -->
@@ -15,7 +16,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(ROOT, "src");
 const OUT = path.join(ROOT, "site");
-const STRICT = process.argv.includes("--strict");
+const LAUNCH = process.argv.includes("--launch");
+const STRICT = LAUNCH || process.argv.includes("--strict");
 const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, "site.config.json"), "utf8"));
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -210,9 +212,25 @@ fs.writeFileSync(path.join(OUT, "sitemap.xml"), `<?xml version="1.0" encoding="U
   indexable.map(b => `  <url><loc>${cfg.domain}${b.urlPath}</loc></url>`).join("\n") + `\n</urlset>\n`);
 fs.writeFileSync(path.join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${cfg.domain}/sitemap.xml\n`);
 
+// ---------- launch checklist: placeholder business details ----------
+const placeholders = [];
+if (/555-01\d\d/.test(cfg.phone)) placeholders.push(`phone is a placeholder (${cfg.phone})`);
+if (/000000/.test(cfg.license)) placeholders.push(`license is a placeholder (${cfg.license})`);
+if (cfg.reviews.some(r => r.sample)) placeholders.push(`${cfg.reviews.filter(r => r.sample).length} sample reviews (replace with real Google reviews and remove "sample": true)`);
+if (!cfg.bookingEndpoint) placeholders.push("bookingEndpoint is empty, so the booking form doesn't send anywhere");
+if (cfg.googleReviewsUrl === "https://www.google.com/maps") placeholders.push("googleReviewsUrl is a placeholder");
+if (cfg.ratingVerified !== true) placeholders.push(`rating "${cfg.rating}" / "${cfg.reviewCount}" not confirmed (set "ratingVerified": true once they match your Google profile)`);
+const ownerNotes = built.reduce((n, b) => n + (fs.readFileSync(path.join(pagesDir, b.rel), "utf8").match(/<!--\s*OWNER/g) || []).length, 0);
+
 console.log(`Built ${built.length} pages → ${path.relative(process.cwd(), OUT) || "."}/`);
 if (problems.length) {
   console.log(`\n${problems.length} problem(s):`);
   for (const p of problems) console.log("  • " + p);
   if (STRICT) process.exit(1);
 } else console.log("No problems found.");
+if (placeholders.length) {
+  console.log(`\nBefore launch (${placeholders.length}):`);
+  for (const p of placeholders) console.log("  • " + p);
+}
+if (ownerNotes) console.log(`  • ${ownerNotes} <!-- OWNER --> notes in src/pages to review (grep -rn "OWNER" src/pages)`);
+if (LAUNCH && (placeholders.length || problems.length)) process.exit(1);
